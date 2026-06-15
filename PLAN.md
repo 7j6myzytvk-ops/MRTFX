@@ -256,3 +256,33 @@ het #ceo-kanaal, zonder dat de gebruiker er om hoeft te vragen.
   `open` (nog binnen de horizon, geen TP/SL geraakt), dus `resolved` was leeg en er
   is terecht niets gepost. Bevestigt dat de nieuwe `client`-parameter geen
   bestaande flow breekt.
+
+## Fase 12 - Setup-markering in CEO-berichten (klaar)
+
+### Doel
+Eerste stap richting het einddoel (proactieve setup-alerts): elk uur wordt al een
+CEO-besluit gepost, maar zonder onderscheid tussen "dit is een kans om naar te
+kijken" (bullish/bearish) en "het team neemt bewust geen positie" (neutral). Een
+visuele markering maakt dit in één oogopslag duidelijk, zonder dat er al een
+confidence-drempel of filter nodig is (die data is nog te dun/scheef, zie Fase 9).
+
+### Implementatie
+- `services/boardroomReporter.js`: nieuwe `formatSetupMarker(signal)` -
+  `bullish`/`bearish` -> `🚨 Setup gevonden`, `neutral` -> `💤 Geen actie`.
+- `formatCeoMessage` en de CEO-eindbeslissing in `formatTraceMessages` tonen nu
+  `**👔 CEO-besluit - <marker>**` resp. `**👔 CEO - eindbeslissing - <marker>**`.
+- `discord/bot.js`'s `/analyse`-antwoord toont dezelfde marker naast het
+  CEO-besluit.
+- Geen nieuwe configuratie/drempel: puur een afleiding van `decision.signal`,
+  dat al verplicht aanwezig is in elk CEO-besluit.
+
+### Validatie
+- `scripts/test-boardroomReporter.js` (7 nieuwe checks, totaal 14):
+  `formatSetupMarker` voor bullish/bearish/neutral, `formatCeoMessage` met
+  marker voor bullish en neutral, en `formatTraceMessages` (6 berichten, CEO-bericht
+  bevat de marker).
+- Live verificatie (2026-06-15): `scripts/test-boardroom.js` gedraaid met
+  mock-candles (bullish-uitkomst) - trace- en CEO-berichten met `🚨 Setup
+  gevonden` correct gepost naar #trace en #ceo.
+- Live bot (scheduler-proces) herstart zodat de lopende scheduler en
+  slash-commands de nieuwe markering meteen gebruiken.

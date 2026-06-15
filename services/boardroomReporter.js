@@ -1,5 +1,17 @@
 import { config } from '../config/index.js';
 
+// Visuele markering of een CEO-besluit een "setup" is om naar te kijken
+// (bullish/bearish) of dat er bewust geen positie wordt genomen (neutral).
+const SETUP_MARKER = {
+  bullish: '🚨 Setup gevonden',
+  bearish: '🚨 Setup gevonden',
+  neutral: '💤 Geen actie',
+};
+
+export function formatSetupMarker(signal) {
+  return SETUP_MARKER[signal];
+}
+
 function formatDecisionBody(decision) {
   return (
     `Signaal: ${decision.signal.toUpperCase()} (zekerheid: ${decision.confidence}%)\n` +
@@ -9,7 +21,7 @@ function formatDecisionBody(decision) {
 }
 
 export function formatCeoMessage(decision) {
-  return `**👔 CEO-besluit**\n${formatDecisionBody(decision)}`;
+  return `**👔 CEO-besluit - ${formatSetupMarker(decision.signal)}**\n${formatDecisionBody(decision)}`;
 }
 
 export function formatTraceMessages({ discussion, decision }) {
@@ -21,7 +33,7 @@ export function formatTraceMessages({ discussion, decision }) {
     `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
     `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal.toUpperCase()} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
-    `**👔 CEO - eindbeslissing**\n${formatDecisionBody(decision)}`,
+    `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal)}**\n${formatDecisionBody(decision)}`,
   ];
 }
 

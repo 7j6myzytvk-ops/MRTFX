@@ -1,4 +1,10 @@
-import { formatOutcomeMessage, reportOutcomes } from '../services/boardroomReporter.js';
+import {
+  formatOutcomeMessage,
+  reportOutcomes,
+  formatSetupMarker,
+  formatCeoMessage,
+  formatTraceMessages,
+} from '../services/boardroomReporter.js';
 import { config } from '../config/index.js';
 
 const decision = { signal: 'bullish', confidence: 72, stopLoss: 4300, takeProfit: 4400, positionSize: 'klein' };
@@ -75,6 +81,43 @@ function check(name, actual, expected) {
   const mockClient = { channels: { fetch: async () => { fetched = true; return { send: async () => {} }; } } };
   await reportOutcomes(mockClient, []);
   check('reportOutcomes - geen channel-fetch bij lege lijst', fetched, false);
+}
+
+// 6. formatSetupMarker - bullish/bearish krijgen de setup-marker, neutral niet
+{
+  check('formatSetupMarker bullish', formatSetupMarker('bullish'), '🚨 Setup gevonden');
+  check('formatSetupMarker bearish', formatSetupMarker('bearish'), '🚨 Setup gevonden');
+  check('formatSetupMarker neutral', formatSetupMarker('neutral'), '💤 Geen actie');
+}
+
+// 7. formatCeoMessage - bevat de setup-marker
+{
+  check('formatCeoMessage - bullish krijgt setup-marker', formatCeoMessage(decision).startsWith('**👔 CEO-besluit - 🚨 Setup gevonden**'), true);
+
+  const neutralDecision = { ...decision, signal: 'neutral' };
+  check(
+    'formatCeoMessage - neutral krijgt geen-actie-marker',
+    formatCeoMessage(neutralDecision).startsWith('**👔 CEO-besluit - 💤 Geen actie**'),
+    true,
+  );
+}
+
+// 8. formatTraceMessages - de CEO-eindbeslissing krijgt ook de setup-marker
+{
+  const discussion = {
+    analyst: { signal: 'bullish', confidence: 70, reasoning: 'r1' },
+    riskManager: { stopLoss: 4300, takeProfit: 4400, positionSize: 'klein', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 40, argument: 'r3' },
+    macro: { sentiment: 'risk-on', confidence: 60, reasoning: 'r4' },
+    analystRebuttal: { signal: 'bullish', confidence: 65, reasoning: 'r5' },
+  };
+  const messages = formatTraceMessages({ discussion, decision });
+  check('formatTraceMessages - 6 berichten', messages.length, 6);
+  check(
+    'formatTraceMessages - laatste bericht heeft setup-marker',
+    messages[5].startsWith('**👔 CEO - eindbeslissing - 🚨 Setup gevonden**'),
+    true,
+  );
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

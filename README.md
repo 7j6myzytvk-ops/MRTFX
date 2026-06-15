@@ -13,9 +13,11 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **services/scheduler.js** - draait periodiek de boardroom, rapporteert naar Discord
   en evalueert open signalen
 - **services/boardroomReporter.js** - formatteert en post de teamdiscussie naar
-  het #trace-kanaal en het CEO-besluit naar het #ceo-kanaal. `reportOutcomes()`
-  post daarnaast automatisch een melding naar het #ceo-kanaal zodra een open
-  signaal een definitieve tp/sl/geen-uitkomst krijgt
+  het #trace-kanaal en het CEO-besluit naar het #ceo-kanaal. Elk CEO-besluit krijgt
+  een setup-markering (`formatSetupMarker`): 🚨 Setup gevonden (bullish/bearish) of
+  💤 Geen actie (neutral). `reportOutcomes()` post daarnaast automatisch een
+  melding naar het #ceo-kanaal zodra een open signaal een definitieve
+  tp/sl/geen-uitkomst krijgt
 - **services/performanceTracker.js** - `evaluateOpenSignals(client)`: zet open
   signalen in `data/signals.json` periodiek af tegen de daadwerkelijke
   prijsbeweging die volgde (`tp`/`sl`/`geen`/`open`/`neutraal`/`onbruikbaar`); geeft
@@ -109,7 +111,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
 - `node scripts/test-performanceTracker.js` - unit-tests voor `evaluateSignalOutcome`
   (tp/sl/geen/open/neutraal/onbruikbaar) met handgeschreven candle-fixtures
 - `node scripts/test-boardroomReporter.js` - unit-tests voor `formatOutcomeMessage`
-  (tp/sl/geen) en `reportOutcomes` (met een mock Discord-client)
+  (tp/sl/geen), `reportOutcomes` (met een mock Discord-client) en `formatSetupMarker`/
+  `formatCeoMessage`/`formatTraceMessages` (🚨 Setup gevonden / 💤 Geen actie)
 - `node scripts/test-agentAnalysis.js` - unit-tests voor de classificatiefuncties en
   de `breakdown()`-helper in `agents/agentAnalysis.js`
 

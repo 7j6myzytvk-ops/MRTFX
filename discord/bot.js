@@ -2,7 +2,7 @@ import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'di
 import { config } from '../config/index.js';
 import { getXauUsdPrice, getRecentRealCandles } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
-import { reportToDiscord } from '../services/boardroomReporter.js';
+import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
 import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
@@ -93,7 +93,7 @@ export function createBot() {
 
         const { decision } = result;
         await interaction.editReply(
-          `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%)\n${decision.reasoning}\n\n` +
+          `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%) - ${formatSetupMarker(decision.signal)}\n${decision.reasoning}\n\n` +
             `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n\n` +
             `_Volledige teamdiscussie: zie het #trace-kanaal._`,
         );
