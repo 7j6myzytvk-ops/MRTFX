@@ -19,5 +19,6 @@ export const config = {
   boardroom: {
     ceoChannelId: process.env.DISCORD_CEO_CHANNEL_ID,
     traceChannelId: process.env.DISCORD_TRACE_CHANNEL_ID,
+    alertUserId: process.env.DISCORD_ALERT_USER_ID,
   },
 };

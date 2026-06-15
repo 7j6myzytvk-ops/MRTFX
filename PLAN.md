@@ -535,3 +535,42 @@ bestaande 🚨 Setup gevonden / 💤 Geen actie.
   `comboSignal: true` (rebuttal-shift 45%→55% = "omhoog", R:R ≈1.12 = "<1.5"),
   bevestigd dat dit `🚨 Setup gevonden 🌟` oplevert in #trace/#ceo.
 - Bot herstart 31400 -> 31821.
+
+## Fase 17 - Proactieve 🌟-melding (klaar)
+
+### Doel
+Record #11 bevestigde het combo-signaal verder (N=14, winRate 84.6% vs.
+31.8% voor de rest). De 🌟 uit Fase 16 was tot nu toe alleen een visuele
+markering in het reguliere uur-bericht in #ceo - makkelijk te missen. Fase 17
+maakt dit proactief: een directe Discord-mention zodra het combo-signaal
+zich voordoet op een echte setup (🚨, niet bij 💤).
+
+### Implementatie
+- Nieuwe instelling `DISCORD_ALERT_USER_ID` (`config/index.js`'s
+  `config.boardroom.alertUserId`, toegevoegd aan `.env`/`.env.example`) -
+  jouw Discord user-ID om te pingen. Leeg = geen extra melding (graceful
+  no-op, geen verplichte configuratie).
+- Nieuwe pure functie `services/boardroomReporter.js`'s
+  `formatComboAlert(signal, comboSignal, alertUserId)`: `null` als
+  `signal === 'neutral'`, `comboSignal` niet waar is, of `alertUserId`
+  ontbreekt; anders `🌟 <@alertUserId> Combo-signaal gedetecteerd - bekijk
+  het CEO-besluit hierboven!`.
+- `reportToDiscord` stuurt na het reguliere CEO-bericht
+  (`formatCeoMessage`) optioneel dit extra alert-bericht naar hetzelfde
+  #ceo-kanaal. `formatCeoMessage`/`formatTraceMessages`/`formatSetupMarker`
+  (Fase 16) zijn ongewijzigd - de 🌟 in de besluittekst blijft, de mention is
+  een aanvullend bericht ernaast.
+
+### Validatie
+- 6 nieuwe unit-tests in `scripts/test-boardroomReporter.js` (25 checks
+  totaal, was 19): `formatComboAlert` voor alle combinaties van
+  comboSignal/signal/alertUserId, plus een `reportToDiscord`-test die
+  bevestigt dat zonder `DISCORD_ALERT_USER_ID` geen extra bericht wordt
+  verstuurd.
+- Volledige regressiesuite (alle `scripts/test-*.js`) groen.
+- Bot herstart 31821 -> 32179.
+
+### Openstaand
+`DISCORD_ALERT_USER_ID` is nog leeg - de mention activeert pas zodra dit is
+ingevuld (Discord user-ID via "Kopieer gebruikers-ID" met Developer Mode
+aan).

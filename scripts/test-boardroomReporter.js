@@ -1,8 +1,10 @@
 import {
   formatOutcomeMessage,
   reportOutcomes,
+  reportToDiscord,
   formatSetupMarker,
   formatCeoMessage,
+  formatComboAlert,
   formatTraceMessages,
 } from '../services/boardroomReporter.js';
 import { config } from '../config/index.js';
@@ -134,6 +136,45 @@ function check(name, actual, expected) {
     comboMessages[5].startsWith('**👔 CEO - eindbeslissing - 🚨 Setup gevonden 🌟**'),
     true,
   );
+}
+
+// 9. formatComboAlert - mention alleen bij comboSignal + niet-neutraal + alertUserId
+{
+  check(
+    'formatComboAlert - bullish + comboSignal + alertUserId -> mention',
+    formatComboAlert('bullish', true, '123456789'),
+    '🌟 <@123456789> Combo-signaal gedetecteerd - bekijk het CEO-besluit hierboven!',
+  );
+  check(
+    'formatComboAlert - bearish + comboSignal + alertUserId -> mention',
+    formatComboAlert('bearish', true, '123456789'),
+    '🌟 <@123456789> Combo-signaal gedetecteerd - bekijk het CEO-besluit hierboven!',
+  );
+  check('formatComboAlert - geen comboSignal -> null', formatComboAlert('bullish', false, '123456789'), null);
+  check('formatComboAlert - neutral + comboSignal -> null', formatComboAlert('neutral', true, '123456789'), null);
+  check('formatComboAlert - geen alertUserId -> null', formatComboAlert('bullish', true, undefined), null);
+}
+
+// 10. reportToDiscord - zonder DISCORD_ALERT_USER_ID-config wordt bij een
+// comboSignal geen extra ping verstuurd naar het CEO-kanaal (alleen het
+// reguliere CEO-bericht).
+{
+  const sent = [];
+  const mockClient = {
+    channels: { fetch: async (id) => ({ send: async (content) => sent.push({ id, content }) }) },
+  };
+  const discussion = {
+    analyst: { signal: 'bullish', confidence: 70, reasoning: 'r1' },
+    riskManager: { stopLoss: 4300, takeProfit: 4400, positionSize: 'klein', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 40, argument: 'r3' },
+    macro: { sentiment: 'risk-on', confidence: 60, reasoning: 'r4' },
+    analystRebuttal: { signal: 'bullish', confidence: 65, reasoning: 'r5' },
+  };
+
+  await reportToDiscord(mockClient, { discussion, decision, comboSignal: true });
+
+  const ceoMessages = sent.filter((s) => s.id === config.boardroom.ceoChannelId);
+  check('reportToDiscord - zonder alertUserId geen extra ping bij comboSignal', ceoMessages.length, 1);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

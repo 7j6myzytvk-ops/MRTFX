@@ -30,6 +30,14 @@ export function formatCeoMessage(decision, comboSignal = false) {
   return `**👔 CEO-besluit - ${formatSetupMarker(decision.signal, comboSignal)}**\n${formatDecisionBody(decision)}`;
 }
 
+// Proactieve melding bovenop het CEO-bericht: alleen bij een combo-signaal
+// (zie agents/agentAnalysis.js's isComboSignal) op een echte setup, en alleen
+// als er een Discord user-ID is geconfigureerd om te pingen.
+export function formatComboAlert(signal, comboSignal, alertUserId) {
+  if (signal === 'neutral' || !comboSignal || !alertUserId) return null;
+  return `🌟 <@${alertUserId}> Combo-signaal gedetecteerd - bekijk het CEO-besluit hierboven!`;
+}
+
 export function formatTraceMessages({ discussion, decision, comboSignal = false }) {
   const { analyst, riskManager, devilsAdvocate, macro, analystRebuttal } = discussion;
 
@@ -56,6 +64,9 @@ export async function reportToDiscord(client, result) {
   if (ceoChannelId) {
     const channel = await client.channels.fetch(ceoChannelId);
     await channel.send(formatCeoMessage(result.decision, result.comboSignal));
+
+    const alert = formatComboAlert(result.decision.signal, result.comboSignal, config.boardroom.alertUserId);
+    if (alert) await channel.send(alert);
   }
 }
 
