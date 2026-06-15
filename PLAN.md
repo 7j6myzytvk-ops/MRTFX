@@ -212,3 +212,47 @@ positiegrootte **klein**. De Devil's Advocate bracht in dat de markt het nieuws 
 deels kan hebben ingeprijsd ("sell the news"); de CEO koos mede daardoor voor een
 strakke SL en een kleine positie i.p.v. normaal/groot, ondanks de hoge zekerheid.
 Gepost naar het #trace- en #ceo-kanaal.
+
+## Fase 11 - Proactieve outcome-meldingen (klaar)
+
+### Doel
+Tot nu toe zag je TP/SL/geen-uitkomsten van eerder gegeven signalen alleen als je
+zelf `/performance` of `/geschiedenis` opvroeg. `evaluateOpenSignals()` (aangeroepen
+door de scheduler elke tick, en door `/performance`) wist intern al wanneer een open
+signaal voor het eerst een definitieve uitkomst krijgt - die informatie ging eerder
+verloren na het loggen. Fase 11 stuurt hiervoor automatisch een Discord-bericht naar
+het #ceo-kanaal, zonder dat de gebruiker er om hoeft te vragen.
+
+### Implementatie
+- `services/performanceTracker.js`'s `evaluateOpenSignals(client)` neemt nu een
+  optionele Discord-`client`. Voor elk `pending`-signaal dat in deze aanroep een
+  **definitieve** uitkomst krijgt (`tp`, `sl` of `geen`), wordt een entry
+  `{ id, timestamp, decision, outcome }` verzameld in `resolved`. Na de loop wordt,
+  als `client` is opgegeven en `resolved` niet leeg is, `reportOutcomes(client,
+  resolved)` aangeroepen.
+- **`neutraal`** (CEO nam geen positie) en **`onbruikbaar`** (prijsschaal-mismatch)
+  worden bewust **niet** gemeld: deze worden al bij de *eerste* evaluatie direct
+  bepaald (geen "afgewacht" resultaat), en zouden dus meteen na het CEO-besluit
+  zelf een (overbodige) tweede melding opleveren.
+- Omdat een signaal alleen in `pending` voorkomt zolang `outcome.result === 'open'`
+  (of nog geen outcome heeft), kan een signaal maximaal één keer in `resolved`
+  belanden - geen risico op dubbele meldingen, ook niet als zowel de scheduler-tick
+  als een handmatige `/performance` binnen hetzelfde uur draaien.
+- `services/boardroomReporter.js` (nieuw): `formatOutcomeMessage(signal)` -
+  formatteert "Signaal #N afgerond - ✅/❌/➖ <label> (na X candles)" + de
+  originele signaal-details (richting, zekerheid, SL/TP, positiegrootte).
+  `reportOutcomes(client, resolved)` post deze berichten naar `ceoChannelId`
+  (zelfde kanaal als het oorspronkelijke CEO-besluit).
+- Call-sites bijgewerkt: `services/scheduler.js`'s `tick()` geeft `client` door,
+  `discord/bot.js`'s `/performance`-handler geeft `interaction.client` door.
+
+### Validatie
+- `scripts/test-boardroomReporter.js` (nieuw, 7 checks): `formatOutcomeMessage`
+  voor tp/sl/geen (incl. met/zonder `candlesToHit`-suffix), en `reportOutcomes`
+  met een mock-client (1 bericht per resolved signaal, juiste kanaal-id, juiste
+  inhoud, geen channel-fetch bij een lege lijst).
+- Live integratietest (2026-06-15): `evaluateOpenSignals(client)` met een echte
+  Discord-client tegen de actuele 7 open signalen (#6, #9-#14) - alle 7 bleven
+  `open` (nog binnen de horizon, geen TP/SL geraakt), dus `resolved` was leeg en er
+  is terecht niets gepost. Bevestigt dat de nieuwe `client`-parameter geen
+  bestaande flow breekt.

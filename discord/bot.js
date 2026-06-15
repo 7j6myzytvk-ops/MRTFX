@@ -127,7 +127,7 @@ export function createBot() {
     if (interaction.commandName === 'performance') {
       await interaction.deferReply();
       try {
-        await evaluateOpenSignals();
+        await evaluateOpenSignals(interaction.client);
         const all = await getAllSignals();
         const withOutcome = all.filter((s) => s.outcome);
         const resolved = withOutcome.filter((s) => ['tp', 'sl', 'geen'].includes(s.outcome.result));

@@ -13,10 +13,14 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **services/scheduler.js** - draait periodiek de boardroom, rapporteert naar Discord
   en evalueert open signalen
 - **services/boardroomReporter.js** - formatteert en post de teamdiscussie naar
-  het #trace-kanaal en het CEO-besluit naar het #ceo-kanaal
-- **services/performanceTracker.js** - `evaluateOpenSignals()`: zet open signalen in
-  `data/signals.json` periodiek af tegen de daadwerkelijke prijsbeweging die volgde
-  (`tp`/`sl`/`geen`/`open`/`neutraal`/`onbruikbaar`)
+  het #trace-kanaal en het CEO-besluit naar het #ceo-kanaal. `reportOutcomes()`
+  post daarnaast automatisch een melding naar het #ceo-kanaal zodra een open
+  signaal een definitieve tp/sl/geen-uitkomst krijgt
+- **services/performanceTracker.js** - `evaluateOpenSignals(client)`: zet open
+  signalen in `data/signals.json` periodiek af tegen de daadwerkelijke
+  prijsbeweging die volgde (`tp`/`sl`/`geen`/`open`/`neutraal`/`onbruikbaar`); geeft
+  bij een meegegeven Discord-`client` de zojuist afgeronde signalen (tp/sl/geen)
+  door aan `reportOutcomes()`
 - **agents/analyst.js** - Claude-agent die candles analyseert (signaal + zekerheid +
   onderbouwing) en na de discussie een weerwoord geeft
 - **agents/riskManager.js** - Claude-agent die stop-loss/take-profit/positiegrootte adviseert
@@ -75,6 +79,14 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   samenvatting (afgeronde trades, TP/SL/geen, winrate, gemiddelde zekerheid) plus
   tellingen voor open/neutraal/niet-evalueerbare signalen
 
+## Proactieve meldingen
+
+- De scheduler evalueert elke tick (`SIGNAL_INTERVAL_MINUTES`) open signalen tegen de
+  actuele candles. Zodra een signaal voor het eerst een definitieve uitkomst krijgt
+  (TP geraakt, SL geraakt, of geen van beide binnen de horizon van 48 H1-candles),
+  post `reportOutcomes()` automatisch een melding naar het #ceo-kanaal - zonder dat
+  je hierom moet vragen. `/performance` triggert dezelfde evaluatie/melding.
+
 ## Backtesting
 
 - `node scripts/backtest.js [dagen]` (standaard 10 dagen) - haalt historische H1-candles
@@ -96,6 +108,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   `DISCORD_TRACE_CHANNEL_ID` / `DISCORD_CEO_CHANNEL_ID`
 - `node scripts/test-performanceTracker.js` - unit-tests voor `evaluateSignalOutcome`
   (tp/sl/geen/open/neutraal/onbruikbaar) met handgeschreven candle-fixtures
+- `node scripts/test-boardroomReporter.js` - unit-tests voor `formatOutcomeMessage`
+  (tp/sl/geen) en `reportOutcomes` (met een mock Discord-client)
 - `node scripts/test-agentAnalysis.js` - unit-tests voor de classificatiefuncties en
   de `breakdown()`-helper in `agents/agentAnalysis.js`
 

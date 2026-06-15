@@ -20,7 +20,7 @@ export function startSignalScheduler(client) {
       const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
       const result = await runBoardroom(candles);
       await reportToDiscord(client, result);
-      await evaluateOpenSignals();
+      await evaluateOpenSignals(client);
     } catch (err) {
       console.error('Boardroom-scheduler mislukt:', err.message);
     }
