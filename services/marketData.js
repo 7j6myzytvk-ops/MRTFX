@@ -118,7 +118,31 @@ export async function getUsYieldCandles(opts = {}) {
 // is een trage macro-achtergrond, en dagdata vermijdt de :30-minuten-uitlijning
 // en mogelijke NYSE-uren-gaten van de uurdata van deze bron. Als extra check
 // filteren we exact-platte candles (high === low) eruit, net als bij EUR/USD.
+
+// `fetchedAt` is geldig zolang `now - fetchedAt < ttlMs`. Los geëxporteerd
+// zodat de cache-logica zonder API-calls te unit-testen is.
+export function isCacheValid(fetchedAt, ttlMs, now = Date.now()) {
+  return fetchedAt != null && now - fetchedAt < ttlMs;
+}
+
+// Dagcandles veranderen maar 1x per dag, maar de scheduler draait elk uur
+// (Fase 5) - zonder cache zou dit elk uur een extra Twelve Data-call kosten
+// voor data die nog niet is gewijzigd. Eén dag cache-geldigheid is ruim
+// genoeg (een nieuwe dagcandle verschijnt hooguit 1x per 24u).
+const YIELD_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let yieldCandlesCache = null; // { count, data, fetchedAt }
+
 export async function getRecentUsYieldCandles({ count = 25 } = {}) {
+  if (
+    yieldCandlesCache &&
+    yieldCandlesCache.count === count &&
+    isCacheValid(yieldCandlesCache.fetchedAt, YIELD_CACHE_TTL_MS)
+  ) {
+    return yieldCandlesCache.data;
+  }
+
   const raw = await getUsYieldCandles({ granularity: 'D', count: count + 10 });
-  return raw.filter((c) => c.high !== c.low).slice(-count);
+  const data = raw.filter((c) => c.high !== c.low).slice(-count);
+  yieldCandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
 }

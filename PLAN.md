@@ -574,3 +574,36 @@ zich voordoet op een echte setup (🚨, niet bij 💤).
 `DISCORD_ALERT_USER_ID` is nog leeg - de mention activeert pas zodra dit is
 ingevuld (Discord user-ID via "Kopieer gebruikers-ID" met Developer Mode
 aan).
+
+## Fase 18 - US2Y-candles cachen (klaar)
+
+### Doel
+`services/scheduler.js` haalt elke tick (elk uur) `getRecentUsYieldCandles`
+op voor de renteklimaat-context (Fase 15), maar dit zijn dagcandles die
+hoogstens 1x per dag veranderen. Zonder cache kost dit een onnodige Twelve
+Data-call per uur - bij een gratis plan met een rate limit (8/min) telt elke
+vermeden call mee naarmate er meer candle-series per tick bijkomen.
+
+### Implementatie
+- Nieuwe pure functie `services/marketData.js`'s `isCacheValid(fetchedAt,
+  ttlMs, now = Date.now())`: `fetchedAt != null && now - fetchedAt < ttlMs`.
+  Los geëxporteerd zodat de cache-logica zonder API-calls te unit-testen is.
+- `getRecentUsYieldCandles` houdt een module-level cache
+  `{ count, data, fetchedAt }` bij met `YIELD_CACHE_TTL_MS = 24u`. Bij een
+  geldige cache (zelfde `count`, binnen 24u) wordt de opgeslagen `data`
+  teruggegeven zonder API-call; anders wordt opnieuw gefetcht en de cache
+  bijgewerkt.
+- Geen wijzigingen nodig in `services/scheduler.js`,
+  `agents/yieldContext.js` of `discord/bot.js` - de cache zit volledig
+  binnen `getRecentUsYieldCandles`, dus alle call sites profiteren
+  automatisch.
+
+### Validatie
+- Nieuwe `scripts/test-marketDataCache.js` (7 checks): `isCacheValid` voor
+  geen-cache, binnen-ttl, exact-op-de-grens, net-binnen-de-grens,
+  buiten-ttl, en een klok-in-de-toekomst-edge-case.
+- Live verificatie (2026-06-15): `getRecentUsYieldCandles({ count: 25 })`
+  twee keer aanroepen - 1e call 372ms (echte API-call, 25 candles t/m
+  2026-06-16), 2e call 0ms (cache-hit), identieke data.
+- Volledige regressiesuite (alle `scripts/test-*.js`) groen.
+- Bot herstart 32179 -> 32331.
