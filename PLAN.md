@@ -331,3 +331,59 @@ sluitprijzen moeten interpreteren).
   redenering (bv. analist: "RSI(14) staat op 83.2, wat sterk overbought
   aangeeft"; risicomanager: SL/TP gebaseerd op "~1x ATR" / "~2x ATR", R:R
   ≈ 1:2). Berichten correct gepost naar #trace en #ceo.
+
+## Fase 14 - Dollarcontext (EUR/USD als DXY-proxy) als extra factor voor de agents (klaar)
+
+### Doel
+Op verzoek van de gebruiker: de agents moeten ook rekening houden met de sterkte
+van de Amerikaanse dollar, een belangrijke driver voor XAU/USD. Een directe
+dollarindex (DXY) is niet beschikbaar via Twelve Data (geprobeerd: `DXY`,
+`USDOLLAR`, `USD/DXY` -> allemaal 404). Als proxy is gekozen voor **EUR/USD**:
+het grootste onderdeel (~58%) van de DXY-mand, met continue 24/5 H1-data (in
+tegenstelling tot bv. de UUP-ETF die alleen tijdens NYSE-uren data heeft) en met
+hetzelfde cadans als de XAU/USD-candles. Door de samenstelling van de DXY-formule
+beweegt EUR/USD in dezelfde richting als goud: EUR/USD omhoog -> dollar verzwakt
+-> doorgaans steun voor XAU/USD, en omgekeerd.
+
+### Implementatie
+- Nieuw `agents/dollarContext.js` (pure, testbare functies, geen I/O):
+  - `computeDollarContext(candles)` -> `{ lastClose, firstClose, sma20 }`
+    (hergebruikt `sma` uit `agents/indicators.js`).
+  - `formatDollarContextNote(context)` -> leesbaar tekstblok: richting en
+    percentage-verandering van EUR/USD over de getoonde periode, positie t.o.v.
+    het 20-periode gemiddelde, en de vertaling naar dollarsterkte +
+    implicatie voor XAU/USD ("steun voor"/"druk op").
+- `services/marketData.js`: generieke `fetchCandles` helper, met
+  `getXauUsdCandles` (bestaand gedrag) en nieuwe `getEurUsdCandles` als wrappers.
+  Nieuwe `getRecentEurUsdCandles({ granularity, count })` haalt EUR/USD-candles op
+  en filtert exact-platte candles (`high !== low`) - de bestaande
+  `filterFlatCandles`/`FLAT_RANGE_THRESHOLD` (afgestemd op XAU/USD's prijsschaal
+  van ~4350) is niet bruikbaar voor EUR/USD (~1.16) en zou daar alle candles als
+  "plat" wegfilteren.
+- `agents/boardroom.js`'s `runDiscussion` accepteert een optionele
+  `dollarCandles`-parameter; als die >= 2 candles bevat wordt `dollarContextNote`
+  berekend en - net als `indicatorsNote`, `events` en `newsContext` - doorgegeven
+  aan **alle 6 agent-gesprekken**, die het toevoegen aan hun prompt.
+- Alle 3 live aanroeppunten (`services/scheduler.js`, `discord/bot.js`'s
+  `/analyse`-handler, `scripts/analyseNow.js`) halen nu ook
+  `getRecentEurUsdCandles({ granularity: 'H1', count: 50 })` op en geven die door
+  als `dollarCandles`.
+
+### Validatie
+- `scripts/test-dollarContext.js` (22 checks): `computeDollarContext` op een
+  lineaire candle-reeks (exacte `lastClose`/`firstClose`/`sma20`-waarden), en
+  `formatDollarContextNote` voor stijgende EUR/USD (bevat "gestegen"/"verzwakt"/
+  "steun voor"/"boven"), dalende EUR/USD ("gedaald"/"versterkt"/"druk op"/"onder",
+  geen negatief percentage door `Math.abs`), het randgeval `lastClose === sma20`
+  (-> "onder", want `>` i.p.v. `>=`), en algemene structuur (begint met `\n\n`,
+  bevat "Dollarcontext"/"EUR/USD"/"XAU/USD").
+- Regressietest: alle bestaande suites (`test-indicators.js`,
+  `test-boardroomReporter.js`, `test-performanceTracker.js`,
+  `test-agentAnalysis.js`, 65 checks totaal) draaien nog steeds zonder fouten
+  (dollarcontext is optioneel/`dollarContextNote=''` als geen `dollarCandles`
+  meegegeven).
+- Live verificatie (2026-06-15): `scripts/analyseNow.js` met echte XAU/USD- én
+  EUR/USD-candles - alle 6 agents (incl. CEO-besluit) verwijzen expliciet naar de
+  dollarcontext in hun redenering (bv. "De lichte dollarzwakte (EUR/USD +0.27%)
+  geeft enige steun aan goud" / "biedt aanvullende, zij het beperkte tailwind
+  voor goud"). Berichten correct gepost naar #trace en #ceo.

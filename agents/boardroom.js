@@ -5,12 +5,18 @@ import { assessSentiment } from './macroAnalyst.js';
 import { decide } from './ceo.js';
 import { upcomingEvents } from './economicCalendar.js';
 import { computeIndicators, formatIndicatorsNote } from './indicators.js';
+import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { appendSignal } from '../data/store.js';
 
-export async function runDiscussion(candles, { instrument = 'XAU_USD', granularity = 'H1', newsContext = '' } = {}) {
+export async function runDiscussion(
+  candles,
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null } = {},
+) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
-  const opts = { instrument, granularity, events, newsContext, indicatorsNote };
+  const dollarContextNote =
+    dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
+  const opts = { instrument, granularity, events, newsContext, indicatorsNote, dollarContextNote };
 
   const analysis = await analyzeCandles(candles, opts);
 

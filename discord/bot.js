@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import { config } from '../config/index.js';
-import { getXauUsdPrice, getRecentRealCandles } from '../services/marketData.js';
+import { getXauUsdPrice, getRecentRealCandles, getRecentEurUsdCandles } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
@@ -88,7 +88,8 @@ export function createBot() {
       try {
         const newsContext = interaction.options.getString('context') ?? '';
         const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
-        const result = await runBoardroom(candles, { newsContext });
+        const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
+        const result = await runBoardroom(candles, { newsContext, dollarCandles });
         await reportToDiscord(interaction.client, result);
 
         const { decision } = result;

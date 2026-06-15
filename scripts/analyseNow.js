@@ -1,6 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import { config } from '../config/index.js';
-import { getRecentRealCandles } from '../services/marketData.js';
+import { getRecentRealCandles, getRecentEurUsdCandles } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { formatTraceMessages, formatCeoMessage } from '../services/boardroomReporter.js';
 
@@ -10,12 +10,13 @@ const newsContext = process.argv.slice(2).join(' ');
 
 console.log('Live H1-candles ophalen...');
 const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
+const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
 
 if (newsContext) {
   console.log(`Marktcontext meegegeven aan het team: "${newsContext}"`);
 }
 
-const result = await runBoardroom(candles, { newsContext });
+const result = await runBoardroom(candles, { newsContext, dollarCandles });
 console.log('\nResultaat:', JSON.stringify(result, null, 2));
 
 const { ceoChannelId, traceChannelId } = config.boardroom;

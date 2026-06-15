@@ -9,7 +9,9 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **services/marketData.js** - haalt live prijzen en candles op via de Twelve Data API.
   `getRecentRealCandles({ granularity, count })` haalt extra candles op en filtert
   synthetische weekend-placeholders eruit (zie `agents/outcomeEvaluator.js`), zodat
-  `/analyse` en de scheduler altijd `count` echte candles gebruiken
+  `/analyse` en de scheduler altijd `count` echte candles gebruiken.
+  `getRecentEurUsdCandles({ granularity, count })` haalt EUR/USD-candles op (proxy
+  voor dollarsterkte, zie `agents/dollarContext.js`) en filtert exact-platte candles
 - **services/scheduler.js** - draait periodiek de boardroom, rapporteert naar Discord
   en evalueert open signalen
 - **services/boardroomReporter.js** - formatteert en post de teamdiscussie naar
@@ -34,11 +36,15 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **agents/boardroom.js** - orchestreert de multi-agent discussie (analyse -> risico/
   tegenargument/sentiment -> weerwoord -> CEO-besluit), geeft aankomende
   economische events (`agents/economicCalendar.js`), berekende technische
-  indicatoren (`agents/indicators.js`) en optionele actuele marktcontext
-  (`newsContext`) mee als context aan alle agents, en logt het resultaat
+  indicatoren (`agents/indicators.js`), dollarcontext (`agents/dollarContext.js`)
+  en optionele actuele marktcontext (`newsContext`) mee als context aan alle
+  agents, en logt het resultaat
 - **agents/indicators.js** - berekent SMA(20)/SMA(50)/RSI(14)/ATR(14) uit de
   candles en formatteert dit als leesbare context (`formatIndicatorsNote`) voor
   alle agents
+- **agents/dollarContext.js** - berekent trend/SMA(20) van EUR/USD (als proxy voor
+  dollarsterkte, grootste component van de DXY) en formatteert dit als leesbare
+  context (`formatDollarContextNote`) voor alle agents
 - **agents/outcomeEvaluator.js** - gedeelde evaluatielogica (SL/TP-hit over
   horizon-candles, filter voor synthetische weekend-candles), gebruikt door zowel
   backtesting als live performance-tracking
@@ -120,6 +126,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   de `breakdown()`-helper in `agents/agentAnalysis.js`
 - `node scripts/test-indicators.js` - unit-tests voor `sma`/`rsi`/`atr`,
   `computeIndicators` en `formatIndicatorsNote` in `agents/indicators.js`
+- `node scripts/test-dollarContext.js` - unit-tests voor `computeDollarContext` en
+  `formatDollarContextNote` in `agents/dollarContext.js`
 
 ## Marktdata testen
 

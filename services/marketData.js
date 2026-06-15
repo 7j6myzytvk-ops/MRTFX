@@ -50,9 +50,9 @@ export async function getXauUsdPrice() {
   };
 }
 
-export async function getXauUsdCandles({ granularity = 'H1', count = 50, from, to } = {}) {
+async function fetchCandles({ symbol, granularity = 'H1', count = 50, from, to }) {
   const params = {
-    symbol: 'XAU/USD',
+    symbol,
     interval: GRANULARITY_TO_INTERVAL[granularity] || granularity,
     timezone: 'UTC',
   };
@@ -79,6 +79,14 @@ export async function getXauUsdCandles({ granularity = 'H1', count = 50, from, t
     .reverse();
 }
 
+export async function getXauUsdCandles(opts = {}) {
+  return fetchCandles({ symbol: 'XAU/USD', ...opts });
+}
+
+export async function getEurUsdCandles(opts = {}) {
+  return fetchCandles({ symbol: 'EUR/USD', ...opts });
+}
+
 // Voor de live boardroom (`/analyse`, scheduler) willen we `count` echte candles,
 // niet `count` ruwe candles. Twelve Data vult weekend-gaten op met synthetische
 // platte placeholder-candles (zie agents/outcomeEvaluator.js), die anders het
@@ -89,4 +97,14 @@ export async function getXauUsdCandles({ granularity = 'H1', count = 50, from, t
 export async function getRecentRealCandles({ granularity = 'H1', count = 50 } = {}) {
   const raw = await getXauUsdCandles({ granularity, count: count + 70 });
   return filterFlatCandles(raw).slice(-count);
+}
+
+// EUR/USD (~1,16) heeft een veel kleinere candle-range dan XAU/USD (~4350), dus
+// `filterFlatCandles`/`FLAT_RANGE_THRESHOLD` (afgestemd op XAU/USD) is hier niet
+// bruikbaar - dat zou alle EUR/USD-candles als "plat" wegfilteren. EUR/USD-data
+// van Twelve Data lijkt geen synthetische platte weekend-candles te hebben, maar
+// als extra check filteren we exact-platte candles (high === low) eruit.
+export async function getRecentEurUsdCandles({ granularity = 'H1', count = 50 } = {}) {
+  const raw = await getEurUsdCandles({ granularity, count: count + 10 });
+  return raw.filter((c) => c.high !== c.low).slice(-count);
 }
