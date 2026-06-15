@@ -31,6 +31,7 @@ export async function assessRisk(
     newsContext = '',
     indicatorsNote = '',
     dollarContextNote = '',
+    yieldContextNote = '',
   } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
@@ -67,7 +68,7 @@ export async function assessRisk(
           `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
           `is ${avgRange.toFixed(2)}. ` +
           `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit ` +
-          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}${indicatorsNote}${dollarContextNote}`,
+          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}${indicatorsNote}${dollarContextNote}${yieldContextNote}`,
       },
     ],
   });

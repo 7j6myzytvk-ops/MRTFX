@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { getXauUsdCandles, getEurUsdCandles } from '../services/marketData.js';
+import { getXauUsdCandles, getEurUsdCandles, getUsYieldCandles } from '../services/marketData.js';
 import { runDiscussion } from '../agents/boardroom.js';
 import { filterFlatCandles, HORIZON_CANDLES, evaluateOutcome, summarize } from '../agents/outcomeEvaluator.js';
 
@@ -46,6 +46,24 @@ function eurWindowFor(window) {
   return eurCandles.filter((c) => c.time >= startTime && c.time <= endTime);
 }
 
+// Amerikaanse 2-jaars rente (US2Y, dagcandles) voor renteklimaat-context (zie
+// agents/yieldContext.js). Dagdata is traag, dus per sample pakken we de laatste
+// 25 dagcandles vóór de sample-tijd (i.p.v. een index- of range-match zoals bij
+// EUR/USD). We halen extra historie op (30 dagen vóór `from`) zodat ook de
+// vroegste samples genoeg dagcandles hebben.
+const yieldFrom = new Date(from.getTime() - 30 * 24 * 60 * 60 * 1000);
+const rawYieldCandles = await getUsYieldCandles({
+  granularity: 'D',
+  from: yieldFrom.toISOString(),
+  to: to.toISOString(),
+});
+const yieldCandles = rawYieldCandles.filter((c) => c.high !== c.low);
+console.log(`${yieldCandles.length} rente-candles (US2Y, dag) voor renteklimaat-context.`);
+
+function yieldWindowFor(sampleTime) {
+  return yieldCandles.filter((c) => c.time <= sampleTime).slice(-25);
+}
+
 // Schrijf na elke sample weg, zodat een trage/vastlopende Claude-call (de
 // boardroom-loop kan lang duren) niet betekent dat reeds voltooide samples
 // verloren gaan als het script crasht of wordt afgebroken.
@@ -76,11 +94,17 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
   const horizonCandles = candles.slice(i, i + HORIZON);
   const sampleTime = window[window.length - 1].time;
   const dollarCandles = eurWindowFor(window);
+  const yieldCandlesForSample = yieldWindowFor(sampleTime);
 
   let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      result = await runDiscussion(window, { instrument: 'XAU_USD', granularity: 'H1', dollarCandles });
+      result = await runDiscussion(window, {
+        instrument: 'XAU_USD',
+        granularity: 'H1',
+        dollarCandles,
+        yieldCandles: yieldCandlesForSample,
+      });
       break;
     } catch (err) {
       console.log(`  poging ${attempt}/${MAX_ATTEMPTS} voor ${sampleTime} mislukt: ${err.message}`);

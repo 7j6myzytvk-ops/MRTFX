@@ -6,17 +6,20 @@ import { decide } from './ceo.js';
 import { upcomingEvents } from './economicCalendar.js';
 import { computeIndicators, formatIndicatorsNote } from './indicators.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
+import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { appendSignal } from '../data/store.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null } = {},
 ) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
   const dollarContextNote =
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
-  const opts = { instrument, granularity, events, newsContext, indicatorsNote, dollarContextNote };
+  const yieldContextNote =
+    yieldCandles && yieldCandles.length >= 2 ? formatYieldContextNote(computeYieldContext(yieldCandles)) : '';
+  const opts = { instrument, granularity, events, newsContext, indicatorsNote, dollarContextNote, yieldContextNote };
 
   const analysis = await analyzeCandles(candles, opts);
 

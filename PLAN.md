@@ -399,3 +399,73 @@ beweegt EUR/USD in dezelfde richting als goud: EUR/USD omhoog -> dollar verzwakt
   sample-window wordt meegegeven. Daarna een grotere run (`DAYS=20`, ~11 nieuwe
   samples) gestart op de achtergrond voor meer data ter voorbereiding op de
   volgende analyse-ronde.
+
+## Fase 15 - Renteklimaat (Amerikaanse 2-jaars rente) als extra factor voor de agents (klaar)
+
+### Doel
+Op verzoek van de gebruiker, na een audit van cruciale factoren die XAU/USD
+beïnvloeden: Amerikaanse rentes/reële rente ontbraken nog als factor. Goud
+levert zelf geen rente op, dus het renteklimaat bepaalt de "opportunity cost"
+van het aanhouden van goud - een stijgende rente verhoogt die opportunity cost
+(doorgaans bearish voor XAU/USD) en een dalende rente verlaagt die (doorgaans
+bullish). De "klassieke" referentie hiervoor is de Amerikaanse 10-jaars
+staatsobligatierente (US10Y), maar die is **niet beschikbaar** via Twelve Data op
+dit plan (zowel `/price` als `/time_series` -> "symbol or figi parameter is
+missing or invalid"). Als proxy is gekozen voor **US2Y** (Amerikaanse 2-jaars
+rente): wél beschikbaar, en sterk gekoppeld aan rente-/Fed-verwachtingen, een van
+de belangrijkste drivers van het renteklimaat.
+
+### Implementatie
+- Nieuw `agents/yieldContext.js` (pure, testbare functies, geen I/O):
+  - `computeYieldContext(candles)` -> `{ lastClose, firstClose, sma20 }`
+    (hergebruikt `sma` uit `agents/indicators.js`, zelfde vorm als
+    `computeDollarContext`).
+  - `formatYieldContextNote(context)` -> leesbaar tekstblok: huidige 2-jaars
+    rente, verandering in basispunten over de getoonde periode, positie t.o.v.
+    het 20-periode gemiddelde, en de vertaling naar opportunity cost +
+    implicatie voor XAU/USD ("steun voor"/"druk op").
+- **Dagcandles i.p.v. uurcandles** (in tegenstelling tot dollarcontext): de rente
+  is een trage macro-achtergrond, en US2Y-uurdata van Twelve Data heeft een
+  `:30`-minuten-uitlijning (i.p.v. `:00` zoals XAU/USD/EUR/USD) en mogelijk
+  NYSE-uren-gaten. Dagdata is continu (geverifieerd over 10 dagen) en vermijdt
+  beide problemen.
+- `services/marketData.js`: nieuwe `getUsYieldCandles` (wrapper om `fetchCandles`
+  met `symbol: 'US2Y'`) en `getRecentUsYieldCandles({ count = 25 })` - haalt
+  dagcandles op en filtert exact-platte candles (`high !== low`) eruit, net als
+  bij EUR/USD.
+- `agents/boardroom.js`'s `runDiscussion` accepteert een optionele
+  `yieldCandles`-parameter; als die >= 2 candles bevat wordt `yieldContextNote`
+  berekend en - net als `indicatorsNote`, `dollarContextNote`, `events` en
+  `newsContext` - doorgegeven aan **alle 6 agent-gesprekken**, die het toevoegen
+  aan hun prompt.
+- Alle 3 live aanroeppunten (`services/scheduler.js`, `discord/bot.js`'s
+  `/analyse`-handler, `scripts/analyseNow.js`) halen nu ook
+  `getRecentUsYieldCandles({ count: 25 })` op en geven die door als
+  `yieldCandles`.
+- `scripts/backtest.js` haalt nu ook US2Y-dagcandles op voor de periode
+  `from - 30 dagen` t/m `to` (extra historie zodat ook de vroegste samples genoeg
+  dagcandles hebben) en koppelt per sample de laatste 25 dagcandles vóór de
+  sample-tijd (`yieldWindowFor`) - simpeler dan `eurWindowFor` omdat dagdata geen
+  index- of tijdrange-matching met de H1-candles nodig heeft.
+
+### Validatie
+- `scripts/test-yieldContext.js` (23 checks): `computeYieldContext` op een
+  lineaire candle-reeks (exacte `lastClose`/`firstClose`/`sma20`-waarden), en
+  `formatYieldContextNote` voor stijgende rente (bevat "gestegen"/"verhoogt"/
+  "druk op"/"boven"), dalende rente ("gedaald"/"verlaagt"/"steun voor"/"onder",
+  geen negatieve basispunten door `Math.abs`), het randgeval
+  `lastClose === sma20` (-> "onder", want `>` i.p.v. `>=`), en algemene structuur
+  (begint met `\n\n`, bevat "Rente-context"/"2-jaars"/"XAU/USD"/"opportunity
+  cost").
+- Regressietest: alle bestaande suites (`test-indicators.js`,
+  `test-dollarContext.js`, `test-boardroomReporter.js`,
+  `test-performanceTracker.js`, `test-agentAnalysis.js`, 87 checks totaal) +
+  nieuwe suite (110 checks totaal) draaien zonder fouten (renteklimaat is
+  optioneel/`yieldContextNote=''` als geen `yieldCandles` meegegeven).
+- Live verificatie (2026-06-15): `scripts/analyseNow.js` met echte XAU/USD-, EUR/
+  USD- en US2Y-candles - meerdere agents verwijzen expliciet naar de
+  renteklimaat-context in hun redenering (bv. analist: "gedaalde 2-jaars rente
+  (-5 bps, onder 20-daags gemiddelde)"; Devil's Advocate en CEO noemen beide "de
+  macro-tailwinds (zwakkere dollar, gedaalde 2-jaars rente onder het 20-daags
+  gemiddelde)" als structurele steun voor goud). Berichten correct gepost naar
+  #trace en #ceo.

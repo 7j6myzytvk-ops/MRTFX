@@ -108,3 +108,17 @@ export async function getRecentEurUsdCandles({ granularity = 'H1', count = 50 } 
   const raw = await getEurUsdCandles({ granularity, count: count + 10 });
   return raw.filter((c) => c.high !== c.low).slice(-count);
 }
+
+export async function getUsYieldCandles(opts = {}) {
+  return fetchCandles({ symbol: 'US2Y', ...opts });
+}
+
+// Amerikaanse 2-jaars rente (US2Y) als renteklimaat-context (zie
+// agents/yieldContext.js). We gebruiken dagcandles i.p.v. uurcandles: de rente
+// is een trage macro-achtergrond, en dagdata vermijdt de :30-minuten-uitlijning
+// en mogelijke NYSE-uren-gaten van de uurdata van deze bron. Als extra check
+// filteren we exact-platte candles (high === low) eruit, net als bij EUR/USD.
+export async function getRecentUsYieldCandles({ count = 25 } = {}) {
+  const raw = await getUsYieldCandles({ granularity: 'D', count: count + 10 });
+  return raw.filter((c) => c.high !== c.low).slice(-count);
+}

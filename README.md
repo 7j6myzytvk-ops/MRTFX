@@ -11,7 +11,10 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
   synthetische weekend-placeholders eruit (zie `agents/outcomeEvaluator.js`), zodat
   `/analyse` en de scheduler altijd `count` echte candles gebruiken.
   `getRecentEurUsdCandles({ granularity, count })` haalt EUR/USD-candles op (proxy
-  voor dollarsterkte, zie `agents/dollarContext.js`) en filtert exact-platte candles
+  voor dollarsterkte, zie `agents/dollarContext.js`) en filtert exact-platte candles.
+  `getRecentUsYieldCandles({ count })` haalt dagcandles van de Amerikaanse 2-jaars
+  rente (US2Y, proxy voor het renteklimaat, zie `agents/yieldContext.js`) op en
+  filtert exact-platte candles
 - **services/scheduler.js** - draait periodiek de boardroom, rapporteert naar Discord
   en evalueert open signalen
 - **services/boardroomReporter.js** - formatteert en post de teamdiscussie naar
@@ -36,15 +39,20 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **agents/boardroom.js** - orchestreert de multi-agent discussie (analyse -> risico/
   tegenargument/sentiment -> weerwoord -> CEO-besluit), geeft aankomende
   economische events (`agents/economicCalendar.js`), berekende technische
-  indicatoren (`agents/indicators.js`), dollarcontext (`agents/dollarContext.js`)
-  en optionele actuele marktcontext (`newsContext`) mee als context aan alle
-  agents, en logt het resultaat
+  indicatoren (`agents/indicators.js`), dollarcontext (`agents/dollarContext.js`),
+  renteklimaat-context (`agents/yieldContext.js`) en optionele actuele
+  marktcontext (`newsContext`) mee als context aan alle agents, en logt het
+  resultaat
 - **agents/indicators.js** - berekent SMA(20)/SMA(50)/RSI(14)/ATR(14) uit de
   candles en formatteert dit als leesbare context (`formatIndicatorsNote`) voor
   alle agents
 - **agents/dollarContext.js** - berekent trend/SMA(20) van EUR/USD (als proxy voor
   dollarsterkte, grootste component van de DXY) en formatteert dit als leesbare
   context (`formatDollarContextNote`) voor alle agents
+- **agents/yieldContext.js** - berekent trend/SMA(20) van de Amerikaanse 2-jaars
+  rente (US2Y, dagcandles, als proxy voor het renteklimaat/opportunity cost van
+  goud) en formatteert dit als leesbare context (`formatYieldContextNote`) voor
+  alle agents
 - **agents/outcomeEvaluator.js** - gedeelde evaluatielogica (SL/TP-hit over
   horizon-candles, filter voor synthetische weekend-candles), gebruikt door zowel
   backtesting als live performance-tracking
@@ -128,6 +136,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   `computeIndicators` en `formatIndicatorsNote` in `agents/indicators.js`
 - `node scripts/test-dollarContext.js` - unit-tests voor `computeDollarContext` en
   `formatDollarContextNote` in `agents/dollarContext.js`
+- `node scripts/test-yieldContext.js` - unit-tests voor `computeYieldContext` en
+  `formatYieldContextNote` in `agents/yieldContext.js`
 
 ## Marktdata testen
 

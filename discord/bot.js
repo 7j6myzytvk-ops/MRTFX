@@ -1,6 +1,11 @@
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import { config } from '../config/index.js';
-import { getXauUsdPrice, getRecentRealCandles, getRecentEurUsdCandles } from '../services/marketData.js';
+import {
+  getXauUsdPrice,
+  getRecentRealCandles,
+  getRecentEurUsdCandles,
+  getRecentUsYieldCandles,
+} from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
@@ -89,7 +94,8 @@ export function createBot() {
         const newsContext = interaction.options.getString('context') ?? '';
         const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
         const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
-        const result = await runBoardroom(candles, { newsContext, dollarCandles });
+        const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
+        const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles });
         await reportToDiscord(interaction.client, result);
 
         const { decision } = result;

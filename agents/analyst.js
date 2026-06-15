@@ -35,7 +35,14 @@ const REBUTTAL_TOOL = {
 
 export async function analyzeCandles(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', indicatorsNote = '', dollarContextNote = '' } = {},
+  {
+    instrument = 'XAU_USD',
+    granularity = 'H1',
+    newsContext = '',
+    indicatorsNote = '',
+    dollarContextNote = '',
+    yieldContextNote = '',
+  } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -54,7 +61,7 @@ export async function analyzeCandles(
         role: 'user',
         content:
           `Je bent een technisch analist voor ${instrument} (${granularity}-candles). ` +
-          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${newsContextNote}${indicatorsNote}${dollarContextNote}\n\n` +
+          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${newsContextNote}${indicatorsNote}${dollarContextNote}${yieldContextNote}\n\n` +
           formatCandles(candles),
       },
     ],
@@ -68,7 +75,14 @@ export async function reviewDiscussion(
   candles,
   analysis,
   { risk, devilsAdvocate, macro },
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', indicatorsNote = '', dollarContextNote = '' } = {},
+  {
+    instrument = 'XAU_USD',
+    granularity = 'H1',
+    newsContext = '',
+    indicatorsNote = '',
+    dollarContextNote = '',
+    yieldContextNote = '',
+  } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -96,7 +110,7 @@ export async function reviewDiscussion(
           `${devilsAdvocate.argument}\n\n` +
           `Marktcontext/Sentiment ("${macro.sentiment}", zekerheid ${macro.confidence}%): ${macro.reasoning}\n\n` +
           `Geef je herziene of bevestigde signaal en zekerheid, met een korte reactie op de discussie. ` +
-          `Je mag bij je eigen analyse blijven als de tegenargumenten je niet overtuigen.${newsContextNote}${indicatorsNote}${dollarContextNote}`,
+          `Je mag bij je eigen analyse blijven als de tegenargumenten je niet overtuigen.${newsContextNote}${indicatorsNote}${dollarContextNote}${yieldContextNote}`,
       },
     ],
   });
