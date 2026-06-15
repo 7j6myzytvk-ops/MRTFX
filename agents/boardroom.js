@@ -19,7 +19,12 @@ export async function runDiscussion(
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
   const yieldContextNote =
     yieldCandles && yieldCandles.length >= 2 ? formatYieldContextNote(computeYieldContext(yieldCandles)) : '';
-  const opts = { instrument, granularity, events, newsContext, indicatorsNote, dollarContextNote, yieldContextNote };
+  // Alle drie de context-notes worden door elke agent op exact dezelfde plek
+  // (na newsContextNote, in deze volgorde) aan de prompt toegevoegd - daarom
+  // hier samengevoegd tot één string, zodat een nieuwe factor (Fase 16+) alleen
+  // hier en niet in alle 6 agent-bestanden hoeft te worden toegevoegd.
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote;
+  const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);
 

@@ -469,3 +469,32 @@ de belangrijkste drivers van het renteklimaat.
   macro-tailwinds (zwakkere dollar, gedaalde 2-jaars rente onder het 20-daags
   gemiddelde)" als structurele steun voor goud). Berichten correct gepost naar
   #trace en #ceo.
+
+## Interne refactor - gedeelde `contextNotes` (klaar)
+
+### Doel
+Na Fase 13/14/15 herhaalden alle 6 agent-functies exact dezelfde
+`indicatorsNote + dollarContextNote + yieldContextNote`-destructuring en
+-concatenatie, op exact dezelfde plek in de prompt (na `newsContextNote`), zonder
+agent-specifieke logica ertussen. Dit maakte elke nieuwe context-factor (Fase 16+)
+een wijziging in alle 6 agent-bestanden. Geconsolideerd tot één `contextNotes`-
+string, één keer berekend in `agents/boardroom.js`.
+
+### Implementatie
+- `agents/boardroom.js`'s `runDiscussion` berekent
+  `contextNotes = indicatorsNote + dollarContextNote + yieldContextNote` en geeft
+  alleen `contextNotes` (i.p.v. de drie losse notes) door in `opts`.
+- Alle 6 agent-functies (`analyst.js` x2, `riskManager.js`, `devilsAdvocate.js`,
+  `macroAnalyst.js`, `ceo.js`) accepteren nu `contextNotes = ''` i.p.v. de drie
+  losse `...Note = ''`-parameters, en gebruiken `${contextNotes}` op de plek waar
+  voorheen `${indicatorsNote}${dollarContextNote}${yieldContextNote}` stond.
+- Een nieuwe factor (Fase 16+) hoeft hierdoor alleen nog `boardroom.js` te wijzigen
+  (de nieuwe note toevoegen aan de `contextNotes`-concatenatie), niet alle 6
+  agent-bestanden.
+
+### Validatie
+- Regressietest: alle bestaande suites (110 checks, zie Fase 15) draaien zonder
+  fouten.
+- Live verificatie (2026-06-15): `scripts/analyseNow.js` - indicatoren-,
+  dollar- en renteklimaat-context verschijnen nog correct in de redenering van
+  alle agents. Berichten correct gepost naar #trace en #ceo.

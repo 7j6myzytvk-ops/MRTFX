@@ -22,14 +22,7 @@ const CHALLENGE_TOOL = {
 export async function challengeAnalysis(
   candles,
   analysis,
-  {
-    instrument = 'XAU_USD',
-    granularity = 'H1',
-    newsContext = '',
-    indicatorsNote = '',
-    dollarContextNote = '',
-    yieldContextNote = '',
-  } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -54,7 +47,7 @@ export async function challengeAnalysis(
           `Bekijk de candles opnieuw en zoek actief het sterkste tegenargument: welk scenario zou ` +
           `dit signaal onderuit kunnen halen? Geef een tegen-signaal met je eigen zekerheid en ` +
           `je argumentatie. Als je na kritisch kijken geen sterk tegenargument vindt, mag je dat ` +
-          `aangeven en het grootste restrisico benoemen.${newsContextNote}${indicatorsNote}${dollarContextNote}${yieldContextNote}\n\n` +
+          `aangeven en het grootste restrisico benoemen.${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
     ],

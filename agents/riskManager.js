@@ -24,15 +24,7 @@ function averageRange(candles) {
 export async function assessRisk(
   candles,
   analysis,
-  {
-    instrument = 'XAU_USD',
-    granularity = 'H1',
-    events = [],
-    newsContext = '',
-    indicatorsNote = '',
-    dollarContextNote = '',
-    yieldContextNote = '',
-  } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -68,7 +60,7 @@ export async function assessRisk(
           `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
           `is ${avgRange.toFixed(2)}. ` +
           `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit ` +
-          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}${indicatorsNote}${dollarContextNote}${yieldContextNote}`,
+          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}${contextNotes}`,
       },
     ],
   });
