@@ -8,8 +8,14 @@ const SETUP_MARKER = {
   neutral: '💤 Geen actie',
 };
 
-export function formatSetupMarker(signal) {
-  return SETUP_MARKER[signal];
+// Extra markering naast 🚨/💤: rebuttal-shift 'omhoog' + risk/reward '<1.5'
+// (zie agents/agentAnalysis.js's isComboSignal) hangt in de backtests samen met
+// een duidelijk hogere winRate. Alleen relevant bij een setup (niet bij 💤).
+const COMBO_MARKER = ' 🌟';
+
+export function formatSetupMarker(signal, comboSignal = false) {
+  const base = SETUP_MARKER[signal];
+  return signal !== 'neutral' && comboSignal ? `${base}${COMBO_MARKER}` : base;
 }
 
 function formatDecisionBody(decision) {
@@ -20,11 +26,11 @@ function formatDecisionBody(decision) {
   );
 }
 
-export function formatCeoMessage(decision) {
-  return `**👔 CEO-besluit - ${formatSetupMarker(decision.signal)}**\n${formatDecisionBody(decision)}`;
+export function formatCeoMessage(decision, comboSignal = false) {
+  return `**👔 CEO-besluit - ${formatSetupMarker(decision.signal, comboSignal)}**\n${formatDecisionBody(decision)}`;
 }
 
-export function formatTraceMessages({ discussion, decision }) {
+export function formatTraceMessages({ discussion, decision, comboSignal = false }) {
   const { analyst, riskManager, devilsAdvocate, macro, analystRebuttal } = discussion;
 
   return [
@@ -33,7 +39,7 @@ export function formatTraceMessages({ discussion, decision }) {
     `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
     `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal.toUpperCase()} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
-    `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal)}**\n${formatDecisionBody(decision)}`,
+    `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal, comboSignal)}**\n${formatDecisionBody(decision)}`,
   ];
 }
 
@@ -49,7 +55,7 @@ export async function reportToDiscord(client, result) {
 
   if (ceoChannelId) {
     const channel = await client.channels.fetch(ceoChannelId);
-    await channel.send(formatCeoMessage(result.decision));
+    await channel.send(formatCeoMessage(result.decision, result.comboSignal));
   }
 }
 

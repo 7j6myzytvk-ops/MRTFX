@@ -7,6 +7,7 @@ import { upcomingEvents } from './economicCalendar.js';
 import { computeIndicators, formatIndicatorsNote } from './indicators.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
+import { isComboSignal } from './agentAnalysis.js';
 import { appendSignal } from '../data/store.js';
 
 export async function runDiscussion(
@@ -38,11 +39,17 @@ export async function runDiscussion(
 
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, rebuttal }, opts);
 
+  const entryPrice = candles[candles.length - 1].close;
+  const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, analystRebuttal: rebuttal };
+  const comboSignal = isComboSignal({ discussion, decision, entryPrice });
+
   return {
     instrument,
     granularity,
-    discussion: { analyst: analysis, riskManager: risk, devilsAdvocate, macro, analystRebuttal: rebuttal },
+    entryPrice,
+    discussion,
     decision,
+    comboSignal,
   };
 }
 

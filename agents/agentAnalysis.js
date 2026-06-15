@@ -48,6 +48,13 @@ export function classifyRiskReward(sample) {
   return '>2.5';
 }
 
+// Combo-signaal uit de Fase 9/10-backtest-analyses: zekerheid omhoog na het
+// weerwoord, gecombineerd met risk/reward <1.5, hangt samen met een duidelijk
+// hogere winRate dan de rest (record #10: 81.8% N=12 vs. 31.9% N=74).
+export function isComboSignal(sample) {
+  return classifyRebuttalShift(sample) === 'omhoog' && classifyRiskReward(sample) === '<1.5';
+}
+
 // Groepeert samples per classificatie-label en berekent per groep de outcome-stats
 // via summarize(). Samples zonder discussion-data (oude backtests, vóór Fase 9)
 // worden overgeslagen - deze breakdowns hebben de teamdiscussie nodig.

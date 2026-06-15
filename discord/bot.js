@@ -98,9 +98,9 @@ export function createBot() {
         const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles });
         await reportToDiscord(interaction.client, result);
 
-        const { decision } = result;
+        const { decision, comboSignal } = result;
         await interaction.editReply(
-          `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%) - ${formatSetupMarker(decision.signal)}\n${decision.reasoning}\n\n` +
+          `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%) - ${formatSetupMarker(decision.signal, comboSignal)}\n${decision.reasoning}\n\n` +
             `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n\n` +
             `_Volledige teamdiscussie: zie het #trace-kanaal._`,
         );

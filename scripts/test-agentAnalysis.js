@@ -5,6 +5,7 @@ import {
   classifyCeoAgreement,
   classifyConfidenceBucket,
   classifyRiskReward,
+  isComboSignal,
   breakdown,
 } from '../agents/agentAnalysis.js';
 
@@ -127,6 +128,44 @@ check(
   'rr bearish richting (reward 40 / risk 30) -> <1.5',
   classifyRiskReward({ entryPrice: 4350, decision: { takeProfit: 4310, stopLoss: 4380 } }),
   '<1.5',
+);
+
+// --- isComboSignal ---
+check(
+  'omhoog + <1.5 -> combo',
+  isComboSignal({
+    discussion: { analyst: { confidence: 60 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4370, stopLoss: 4330 },
+  }),
+  true,
+);
+check(
+  'omhoog + 1.5-2.5 -> geen combo',
+  isComboSignal({
+    discussion: { analyst: { confidence: 60 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4400, stopLoss: 4330 },
+  }),
+  false,
+);
+check(
+  'omlaag + <1.5 -> geen combo',
+  isComboSignal({
+    discussion: { analyst: { confidence: 70 }, analystRebuttal: { confidence: 60 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4370, stopLoss: 4330 },
+  }),
+  false,
+);
+check(
+  'gelijk + <1.5 -> geen combo',
+  isComboSignal({
+    discussion: { analyst: { confidence: 70 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4370, stopLoss: 4330 },
+  }),
+  false,
 );
 
 // --- breakdown ---

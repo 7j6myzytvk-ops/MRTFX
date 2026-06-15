@@ -33,7 +33,9 @@ if (traceChannelId) {
 }
 
 if (ceoChannelId) {
-  await rest.post(Routes.channelMessages(ceoChannelId), { body: { content: formatCeoMessage(result.decision) } });
+  await rest.post(Routes.channelMessages(ceoChannelId), {
+    body: { content: formatCeoMessage(result.decision, result.comboSignal) },
+  });
   console.log('CEO-besluit gepost naar', ceoChannelId);
 } else {
   console.log('DISCORD_CEO_CHANNEL_ID niet ingesteld, geen CEO-besluit verstuurd.');

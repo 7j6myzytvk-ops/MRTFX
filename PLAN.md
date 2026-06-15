@@ -498,3 +498,40 @@ string, één keer berekend in `agents/boardroom.js`.
 - Live verificatie (2026-06-15): `scripts/analyseNow.js` - indicatoren-,
   dollar- en renteklimaat-context verschijnen nog correct in de redenering van
   alle agents. Berichten correct gepost naar #trace en #ceo.
+
+## Fase 16 - 🌟-markering voor het combo-signaal (klaar)
+
+### Doel
+De Fase 9/10-backtest-analyses lieten een combo-signaal zien (zekerheid
+analist omhoog na het weerwoord + risk/reward <1.5) dat samenhangt met een
+duidelijk hogere winRate dan de rest (record #10: 81.8% N=12 vs. 31.9% N=74).
+Dit wordt nu zichtbaar gemaakt in Discord als extra markering naast de
+bestaande 🚨 Setup gevonden / 💤 Geen actie.
+
+### Implementatie
+- Nieuw `agents/agentAnalysis.js`'s `isComboSignal(sample)`: combineert
+  `classifyRebuttalShift(sample) === 'omhoog'` en
+  `classifyRiskReward(sample) === '<1.5'`.
+- `agents/boardroom.js`'s `runDiscussion` retourneert nu ook `entryPrice`
+  (candle-close op besluitmoment, nodig voor `classifyRiskReward`) en
+  `comboSignal` (resultaat van `isComboSignal` op de eigen discussion/decision/
+  entryPrice).
+- `services/boardroomReporter.js`'s `formatSetupMarker(signal, comboSignal)`
+  voegt ` 🌟` toe aan `🚨 Setup gevonden` als `comboSignal` waar is (bij
+  `neutral`/💤 wordt `comboSignal` genegeerd). `formatCeoMessage` en
+  `formatTraceMessages` geven `comboSignal` door. Geen hardcoded winRate-
+  percentage in de tekst - dat cijfer leeft in de backtests en zou snel
+  verouderen.
+- Call sites (`discord/bot.js`'s `/analyse`-handler, `scripts/analyseNow.js`)
+  geven `result.comboSignal` door aan `formatSetupMarker`/`formatCeoMessage`.
+  `services/scheduler.js` had geen wijziging nodig (`reportToDiscord` haalt
+  `comboSignal` al uit `result`).
+
+### Validatie
+- 10 nieuwe unit-tests (4 in `scripts/test-agentAnalysis.js` voor
+  `isComboSignal`, 6 in `scripts/test-boardroomReporter.js` voor de 🌟-
+  markering), alle 119 checks totaal groen.
+- Live verificatie (2026-06-15): `scripts/analyseNow.js` op echte data gaf
+  `comboSignal: true` (rebuttal-shift 45%→55% = "omhoog", R:R ≈1.12 = "<1.5"),
+  bevestigd dat dit `🚨 Setup gevonden 🌟` oplevert in #trace/#ceo.
+- Bot herstart 31400 -> 31821.

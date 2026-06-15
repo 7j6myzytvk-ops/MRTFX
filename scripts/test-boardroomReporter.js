@@ -88,6 +88,9 @@ function check(name, actual, expected) {
   check('formatSetupMarker bullish', formatSetupMarker('bullish'), '🚨 Setup gevonden');
   check('formatSetupMarker bearish', formatSetupMarker('bearish'), '🚨 Setup gevonden');
   check('formatSetupMarker neutral', formatSetupMarker('neutral'), '💤 Geen actie');
+  check('formatSetupMarker bullish + comboSignal', formatSetupMarker('bullish', true), '🚨 Setup gevonden 🌟');
+  check('formatSetupMarker bearish + comboSignal', formatSetupMarker('bearish', true), '🚨 Setup gevonden 🌟');
+  check('formatSetupMarker neutral + comboSignal (genegeerd)', formatSetupMarker('neutral', true), '💤 Geen actie');
 }
 
 // 7. formatCeoMessage - bevat de setup-marker
@@ -98,6 +101,12 @@ function check(name, actual, expected) {
   check(
     'formatCeoMessage - neutral krijgt geen-actie-marker',
     formatCeoMessage(neutralDecision).startsWith('**👔 CEO-besluit - 💤 Geen actie**'),
+    true,
+  );
+
+  check(
+    'formatCeoMessage - comboSignal voegt 🌟 toe',
+    formatCeoMessage(decision, true).startsWith('**👔 CEO-besluit - 🚨 Setup gevonden 🌟**'),
     true,
   );
 }
@@ -116,6 +125,13 @@ function check(name, actual, expected) {
   check(
     'formatTraceMessages - laatste bericht heeft setup-marker',
     messages[5].startsWith('**👔 CEO - eindbeslissing - 🚨 Setup gevonden**'),
+    true,
+  );
+
+  const comboMessages = formatTraceMessages({ discussion, decision, comboSignal: true });
+  check(
+    'formatTraceMessages - comboSignal voegt 🌟 toe aan laatste bericht',
+    comboMessages[5].startsWith('**👔 CEO - eindbeslissing - 🚨 Setup gevonden 🌟**'),
     true,
   );
 }
