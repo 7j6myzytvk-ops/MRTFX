@@ -24,11 +24,16 @@ const DECISION_TOOL = {
 export async function decide(
   candles,
   { analysis, risk, devilsAdvocate, macro, rebuttal },
-  { instrument = 'XAU_USD', granularity = 'H1' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
   const lastClose = candles[candles.length - 1].close;
+
+  const newsContextNote = newsContext
+    ? `\n\nLet op: het team heeft daarnaast de volgende actuele marktcontext meegegeven (behandel ` +
+      `als bevestigd feit): "${newsContext}". Weeg dit mee in je eindbesluit.`
+    : '';
 
   const message = await client.messages.create({
     model: config.anthropic.model,
@@ -53,7 +58,7 @@ export async function decide(
           `Neem het definitieve besluit voor het team: signaal, zekerheid, concrete stop-loss- en ` +
           `take-profit-prijzen en een positiegrootte-advies. Je mag afwijken van de analist als de ` +
           `discussie dat rechtvaardigt - leg in je onderbouwing uit hoe je de verschillende ` +
-          `standpunten hebt gewogen.`,
+          `standpunten hebt gewogen.${newsContextNote}`,
       },
     ],
   });

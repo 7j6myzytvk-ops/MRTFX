@@ -147,3 +147,68 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
     over bullish signalen. Conclusies gelden vooralsnog vooral voor bearish setups.
 - Details per sample (incl. volledige discussie) in `data/backtests.json`
   (gitignored, runtime-gegenereerd, 5 records / 47 samples).
+
+## Fase 10 - Actuele marktcontext (`newsContext`) + bugfix synthetische candles in live paden (klaar)
+
+### `newsContext`: actueel nieuws meegeven aan het team
+- `agents/boardroom.js`'s `runDiscussion(candles, { instrument, granularity,
+  newsContext })` neemt een optionele `newsContext`-string (standaard `''`) en
+  geeft die door als onderdeel van `opts` aan **alle 6 agent-gesprekken**
+  (analyse, risicomanager, Devil's Advocate, marktcontext, weerwoord, CEO-besluit)
+  - dezelfde aanpak als de bestaande `events` (economische kalender).
+- Elke agent krijgt, als `newsContext` is opgegeven, een eigen toegespitste
+  instructie om de meegegeven tekst als **bevestigd feit** te behandelen
+  (in afwijking van de standaardinstructie om geen onbevestigd nieuws te claimen):
+  - **analist**: kan het nieuws gebruiken om de recente prijsbeweging te verklaren.
+  - **risicomanager**: houdt rekening met verhoogde volatiliteit bij SL/TP en
+    positiegrootte.
+  - **Devil's Advocate**: overweegt expliciet of de markt al "sell the news" heeft
+    gespeeld, of dat het nieuws nog niet (volledig) in de prijs is verwerkt.
+  - **marktcontext-analist**: beoordeelt of het sentiment en het koersgedrag in de
+    candles met het nieuws overeenkomen.
+  - **analist (weerwoord)**: weegt het nieuws mee in het al-dan-niet aanpassen van
+    zekerheid/signaal na de discussie.
+  - **CEO**: weegt het nieuws expliciet mee in het einbesluit.
+- `/analyse` heeft een nieuwe optionele `context`-parameter
+  (`SlashCommandBuilder().addStringOption(...)`) waarmee een gebruiker live
+  marktcontext kan meegeven; die wordt 1-op-1 doorgegeven als `newsContext`.
+- `scripts/analyseNow.js` (nieuw): CLI-variant -
+  `node scripts/analyseNow.js "<contexttekst>"` - haalt live candles op, draait de
+  boardroom met `newsContext`, en post de trace/CEO-berichten naar Discord (zelfde
+  REST-aanpak als `scripts/test-boardroom.js`).
+
+### Bugfix: synthetische weekend-candles vervuilden live analyses
+- **Probleem ontdekt tijdens een live `/analyse`-achtige run** (via
+  `scripts/analyseNow.js`) met de Trump/Iran-context: de Devil's Advocate
+  signaleerde zelf dat ~33 van de 50 opgehaalde H1-candles een "microscopische
+  bandbreedte van ~0,26 dollar" hadden - een teken van bevroren/synthetische
+  prijzen.
+- **Oorzaak**: `getXauUsdCandles({ granularity: 'H1', count: 50 })` haalt de
+  laatste 50 candles op zonder de `filterFlatCandles`-stap (zie
+  `agents/outcomeEvaluator.js`) die `scripts/backtest.js` en
+  `services/performanceTracker.js` al wel toepassen. Twelve Data vult
+  weekend-gaten (vrijdagavond - zondagavond) op met platte placeholder-candles
+  (`high - low < FLAT_RANGE_THRESHOLD`). Vlak na een weekend bestond het
+  analyse-venster van 50 candles daardoor voor **64% (32/50)** uit deze
+  placeholders, en spande het venster maar 3 kalenderdagen (13-15 juni) i.p.v. ~2
+  dagen aan echte marktbeweging.
+- **Fix**: nieuwe `getRecentRealCandles({ granularity = 'H1', count = 50 })` in
+  `services/marketData.js` - haalt `count + 70` ruwe candles op, filtert de platte
+  candles eruit, en geeft de laatste `count` echte candles terug. `discord/bot.js`
+  (`/analyse`), `services/scheduler.js` (periodieke tick) en
+  `scripts/analyseNow.js` gebruiken nu allemaal `getRecentRealCandles` i.p.v.
+  `getXauUsdCandles`.
+- **Verificatie**: voor de fix - 50 candles, 32 flat (64%), venster 13-15 juni. Na
+  de fix - 50 candles, 0 flat, venster 11-15 juni. Een herhaalde live run met
+  dezelfde Trump/Iran-context na de fix gaf een ander (conservatiever) besluit -
+  zie hieronder.
+
+### Live resultaat (na de fix, met Trump/Iran-context)
+Context: "Trump heeft aangekondigd vrede te willen sluiten met Iran; sindsdien is er
+een sterke stijging in XAU/USD - de markt is momenteel bullish."
+
+CEO-besluit: **BULLISH, zekerheid 72%**, SL 4300 / TP 4400 (RR ~1:1,6),
+positiegrootte **klein**. De Devil's Advocate bracht in dat de markt het nieuws al
+deels kan hebben ingeprijsd ("sell the news"); de CEO koos mede daardoor voor een
+strakke SL en een kleine positie i.p.v. normaal/groot, ondanks de hoge zekerheid.
+Gepost naar het #trace- en #ceo-kanaal.

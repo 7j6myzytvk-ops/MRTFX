@@ -33,8 +33,13 @@ const REBUTTAL_TOOL = {
   },
 };
 
-export async function analyzeCandles(candles, { instrument = 'XAU_USD', granularity = 'H1' } = {}) {
+export async function analyzeCandles(candles, { instrument = 'XAU_USD', granularity = 'H1', newsContext = '' } = {}) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+
+  const newsContextNote = newsContext
+    ? `\n\nHet team heeft de volgende actuele marktcontext meegegeven (behandel als bevestigd ` +
+      `feit, bv. nieuws dat de recente prijsbeweging kan verklaren): "${newsContext}".`
+    : '';
 
   const message = await client.messages.create({
     model: config.anthropic.model,
@@ -46,7 +51,7 @@ export async function analyzeCandles(candles, { instrument = 'XAU_USD', granular
         role: 'user',
         content:
           `Je bent een technisch analist voor ${instrument} (${granularity}-candles). ` +
-          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.\n\n` +
+          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${newsContextNote}\n\n` +
           formatCandles(candles),
       },
     ],
@@ -60,9 +65,14 @@ export async function reviewDiscussion(
   candles,
   analysis,
   { risk, devilsAdvocate, macro },
-  { instrument = 'XAU_USD', granularity = 'H1' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+
+  const newsContextNote = newsContext
+    ? `\n\nLet op: het team heeft daarnaast de volgende actuele marktcontext meegegeven (behandel ` +
+      `als bevestigd feit): "${newsContext}".`
+    : '';
 
   const message = await client.messages.create({
     model: config.anthropic.model,
@@ -83,7 +93,7 @@ export async function reviewDiscussion(
           `${devilsAdvocate.argument}\n\n` +
           `Marktcontext/Sentiment ("${macro.sentiment}", zekerheid ${macro.confidence}%): ${macro.reasoning}\n\n` +
           `Geef je herziene of bevestigde signaal en zekerheid, met een korte reactie op de discussie. ` +
-          `Je mag bij je eigen analyse blijven als de tegenargumenten je niet overtuigen.`,
+          `Je mag bij je eigen analyse blijven als de tegenargumenten je niet overtuigen.${newsContextNote}`,
       },
     ],
   });

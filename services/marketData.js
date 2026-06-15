@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '../config/index.js';
+import { filterFlatCandles } from '../agents/outcomeEvaluator.js';
 
 const BASE_URL = 'https://api.twelvedata.com';
 
@@ -76,4 +77,16 @@ export async function getXauUsdCandles({ granularity = 'H1', count = 50, from, t
       close: Number(v.close),
     }))
     .reverse();
+}
+
+// Voor de live boardroom (`/analyse`, scheduler) willen we `count` echte candles,
+// niet `count` ruwe candles. Twelve Data vult weekend-gaten op met synthetische
+// platte placeholder-candles (zie agents/outcomeEvaluator.js), die anders het
+// analyse-venster vervuilen - met name net na een weekend kan dat een groot deel
+// van de meest recente candles zijn. We vragen daarom extra candles op (genoeg om
+// een volledig weekend te overbruggen), filteren de platte candles eruit en geven
+// de laatste `count` echte candles terug.
+export async function getRecentRealCandles({ granularity = 'H1', count = 50 } = {}) {
+  const raw = await getXauUsdCandles({ granularity, count: count + 70 });
+  return filterFlatCandles(raw).slice(-count);
 }

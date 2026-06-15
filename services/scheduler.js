@@ -1,5 +1,5 @@
 import { config } from '../config/index.js';
-import { getXauUsdCandles } from './marketData.js';
+import { getRecentRealCandles } from './marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
@@ -17,7 +17,7 @@ export function startSignalScheduler(client) {
 
   async function tick() {
     try {
-      const candles = await getXauUsdCandles({ granularity: 'H1', count: 50 });
+      const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
       const result = await runBoardroom(candles);
       await reportToDiscord(client, result);
       await evaluateOpenSignals();

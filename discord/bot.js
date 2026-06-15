@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import { config } from '../config/index.js';
-import { getXauUsdPrice, getXauUsdCandles } from '../services/marketData.js';
+import { getXauUsdPrice, getRecentRealCandles } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
@@ -14,7 +14,12 @@ const commands = [
     .setDescription('Toon de status van het systeem en de huidige XAU/USD koers'),
   new SlashCommandBuilder()
     .setName('analyse')
-    .setDescription('Laat de AI-agent de huidige XAU/USD candles analyseren'),
+    .setDescription('Laat de AI-agent de huidige XAU/USD candles analyseren')
+    .addStringOption((option) =>
+      option
+        .setName('context')
+        .setDescription('Actuele marktcontext/nieuws dat het team moet meewegen (optioneel)'),
+    ),
   new SlashCommandBuilder()
     .setName('geschiedenis')
     .setDescription('Toon de laatst gegenereerde signalen')
@@ -81,8 +86,9 @@ export function createBot() {
     if (interaction.commandName === 'analyse') {
       await interaction.deferReply();
       try {
-        const candles = await getXauUsdCandles({ granularity: 'H1', count: 50 });
-        const result = await runBoardroom(candles);
+        const newsContext = interaction.options.getString('context') ?? '';
+        const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
+        const result = await runBoardroom(candles, { newsContext });
         await reportToDiscord(interaction.client, result);
 
         const { decision } = result;

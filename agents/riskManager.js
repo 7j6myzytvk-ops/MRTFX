@@ -24,7 +24,7 @@ function averageRange(candles) {
 export async function assessRisk(
   candles,
   analysis,
-  { instrument = 'XAU_USD', granularity = 'H1', events = [] } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -36,6 +36,12 @@ export async function assessRisk(
       events.map((e) => `"${e.name}" om ${e.time}`).join(', ') +
       `. Houd rekening met verhoogde volatiliteit rond deze tijdstippen bij je SL/TP- en ` +
       `positiegrootte-advies.`
+    : '';
+
+  const newsContextNote = newsContext
+    ? `\n\nLet op: het team heeft de volgende actuele marktcontext meegegeven (behandel als ` +
+      `bevestigd feit): "${newsContext}". Houd rekening met mogelijk verhoogde volatiliteit ` +
+      `hierdoor bij je SL/TP- en positiegrootte-advies.`
     : '';
 
   const message = await client.messages.create({
@@ -54,7 +60,7 @@ export async function assessRisk(
           `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
           `is ${avgRange.toFixed(2)}. ` +
           `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit ` +
-          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}`,
+          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}`,
       },
     ],
   });

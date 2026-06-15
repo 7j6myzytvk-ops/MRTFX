@@ -6,7 +6,10 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 
 - **discord/bot.js** - Discord bot met slash commands (`/status`, `/analyse`,
   `/geschiedenis`, `/performance`)
-- **services/marketData.js** - haalt live prijzen en candles op via de Twelve Data API
+- **services/marketData.js** - haalt live prijzen en candles op via de Twelve Data API.
+  `getRecentRealCandles({ granularity, count })` haalt extra candles op en filtert
+  synthetische weekend-placeholders eruit (zie `agents/outcomeEvaluator.js`), zodat
+  `/analyse` en de scheduler altijd `count` echte candles gebruiken
 - **services/scheduler.js** - draait periodiek de boardroom, rapporteert naar Discord
   en evalueert open signalen
 - **services/boardroomReporter.js** - formatteert en post de teamdiscussie naar
@@ -24,7 +27,8 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
   besluit neemt
 - **agents/boardroom.js** - orchestreert de multi-agent discussie (analyse -> risico/
   tegenargument/sentiment -> weerwoord -> CEO-besluit), geeft aankomende
-  economische events (`agents/economicCalendar.js`) mee als context, en logt het
+  economische events (`agents/economicCalendar.js`) en optionele actuele
+  marktcontext (`newsContext`) mee als context aan alle agents, en logt het
   resultaat
 - **agents/outcomeEvaluator.js** - gedeelde evaluatielogica (SL/TP-hit over
   horizon-candles, filter voor synthetische weekend-candles), gebruikt door zowel
@@ -59,8 +63,11 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
 ## Commands
 
 - `/status` - toont systeemstatus en huidige XAU/USD koers
-- `/analyse` - laat het agententeam de huidige candles bespreken en toont het CEO-besluit
-  (de volledige discussie wordt gepost in het #trace-kanaal, het besluit in het #ceo-kanaal)
+- `/analyse [context]` - laat het agententeam de huidige candles bespreken en toont het
+  CEO-besluit (de volledige discussie wordt gepost in het #trace-kanaal, het besluit in
+  het #ceo-kanaal). De optionele `context`-parameter geeft actuele marktcontext/nieuws
+  mee dat het team als bevestigd feit meeweegt (bv. "Trump kondigde vrede met Iran aan,
+  sterke stijging in goud")
 - `/geschiedenis [aantal]` - toont de laatst gegenereerde CEO-besluiten (1-10, standaard 5),
   inclusief een outcome-indicator per signaal (✅ TP / ❌ SL / ➖ geen/neutraal /
   ⚠️ onbruikbaar / ⏳ open)
@@ -96,3 +103,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
 
 - `node scripts/test-marketdata.js` - haalt de live XAU/USD-prijs en de laatste H1-candles
   op via Twelve Data (vereist `TWELVE_DATA_API_KEY`)
+- `node scripts/analyseNow.js ["<actuele marktcontext>"]` - draait de boardroom op de
+  meest recente echte H1-candles (via `getRecentRealCandles`) en post de discussie/
+  besluit naar Discord, net als `/analyse`. Met een tekstargument wordt die als
+  `newsContext` meegegeven aan het team, bv.:
+  `node scripts/analyseNow.js "Trump kondigde vrede met Iran aan, sterke stijging in goud"`

@@ -22,7 +22,7 @@ const SENTIMENT_TOOL = {
 export async function assessSentiment(
   candles,
   analysis,
-  { instrument = 'XAU_USD', granularity = 'H1', events = [] } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -31,6 +31,13 @@ export async function assessSentiment(
       `(dit zijn vaststaande feiten, geen nieuws dat je zelf moet verifiëren): ` +
       events.map((e) => `"${e.name}" om ${e.time}`).join(', ') +
       `. Geef aan of en hoe dit het huidige sentiment op korte termijn kan overschaduwen.`
+    : '';
+
+  const newsContextNote = newsContext
+    ? `\n\nHet team heeft daarnaast de volgende actuele marktcontext meegegeven (behandel dit als ` +
+      `een bevestigd feit, in afwijking van de instructie om geen onbevestigd nieuws te claimen): ` +
+      `"${newsContext}". Geef aan hoe dit het sentiment beïnvloedt en of het koersgedrag in de ` +
+      `candles hiermee overeenkomt.`
     : '';
 
   const message = await client.messages.create({
@@ -45,11 +52,11 @@ export async function assessSentiment(
           `Je bent een marktcontext/sentiment-analist voor ${instrument} (${granularity}-candles). ` +
           `Baseer je beoordeling van het koersgedrag UITSLUITEND op de candles hieronder ` +
           `(momentum, volatiliteit, trendkarakter) - claim geen actueel nieuws of macro-events die ` +
-          `je niet zeker weet. Een analist gaf het signaal "${analysis.signal}" ` +
-          `(zekerheid ${analysis.confidence}%) met de onderbouwing: "${analysis.reasoning}". ` +
-          `Geef een algemene sentiment-inschatting (risk-on/risk-off/neutraal) die bij dit ` +
-          `prijsgedrag past, en geef aan of dit het signaal van de analist ondersteunt of ` +
-          `juist relativeert.${eventsNote}\n\n` +
+          `je niet zeker weet, tenzij het team dit hieronder expliciet meegeeft. Een analist gaf het ` +
+          `signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) met de onderbouwing: ` +
+          `"${analysis.reasoning}". Geef een algemene sentiment-inschatting (risk-on/risk-off/neutraal) ` +
+          `die bij dit prijsgedrag past, en geef aan of dit het signaal van de analist ondersteunt of ` +
+          `juist relativeert.${eventsNote}${newsContextNote}\n\n` +
           formatCandles(candles),
       },
     ],
