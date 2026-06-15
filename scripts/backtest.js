@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { getXauUsdCandles } from '../services/marketData.js';
+import { getXauUsdCandles, getEurUsdCandles } from '../services/marketData.js';
 import { runDiscussion } from '../agents/boardroom.js';
 import { filterFlatCandles, HORIZON_CANDLES, evaluateOutcome, summarize } from '../agents/outcomeEvaluator.js';
 
@@ -33,6 +33,19 @@ console.log(
     `(weekend-)candles gefilterd, ${candles.length} resterend.`,
 );
 
+// EUR/USD-candles voor dezelfde periode (dollarcontext, zie agents/dollarContext.js).
+// Index-uitlijning met `candles` werkt niet (XAU/USD filtert weekend-candles weg,
+// EUR/USD niet), dus per sample-window koppelen we op timestamp-range.
+const rawEurCandles = await getEurUsdCandles({ granularity: 'H1', from: from.toISOString(), to: to.toISOString() });
+const eurCandles = rawEurCandles.filter((c) => c.high !== c.low);
+console.log(`${eurCandles.length} EUR/USD-candles voor dollarcontext.`);
+
+function eurWindowFor(window) {
+  const startTime = window[0].time;
+  const endTime = window[window.length - 1].time;
+  return eurCandles.filter((c) => c.time >= startTime && c.time <= endTime);
+}
+
 // Schrijf na elke sample weg, zodat een trage/vastlopende Claude-call (de
 // boardroom-loop kan lang duren) niet betekent dat reeds voltooide samples
 // verloren gaan als het script crasht of wordt afgebroken.
@@ -62,11 +75,12 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
   const window = candles.slice(i - LOOKBACK, i);
   const horizonCandles = candles.slice(i, i + HORIZON);
   const sampleTime = window[window.length - 1].time;
+  const dollarCandles = eurWindowFor(window);
 
   let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      result = await runDiscussion(window, { instrument: 'XAU_USD', granularity: 'H1' });
+      result = await runDiscussion(window, { instrument: 'XAU_USD', granularity: 'H1', dollarCandles });
       break;
     } catch (err) {
       console.log(`  poging ${attempt}/${MAX_ATTEMPTS} voor ${sampleTime} mislukt: ${err.message}`);

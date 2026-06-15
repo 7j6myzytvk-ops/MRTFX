@@ -368,6 +368,12 @@ beweegt EUR/USD in dezelfde richting als goud: EUR/USD omhoog -> dollar verzwakt
   `/analyse`-handler, `scripts/analyseNow.js`) halen nu ook
   `getRecentEurUsdCandles({ granularity: 'H1', count: 50 })` op en geven die door
   als `dollarCandles`.
+- `scripts/backtest.js` haalt nu ook EUR/USD-candles op voor dezelfde
+  `from`/`to`-periode en koppelt per sample-window de EUR/USD-candles op
+  timestamp-range (`eurWindowFor`) - index-uitlijning met de XAU/USD-candles werkt
+  niet, omdat `filterFlatCandles` (XAU/USD) weekend-candles wegfiltert terwijl het
+  `high !== low`-filter (EUR/USD) dat niet doet. Zo krijgen ook nieuwe
+  backtest-samples een `dollarContextNote`, consistent met de live agents.
 
 ### Validatie
 - `scripts/test-dollarContext.js` (22 checks): `computeDollarContext` op een
@@ -387,3 +393,9 @@ beweegt EUR/USD in dezelfde richting als goud: EUR/USD omhoog -> dollar verzwakt
   dollarcontext in hun redenering (bv. "De lichte dollarzwakte (EUR/USD +0.27%)
   geeft enige steun aan goud" / "biedt aanvullende, zij het beperkte tailwind
   voor goud"). Berichten correct gepost naar #trace en #ceo.
+- Validatie `scripts/backtest.js` (2026-06-15): kleine run (`DAYS=7`, 1 nieuw
+  sample, record #7) - analist verwijst expliciet naar "EUR/USD +0.10% en boven
+  de slotkoers" in zijn redenering, bevestigt dat `dollarCandles` correct per
+  sample-window wordt meegegeven. Daarna een grotere run (`DAYS=20`, ~11 nieuwe
+  samples) gestart op de achtergrond voor meer data ter voorbereiding op de
+  volgende analyse-ronde.
