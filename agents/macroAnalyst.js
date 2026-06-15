@@ -22,7 +22,7 @@ const SENTIMENT_TOOL = {
 export async function assessSentiment(
   candles,
   analysis,
-  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', indicatorsNote = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -56,7 +56,7 @@ export async function assessSentiment(
           `signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) met de onderbouwing: ` +
           `"${analysis.reasoning}". Geef een algemene sentiment-inschatting (risk-on/risk-off/neutraal) ` +
           `die bij dit prijsgedrag past, en geef aan of dit het signaal van de analist ondersteunt of ` +
-          `juist relativeert.${eventsNote}${newsContextNote}\n\n` +
+          `juist relativeert.${eventsNote}${newsContextNote}${indicatorsNote}\n\n` +
           formatCandles(candles),
       },
     ],

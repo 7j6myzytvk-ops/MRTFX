@@ -33,9 +33,12 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
   besluit neemt
 - **agents/boardroom.js** - orchestreert de multi-agent discussie (analyse -> risico/
   tegenargument/sentiment -> weerwoord -> CEO-besluit), geeft aankomende
-  economische events (`agents/economicCalendar.js`) en optionele actuele
-  marktcontext (`newsContext`) mee als context aan alle agents, en logt het
-  resultaat
+  economische events (`agents/economicCalendar.js`), berekende technische
+  indicatoren (`agents/indicators.js`) en optionele actuele marktcontext
+  (`newsContext`) mee als context aan alle agents, en logt het resultaat
+- **agents/indicators.js** - berekent SMA(20)/SMA(50)/RSI(14)/ATR(14) uit de
+  candles en formatteert dit als leesbare context (`formatIndicatorsNote`) voor
+  alle agents
 - **agents/outcomeEvaluator.js** - gedeelde evaluatielogica (SL/TP-hit over
   horizon-candles, filter voor synthetische weekend-candles), gebruikt door zowel
   backtesting als live performance-tracking
@@ -115,6 +118,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   `formatCeoMessage`/`formatTraceMessages` (🚨 Setup gevonden / 💤 Geen actie)
 - `node scripts/test-agentAnalysis.js` - unit-tests voor de classificatiefuncties en
   de `breakdown()`-helper in `agents/agentAnalysis.js`
+- `node scripts/test-indicators.js` - unit-tests voor `sma`/`rsi`/`atr`,
+  `computeIndicators` en `formatIndicatorsNote` in `agents/indicators.js`
 
 ## Marktdata testen
 

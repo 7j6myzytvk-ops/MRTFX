@@ -24,7 +24,7 @@ const DECISION_TOOL = {
 export async function decide(
   candles,
   { analysis, risk, devilsAdvocate, macro, rebuttal },
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', indicatorsNote = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -58,7 +58,7 @@ export async function decide(
           `Neem het definitieve besluit voor het team: signaal, zekerheid, concrete stop-loss- en ` +
           `take-profit-prijzen en een positiegrootte-advies. Je mag afwijken van de analist als de ` +
           `discussie dat rechtvaardigt - leg in je onderbouwing uit hoe je de verschillende ` +
-          `standpunten hebt gewogen.${newsContextNote}`,
+          `standpunten hebt gewogen.${newsContextNote}${indicatorsNote}`,
       },
     ],
   });

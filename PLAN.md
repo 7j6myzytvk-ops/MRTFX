@@ -286,3 +286,48 @@ confidence-drempel of filter nodig is (die data is nog te dun/scheef, zie Fase 9
   gevonden` correct gepost naar #trace en #ceo.
 - Live bot (scheduler-proces) herstart zodat de lopende scheduler en
   slash-commands de nieuwe markering meteen gebruiken.
+
+## Fase 13 - Technische indicatoren als context voor de agents (klaar)
+
+### Doel
+Vervolgstap richting het einddoel: de agents kregen tot nu toe alleen 50 losse
+OHLC-regels (`formatCandles`) en moesten daar zelf trend/momentum/volatiliteit uit
+afleiden - iets waar LLM's relatief zwak in zijn. Door veelgebruikte technische
+indicatoren vooraf te berekenen en als context mee te geven, krijgen alle agents
+een directer en consistenter signaal (bv. "RSI 83 = overbought" i.p.v. zelf 50
+sluitprijzen moeten interpreteren).
+
+### Implementatie
+- Nieuw `agents/indicators.js` (pure, testbare functies, geen I/O):
+  - `sma(values, period)`, `rsi(closes, period=14)`, `atr(candles, period=14)` -
+    vallen netjes terug op minder periodes als er te weinig candles zijn (bv. bij
+    mock-data met 12 candles), en geven `null` terug als er te weinig data is voor
+    een betekenisvolle waarde (i.p.v. NaN/crash).
+  - `computeIndicators(candles)` -> `{ lastClose, sma20, sma50, rsi14, atr14 }`.
+  - `formatIndicatorsNote(indicators)` -> leesbaar tekstblok met RSI-label
+    (overbought/oversold/neutraal vanaf >=70/<=30) en SMA20/50-trendpositie
+    (prijs ligt "boven"/"onder").
+- `agents/boardroom.js`'s `runDiscussion` berekent `indicatorsNote` één keer en
+  geeft het - net als `events` en `newsContext` - door aan **alle 6
+  agent-gesprekken** (analyse, risico, Devil's Advocate, marktcontext, weerwoord,
+  CEO), die het toevoegen aan hun prompt.
+- Geen nieuwe configuratie of databron nodig: indicatoren worden berekend uit de
+  candles die elke live/`backtest`-aanroep al ophaalt.
+
+### Validatie
+- `scripts/test-indicators.js` (19 checks): `sma`/`rsi`/`atr` met handgeschreven
+  fixtures (alleen winst -> RSI 100, alleen verlies -> RSI 0, gemengd -> RSI 60,
+  constante true range -> ATR, fallback bij te weinig candles -> `null`,
+  fallback bij periode > beschikbare data), `computeIndicators` +
+  `formatIndicatorsNote` op een lineaire candle-reeks (verwachte SMA/RSI/ATR-
+  waarden exact uitgerekend), en een check dat `null`-waarden niet als `"null"`
+  in de prompt-tekst verschijnen.
+- Regressietest: bestaande suites (`test-analyst.js`, `test-boardroomReporter.js`,
+  `test-performanceTracker.js`, `test-agentAnalysis.js`) draaien nog steeds
+  zonder fouten (indicatoren zijn optioneel/`indicatorsNote=''` als niet
+  meegegeven).
+- Live verificatie (2026-06-15): `scripts/test-boardroom.js` met mock-candles -
+  alle 6 agents verwijzen expliciet naar de berekende indicatoren in hun
+  redenering (bv. analist: "RSI(14) staat op 83.2, wat sterk overbought
+  aangeeft"; risicomanager: SL/TP gebaseerd op "~1x ATR" / "~2x ATR", R:R
+  ≈ 1:2). Berichten correct gepost naar #trace en #ceo.
