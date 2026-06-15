@@ -155,9 +155,9 @@ function check(name, actual, expected) {
   check('formatComboAlert - geen alertUserId -> null', formatComboAlert('bullish', true, undefined), null);
 }
 
-// 10. reportToDiscord - zonder DISCORD_ALERT_USER_ID-config wordt bij een
-// comboSignal geen extra ping verstuurd naar het CEO-kanaal (alleen het
-// reguliere CEO-bericht).
+// 10. reportToDiscord - bij comboSignal stuurt het CEO-kanaal het reguliere
+// bericht plus (afhankelijk van DISCORD_ALERT_USER_ID) een extra
+// combo-alert, exact zoals formatComboAlert() dat voorschrijft.
 {
   const sent = [];
   const mockClient = {
@@ -174,7 +174,11 @@ function check(name, actual, expected) {
   await reportToDiscord(mockClient, { discussion, decision, comboSignal: true });
 
   const ceoMessages = sent.filter((s) => s.id === config.boardroom.ceoChannelId);
-  check('reportToDiscord - zonder alertUserId geen extra ping bij comboSignal', ceoMessages.length, 1);
+  const expectedAlert = formatComboAlert(decision.signal, true, config.boardroom.alertUserId);
+  check('reportToDiscord - aantal CEO-berichten komt overeen met formatComboAlert', ceoMessages.length, expectedAlert ? 2 : 1);
+  if (expectedAlert) {
+    check('reportToDiscord - 2e CEO-bericht is de combo-alert', ceoMessages[1]?.content, expectedAlert);
+  }
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

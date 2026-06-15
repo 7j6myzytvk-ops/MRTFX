@@ -570,10 +570,13 @@ zich voordoet op een echte setup (🚨, niet bij 💤).
 - Volledige regressiesuite (alle `scripts/test-*.js`) groen.
 - Bot herstart 31821 -> 32179.
 
-### Openstaand
-`DISCORD_ALERT_USER_ID` is nog leeg - de mention activeert pas zodra dit is
-ingevuld (Discord user-ID via "Kopieer gebruikers-ID" met Developer Mode
-aan).
+### Status
+`DISCORD_ALERT_USER_ID` is ingevuld (2026-06-15) - de mention is actief.
+Test 10 in `scripts/test-boardroomReporter.js` is hierop aangepast: het
+verwachte aantal CEO-berichten (1 of 2) en de inhoud van het 2e bericht
+worden nu afgeleid van `formatComboAlert()` zelf, zodat de test correct
+blijft of `DISCORD_ALERT_USER_ID` nu wel of niet geconfigureerd is (26
+checks totaal, was 25). Bot herstart 32331 -> 32627.
 
 ## Fase 18 - US2Y-candles cachen (klaar)
 
