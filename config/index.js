@@ -6,12 +6,18 @@ export const config = {
     clientId: process.env.DISCORD_CLIENT_ID,
     guildId: process.env.DISCORD_GUILD_ID,
   },
-  oanda: {
-    apiKey: process.env.OANDA_API_KEY,
-    accountId: process.env.OANDA_ACCOUNT_ID,
-    env: process.env.OANDA_ENV || 'practice',
+  marketData: {
+    apiKey: process.env.TWELVE_DATA_API_KEY,
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
+    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+  },
+  scheduler: {
+    intervalMinutes: Number(process.env.SIGNAL_INTERVAL_MINUTES) || 60,
+  },
+  boardroom: {
+    ceoChannelId: process.env.DISCORD_CEO_CHANNEL_ID,
+    traceChannelId: process.env.DISCORD_TRACE_CHANNEL_ID,
   },
 };
