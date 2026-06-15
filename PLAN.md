@@ -62,13 +62,10 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
   - Retry per sample (max 3 pogingen) + incrementele opslag naar
     `data/backtests.json`, zodat een trage/mislukte Claude-call niet de hele run
     laat crashen
-- Resultaten van de steekproef (12 samples, periode 19 mei - 11 juni 2026, XAU/USD
-  H1): 11x bearish / 1x bullish signaal, 5 TP / 7 SL -> **winRate 41,7%**
-  (gem. zekerheid TP 69%, SL 66%). Details per sample in `data/backtests.json`
-  (gitignored, runtime-gegenereerd) - script kan later opnieuw gedraaid worden voor
-  een grotere steekproef
-- Met Fase 7 logt elk record nu ook de volledige discussie (`discussion`), niet alleen
-  het eindbesluit - bruikbaar om te analyseren welke agent-inbreng het meest voorspellend was
+- Resultaten en agent-analyse van de steekproef: zie Fase 9 voor de actuele
+  geaggregeerde cijfers en de analyse van welke agent-inbreng het meest
+  samenhangt met TP- vs SL-uitkomsten. Details per sample in `data/backtests.json`
+  (gitignored, runtime-gegenereerd)
 
 ## Fase 8 - Live performance-tracking (klaar)
 - Sluit de cirkel voor live signalen: elk record in `data/signals.json` (via `/analyse`
@@ -102,3 +99,51 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
   `data/signals.json` (9 records: #1-4 en #8 - pre-migratie mock-prijzen ~2400 -
   correct `onbruikbaar`; #5/#7 -> `sl` na een echte pullback-candle; #6/#9 -> `open`)
   + live scheduler-tick (2x, signalen #10 en #11 meteen correct als `open` gelogd).
+
+## Fase 9 - Grotere backtest-steekproef + agent-analyse (klaar)
+- `scripts/backtest.js` logt per sample nu ook `entryPrice` (candle-close op het
+  moment van het besluit) en de volledige `discussion` (analist, risicomanager,
+  Devil's Advocate, marktcontext, weerwoord) - nodig om te onderzoeken welke
+  agent-inbreng samenhangt met TP- vs SL-uitkomsten.
+- `agents/agentAnalysis.js` (nieuw, pure/testbaar): classificeert elk sample met
+  discussion-data op 6 dimensies en groepeert via `breakdown(samples, classifyFn,
+  labelOrder)` (herbruikt `summarize()` uit Fase 8 per groep):
+  - Devil's Advocate eens/oneens met het eindbesluit
+  - Marktcontext-alignment (sentiment vs. besluitrichting): aligned/contrarian/neutraal
+  - Zekerheidsverschuiving van de analist na het weerwoord: omlaag/gelijk/omhoog
+  - CEO volgt eerste analyse of wijkt af
+  - CEO-zekerheid in buckets: <60% / 60-70% / >70%
+  - Risk/reward-ratio in buckets: <1.5 / 1.5-2.5 / >2.5
+  Samples zonder `discussion` (van vóór Fase 9) worden voor deze breakdowns
+  overgeslagen, maar tellen wel mee in het algemene overzicht.
+- `scripts/analyzeBacktests.js` (nieuw) - CLI-rapport: algemeen overzicht, subset
+  met discussion-data, en de 6 breakdowns, met disclaimer over kleine N per groep.
+- Gevalideerd: 25 unit-tests (`scripts/test-agentAnalysis.js`).
+- Steekproef vergroot met een extra run (28 nieuwe samples met discussion-data,
+  1 mei - 11 juni 2026): totaal **47 samples** (16 TP / 30 SL / 1 geen) ->
+  **winRate 34%** (gem. zekerheid TP 69%, SL 66%). Van de 31 samples met
+  discussion-data: winRate 32,3% (10 TP / 21 SL).
+- **Bevindingen agent-analyse** (indicatief, N per groep tussen 3 en 21 - geen
+  statistische significantie):
+  - Devil's Advocate, marktcontext-alignment en CEO-volggedrag tonen **geen
+    variatie**: in alle 31 samples is de Devil's Advocate het "oneens" met het
+    besluit, sluit de marktcontext aan ("aligned") en volgt de CEO de eerste
+    analyse. Deze drie dimensies zijn met de huidige data niet onderscheidend - de
+    agents zijn opvallend consistent met elkaar.
+  - **Sterkste signaal - zekerheidsverschuiving na weerwoord**: zakt de zekerheid
+    van de analist na het horen van het tegenargument/marktcontext (`omlaag`,
+    N=13), dan winRate **7,7%** (1 TP / 12 SL). Stijgt de zekerheid juist (`omhoog`,
+    N=18), dan winRate **50%** (9 TP / 9 SL). Een dalende zekerheid na het weerwoord
+    hangt dus sterk samen met een SL-uitkomst - het meest bruikbare signaal uit deze
+    steekproef.
+  - **Risk/reward-ratio**: lagere ratio's (`<1.5`, N=10) winnen vaker (50%) dan
+    hogere (`1.5-2.5`, N=16 -> 25%; `>2.5`, N=5 -> 20%) - logisch (een dichterbij
+    take-profit wordt makkelijker geraakt), maar zegt op zichzelf niets over de
+    verwachte waarde per trade.
+  - **CEO-zekerheid**: niet monotoon - `60-70%` (N=21) presteert het best (38,1%),
+    `>70%` (N=7) lager (28,6%), `<60%` (N=3) het slechtst (0%, maar zeer kleine N).
+  - **Beperking van deze steekproef**: 27 van de 28 nieuwe samples zijn bearish
+    (mei-juni 2026 was een dalende markt voor XAU/USD) - er is dus vrijwel geen data
+    over bullish signalen. Conclusies gelden vooralsnog vooral voor bearish setups.
+- Details per sample (incl. volledige discussie) in `data/backtests.json`
+  (gitignored, runtime-gegenereerd, 5 records / 47 samples).

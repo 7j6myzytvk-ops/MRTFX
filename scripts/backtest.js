@@ -63,10 +63,10 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
   const horizonCandles = candles.slice(i, i + HORIZON);
   const sampleTime = window[window.length - 1].time;
 
-  let decision;
+  let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      ({ decision } = await runDiscussion(window, { instrument: 'XAU_USD', granularity: 'H1' }));
+      result = await runDiscussion(window, { instrument: 'XAU_USD', granularity: 'H1' });
       break;
     } catch (err) {
       console.log(`  poging ${attempt}/${MAX_ATTEMPTS} voor ${sampleTime} mislukt: ${err.message}`);
@@ -74,13 +74,15 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
     }
   }
 
-  if (!decision) {
+  if (!result) {
     console.log(`[${samples.length + 1}] ${sampleTime} -> OVERGESLAGEN (na ${MAX_ATTEMPTS} mislukte pogingen)`);
     continue;
   }
 
+  const { decision, discussion } = result;
+  const entryPrice = window[window.length - 1].close;
   const outcome = evaluateOutcome(decision, horizonCandles);
-  samples.push({ sampleTime, decision, outcome });
+  samples.push({ sampleTime, entryPrice, decision, discussion, outcome });
   console.log(
     `[${samples.length}] ${sampleTime} -> ${decision.signal.toUpperCase()} (${decision.confidence}%)` +
       ` -> ${outcome.result}${outcome.candlesToHit ? ` (na ${outcome.candlesToHit} candles)` : ''}`,

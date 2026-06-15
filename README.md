@@ -29,6 +29,10 @@ Multi-agent analyse- en signalenserver voor XAU/USD, met Discord als interface.
 - **agents/outcomeEvaluator.js** - gedeelde evaluatielogica (SL/TP-hit over
   horizon-candles, filter voor synthetische weekend-candles), gebruikt door zowel
   backtesting als live performance-tracking
+- **agents/agentAnalysis.js** - classificeert backtest-samples op 6 dimensies van de
+  teamdiscussie (Devil's Advocate, marktcontext-alignment, zekerheidsverschuiving na
+  weerwoord, CEO-volggedrag, CEO-zekerheid, risk/reward) en groepeert uitkomsten per
+  label
 - **data/store.js** - JSON-opslag voor gegenereerde signalen (`data/signals.json`)
 
 Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
@@ -69,8 +73,13 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
 - `node scripts/backtest.js [dagen]` (standaard 10 dagen) - haalt historische H1-candles
   op, draait de volledige boardroom-discussie op steekproef-samples (1x per dag) en
   toetst elk CEO-besluit aan de candles die erna kwamen. Resultaten (incl. volledige
-  discussie per sample) worden incrementeel opgeslagen in `data/backtests.json`
-  (gitignored), zodat een trage/mislukte run niet alle voortgang verliest.
+  discussie en entry-prijs per sample) worden incrementeel opgeslagen in
+  `data/backtests.json` (gitignored), zodat een trage/mislukte run niet alle
+  voortgang verliest.
+- `node scripts/analyzeBacktests.js` - leest `data/backtests.json` en print een
+  algemeen overzicht (winRate, gem. zekerheid TP/SL) plus, voor samples met
+  teamdiscussie-data, een agent-analyse op de 6 dimensies uit
+  `agents/agentAnalysis.js`.
 
 ## Testen zonder live marktdata
 
@@ -80,6 +89,8 @@ Zie [PLAN.md](PLAN.md) voor de roadmap per fase.
   `DISCORD_TRACE_CHANNEL_ID` / `DISCORD_CEO_CHANNEL_ID`
 - `node scripts/test-performanceTracker.js` - unit-tests voor `evaluateSignalOutcome`
   (tp/sl/geen/open/neutraal/onbruikbaar) met handgeschreven candle-fixtures
+- `node scripts/test-agentAnalysis.js` - unit-tests voor de classificatiefuncties en
+  de `breakdown()`-helper in `agents/agentAnalysis.js`
 
 ## Marktdata testen
 

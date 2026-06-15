@@ -1,0 +1,66 @@
+import { summarize } from './outcomeEvaluator.js';
+
+// Stond de Devil's Advocate uiteindelijk "aan dezelfde kant" als het CEO-besluit
+// (zeldzaam - de DA wordt expliciet gevraagd het besluit uit te dagen)?
+export function classifyDevilsAdvocate(sample) {
+  const { counterSignal } = sample.discussion.devilsAdvocate;
+  return counterSignal === sample.decision.signal ? 'eens' : 'oneens';
+}
+
+// Komt de marktcontext (risk-on/risk-off) overeen met de richting van het besluit?
+export function classifyMacroAlignment(sample) {
+  const { sentiment } = sample.discussion.macro;
+  const { signal } = sample.decision;
+  if (sentiment === 'neutraal' || signal === 'neutral') return 'neutraal';
+  const aligned =
+    (sentiment === 'risk-on' && signal === 'bullish') || (sentiment === 'risk-off' && signal === 'bearish');
+  return aligned ? 'aligned' : 'contrarian';
+}
+
+// Ging de zekerheid van de analist omhoog/omlaag/gelijk na het weerwoord op de discussie?
+export function classifyRebuttalShift(sample) {
+  const { analyst, analystRebuttal } = sample.discussion;
+  const delta = analystRebuttal.confidence - analyst.confidence;
+  if (delta < 0) return 'omlaag';
+  if (delta > 0) return 'omhoog';
+  return 'gelijk';
+}
+
+// Volgt het CEO-besluit de richting van de eerste analyse, of wijkt het af?
+export function classifyCeoAgreement(sample) {
+  return sample.decision.signal === sample.discussion.analyst.signal ? 'volgt-analist' : 'wijkt-af';
+}
+
+export function classifyConfidenceBucket(sample) {
+  const { confidence } = sample.decision;
+  if (confidence < 60) return '<60%';
+  if (confidence <= 70) return '60-70%';
+  return '>70%';
+}
+
+export function classifyRiskReward(sample) {
+  const { entryPrice, decision } = sample;
+  const reward = Math.abs(decision.takeProfit - entryPrice);
+  const risk = Math.abs(entryPrice - decision.stopLoss);
+  const rr = reward / risk;
+  if (rr < 1.5) return '<1.5';
+  if (rr <= 2.5) return '1.5-2.5';
+  return '>2.5';
+}
+
+// Groepeert samples per classificatie-label en berekent per groep de outcome-stats
+// via summarize(). Samples zonder discussion-data (oude backtests, vóór Fase 9)
+// worden overgeslagen - deze breakdowns hebben de teamdiscussie nodig.
+// labelOrder is optioneel: geeft een vaste volgorde (incl. lege groepen) voor
+// overzichtelijke rapportage.
+export function breakdown(samples, classifyFn, labelOrder) {
+  const withDiscussion = samples.filter((s) => s.discussion);
+  const groups = new Map();
+  for (const s of withDiscussion) {
+    const label = classifyFn(s);
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(s);
+  }
+  const labels = labelOrder || [...groups.keys()];
+  return labels.map((label) => ({ label, ...summarize(groups.get(label) ?? []) }));
+}
