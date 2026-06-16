@@ -60,7 +60,12 @@ export async function assessRisk(
           `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
           `is ${avgRange.toFixed(2)}. ` +
           `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit ` +
-          `signaal en deze volatiliteit, en geef een positiegrootte-advies.${eventsNote}${newsContextNote}${contextNotes}`,
+          `signaal en deze volatiliteit, en geef een positiegrootte-advies. ` +
+          `Beoordeel daarnaast de kwaliteit van de trade: is de verhouding tussen de TP-afstand ` +
+          `en de SL-afstand gunstig? Is de volatiliteit op dit moment zo hoog dat een verantwoorde ` +
+          `trade nauwelijks mogelijk is? Als dat het geval is, geef dit dan expliciet aan in je ` +
+          `onderbouwing en adviseer de kleinste positiegrootte — de CEO weegt dit mee in het ` +
+          `uiteindelijke besluit.${eventsNote}${newsContextNote}${contextNotes}`,
       },
     ],
   });

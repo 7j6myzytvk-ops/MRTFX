@@ -35,9 +35,16 @@ const REBUTTAL_TOOL = {
 
 export async function analyzeCandles(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+
+  const eventsNote = events.length
+    ? `\n\nLet op: binnen 48 uur staan de volgende marktbewegende USD-events gepland: ` +
+      events.map((e) => `"${e.name}" om ${e.time}`).join(', ') +
+      `. Houd hier rekening mee in je zekerheid - een technisch sterk ` +
+      `signaal kan binnen enkele uren worden omgekeerd door zo'n event.`
+    : '';
 
   const newsContextNote = newsContext
     ? `\n\nHet team heeft de volgende actuele marktcontext meegegeven (behandel als bevestigd ` +
@@ -54,7 +61,7 @@ export async function analyzeCandles(
         role: 'user',
         content:
           `Je bent een technisch analist voor ${instrument} (${granularity}-candles). ` +
-          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${newsContextNote}${contextNotes}\n\n` +
+          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
     ],
@@ -96,7 +103,10 @@ export async function reviewDiscussion(
           `${devilsAdvocate.argument}\n\n` +
           `Marktcontext/Sentiment ("${macro.sentiment}", zekerheid ${macro.confidence}%): ${macro.reasoning}\n\n` +
           `Geef je herziene of bevestigde signaal en zekerheid, met een korte reactie op de discussie. ` +
-          `Je mag bij je eigen analyse blijven als de tegenargumenten je niet overtuigen.${newsContextNote}${contextNotes}`,
+          `Weeg elk argument inhoudelijk: als het macro-oordeel of het tegenscenario steekhoudende ` +
+          `punten maakt, pas dan je zekerheidspercentage aan — ook als je bij je richting blijft. ` +
+          `Een onveranderd percentage is alleen gerechtvaardigd als je elk argument ` +
+          `concreet kunt weerleggen.${newsContextNote}${contextNotes}`,
       },
     ],
   });

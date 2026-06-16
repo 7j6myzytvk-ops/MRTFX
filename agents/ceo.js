@@ -45,22 +45,27 @@ export async function decide(
         role: 'user',
         content:
           `Je bent de CEO van een handelsteam voor ${instrument} (${granularity}-candles). ` +
-          `De huidige prijs is ${lastClose}. Je team leverde vier onafhankelijke invalshoeken:\n\n` +
+          `De huidige prijs is ${lastClose}. Je team leverde de volgende invalshoeken:\n\n` +
           `1) Technische analyse: signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) - ` +
           `${analysis.reasoning}\n\n` +
-          `2) Risicobeoordeling: SL ${risk.stopLoss}, TP ${risk.takeProfit}, ` +
-          `positiegrootte "${risk.positionSize}" - ${risk.reasoning}\n\n` +
+          `2) Risicobeoordeling (sizing en niveaus, geen directioneel oordeel): ` +
+          `SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}" - ` +
+          `${risk.reasoning}\n\n` +
           `3) Tegenscenario: signaal "${devilsAdvocate.counterSignal}" ` +
           `(zekerheid ${devilsAdvocate.counterConfidence}%) - ${devilsAdvocate.argument}\n\n` +
           `4) Onafhankelijk macro/sentiment-oordeel: "${macro.sentiment}" ` +
           `(zekerheid ${macro.confidence}%) - ${macro.reasoning}\n\n` +
           `Na de discussie herzag de technisch analist zijn standpunt: signaal "${rebuttal.signal}" ` +
           `(zekerheid ${rebuttal.confidence}%) - ${rebuttal.reasoning}\n\n` +
-          `Neem nu het definitieve besluit. Alle vier invalshoeken wegen even zwaar - er is geen ` +
-          `standaard-standpunt. Als drie of vier invalshoeken dezelfde richting aangeven, is dat ` +
-          `doorslaggevend. Als ze verdeeld zijn, benoem dan expliciet welke invalshoek het zwaarst ` +
-          `weegt en waarom. Onderbouw je besluit met concrete verwijzingen naar de discussie, ` +
-          `niet alleen naar de technische analyse.${newsContextNote}${contextNotes}`,
+          `Neem nu het definitieve besluit. De drie directionele invalshoeken (technische analyse, ` +
+          `tegenscenario en macro/sentiment) wegen elk even zwaar - er is geen standaard-standpunt. ` +
+          `Kalibreer je zekerheid op basis van consensus: drie stemmen eensgezind → boven 70%; ` +
+          `twee tegen één → 55-70%; verdeeld of sterke twijfel → overweeg neutraal. ` +
+          `De risicobeoordeling (invalshoek 2) informeert je SL/TP en positiegrootte, niet de richting. ` +
+          `Als jouw signaal afwijkt van de technisch analist, stel dan ook nieuwe SL/TP-niveaus in ` +
+          `die bij jouw richting passen — de risicomanager's niveaus zijn berekend voor het analist-signaal. ` +
+          `Onderbouw je besluit met concrete verwijzingen naar alle drie de directionele ` +
+          `invalshoeken.${newsContextNote}${contextNotes}`,
       },
     ],
   });

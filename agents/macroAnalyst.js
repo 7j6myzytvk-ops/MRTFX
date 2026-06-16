@@ -56,9 +56,10 @@ export async function assessSentiment(
           `(momentum, volatiliteit, trendstructuur) en (2) de dollar- en rentecontext die het team ` +
           `hieronder meegeeft. Claim geen actueel nieuws of macro-events die je niet zeker weet, ` +
           `tenzij het team dit expliciet meegeeft. ` +
-          `Stel je eigen richting vast: is het sentiment risk-on (goud onder druk), ` +
-          `risk-off (goud ondersteund) of neutraal? Onderbouw dit met concrete observaties ` +
-          `uit de candles en de contextnotities, niet met aannames over de richting van de markt.` +
+          `Bepaal zelf of het overheersende sentiment risk-on, risk-off of neutraal is, ` +
+          `en leg in je redenering uit wat dit concreet betekent voor XAU/USD in de huidige ` +
+          `marktomgeving. Onderbouw dit met concrete observaties uit de candles en de ` +
+          `contextnotities, niet met aannames over de richting van de markt.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

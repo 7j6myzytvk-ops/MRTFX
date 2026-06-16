@@ -22,9 +22,16 @@ const CHALLENGE_TOOL = {
 export async function challengeAnalysis(
   candles,
   analysis,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+
+  const eventsNote = events.length
+    ? `\n\nLet op: binnen 48 uur staan de volgende marktbewegende USD-events gepland: ` +
+      events.map((e) => `"${e.name}" om ${e.time}`).join(', ') +
+      `. Een aankomend groot event is op zichzelf al een sterk tegenargument: ` +
+      `technische setups kunnen binnen uren worden omgekeerd door onverwachte uitkomsten.`
+    : '';
 
   const newsContextNote = newsContext
     ? `\n\nHet team heeft de volgende actuele marktcontext meegegeven (behandel als bevestigd ` +
@@ -47,7 +54,7 @@ export async function challengeAnalysis(
           `Bekijk de candles opnieuw en zoek actief het sterkste tegenargument: welk scenario zou ` +
           `dit signaal onderuit kunnen halen? Geef een tegen-signaal met je eigen zekerheid en ` +
           `je argumentatie. Als je na kritisch kijken geen sterk tegenargument vindt, mag je dat ` +
-          `aangeven en het grootste restrisico benoemen.${newsContextNote}${contextNotes}\n\n` +
+          `aangeven en het grootste restrisico benoemen.${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
     ],
