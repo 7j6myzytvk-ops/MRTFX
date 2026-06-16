@@ -21,7 +21,7 @@ const SENTIMENT_TOOL = {
 
 export async function assessSentiment(
   candles,
-  analysis,
+  _analysis,
   { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
@@ -50,13 +50,16 @@ export async function assessSentiment(
         role: 'user',
         content:
           `Je bent een marktcontext/sentiment-analist voor ${instrument} (${granularity}-candles). ` +
-          `Baseer je beoordeling van het koersgedrag UITSLUITEND op de candles hieronder ` +
-          `(momentum, volatiliteit, trendkarakter) - claim geen actueel nieuws of macro-events die ` +
-          `je niet zeker weet, tenzij het team dit hieronder expliciet meegeeft. Een analist gaf het ` +
-          `signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) met de onderbouwing: ` +
-          `"${analysis.reasoning}". Geef een algemene sentiment-inschatting (risk-on/risk-off/neutraal) ` +
-          `die bij dit prijsgedrag past, en geef aan of dit het signaal van de analist ondersteunt of ` +
-          `juist relativeert.${eventsNote}${newsContextNote}${contextNotes}\n\n` +
+          `Geef een volledig onafhankelijk oordeel van het marktsentiment - je weet niet wat andere ` +
+          `teamleden hebben geconcludeerd en dat is bewust zo. ` +
+          `Baseer je inschatting UITSLUITEND op (1) het karakter van de candles hieronder ` +
+          `(momentum, volatiliteit, trendstructuur) en (2) de dollar- en rentecontext die het team ` +
+          `hieronder meegeeft. Claim geen actueel nieuws of macro-events die je niet zeker weet, ` +
+          `tenzij het team dit expliciet meegeeft. ` +
+          `Stel je eigen richting vast: is het sentiment risk-on (goud onder druk), ` +
+          `risk-off (goud ondersteund) of neutraal? Onderbouw dit met concrete observaties ` +
+          `uit de candles en de contextnotities, niet met aannames over de richting van de markt.` +
+          `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
     ],

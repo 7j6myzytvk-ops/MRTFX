@@ -45,20 +45,22 @@ export async function decide(
         role: 'user',
         content:
           `Je bent de CEO van een handelsteam voor ${instrument} (${granularity}-candles). ` +
-          `De huidige prijs is ${lastClose}. Je team heeft het volgende besproken:\n\n` +
-          `1) Analist (eerste analyse): signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) - ` +
+          `De huidige prijs is ${lastClose}. Je team leverde vier onafhankelijke invalshoeken:\n\n` +
+          `1) Technische analyse: signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) - ` +
           `${analysis.reasoning}\n\n` +
-          `2) Risicomanager: SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}" - ` +
-          `${risk.reasoning}\n\n` +
-          `3) Devil's Advocate: tegen-signaal "${devilsAdvocate.counterSignal}" ` +
+          `2) Risicobeoordeling: SL ${risk.stopLoss}, TP ${risk.takeProfit}, ` +
+          `positiegrootte "${risk.positionSize}" - ${risk.reasoning}\n\n` +
+          `3) Tegenscenario: signaal "${devilsAdvocate.counterSignal}" ` +
           `(zekerheid ${devilsAdvocate.counterConfidence}%) - ${devilsAdvocate.argument}\n\n` +
-          `4) Marktcontext/Sentiment: "${macro.sentiment}" (zekerheid ${macro.confidence}%) - ${macro.reasoning}\n\n` +
-          `5) Analist (weerwoord na de discussie): signaal "${rebuttal.signal}" (zekerheid ${rebuttal.confidence}%) - ` +
-          `${rebuttal.reasoning}\n\n` +
-          `Neem het definitieve besluit voor het team: signaal, zekerheid, concrete stop-loss- en ` +
-          `take-profit-prijzen en een positiegrootte-advies. Je mag afwijken van de analist als de ` +
-          `discussie dat rechtvaardigt - leg in je onderbouwing uit hoe je de verschillende ` +
-          `standpunten hebt gewogen.${newsContextNote}${contextNotes}`,
+          `4) Onafhankelijk macro/sentiment-oordeel: "${macro.sentiment}" ` +
+          `(zekerheid ${macro.confidence}%) - ${macro.reasoning}\n\n` +
+          `Na de discussie herzag de technisch analist zijn standpunt: signaal "${rebuttal.signal}" ` +
+          `(zekerheid ${rebuttal.confidence}%) - ${rebuttal.reasoning}\n\n` +
+          `Neem nu het definitieve besluit. Alle vier invalshoeken wegen even zwaar - er is geen ` +
+          `standaard-standpunt. Als drie of vier invalshoeken dezelfde richting aangeven, is dat ` +
+          `doorslaggevend. Als ze verdeeld zijn, benoem dan expliciet welke invalshoek het zwaarst ` +
+          `weegt en waarom. Onderbouw je besluit met concrete verwijzingen naar de discussie, ` +
+          `niet alleen naar de technische analyse.${newsContextNote}${contextNotes}`,
       },
     ],
   });
