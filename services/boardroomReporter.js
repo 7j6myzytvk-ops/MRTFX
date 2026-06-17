@@ -74,19 +74,20 @@ export function formatTraceMessages({
   return messages;
 }
 
-export async function reportToDiscord(client, result) {
-  const { ceoChannelId, traceChannelId } = config.boardroom;
+export async function reportToDiscord(client, result, { ceoChannelId, traceChannelId } = {}) {
+  const effectiveCeoChannelId = ceoChannelId ?? config.boardroom.ceoChannelId;
+  const effectiveTraceChannelId = traceChannelId ?? config.boardroom.traceChannelId;
   const qualityResult = result.qualityResult ?? { passed: true, blockers: [] };
 
-  if (traceChannelId) {
-    const channel = await client.channels.fetch(traceChannelId);
+  if (effectiveTraceChannelId) {
+    const channel = await client.channels.fetch(effectiveTraceChannelId);
     for (const msg of formatTraceMessages({ ...result, qualityResult })) {
       await channel.send(msg);
     }
   }
 
-  if (ceoChannelId) {
-    const channel = await client.channels.fetch(ceoChannelId);
+  if (effectiveCeoChannelId) {
+    const channel = await client.channels.fetch(effectiveCeoChannelId);
     await channel.send(formatCeoMessage(result.decision, result.comboSignal, qualityResult));
 
     const alert = formatComboAlert(
