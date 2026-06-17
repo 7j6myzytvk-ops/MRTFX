@@ -682,10 +682,101 @@ zijn de volgende aanvullende verbeteringen doorgevoerd:
   vergelijking met de pre-Fase-19-bevindingen (macro altijd aligned, CEO
   altijd volgt-analist).
 
-### Openstaand
-- Wacht op eerste scheduler-ticks met de nieuwe prompts om te verifiëren
-  dat macro nu wél soms een richtingafwijking geeft en de CEO die meeneemt.
-- Record #15 (backtest met Fase 19-prompts) analyseren zodra compleet:
-  - Heeft macro nog steeds 100% "aligned"?
-  - Wijkt de CEO nu soms af van de analist?
-  - Houdt het combo-signaal stand met genuïnere deliberatie?
+### Validatie nacht-backtest (record #16)
+- 19 samples, winRate 40% (15 trades: 6 TP / 8 SL / 1 geen).
+- Fase 19 bewezen effectief: DA "eens" 7x (was 0x), macro "contrarian" 4x
+  (was 0x), CEO "wijkt-af" 15x (was 0x) - alle drie voorheen-nul dimensies
+  tonen nu reële variatie.
+
+## Fase 20 - Signaalfilter op basis van drie kwaliteitscriteria (klaar)
+
+### Aanleiding
+Nacht-backtest (record #16, eerste Fase 19-run) + cumulatieve analyse van alle
+records leverden drie statistisch onderbouwde "rode vlaggen" voor setup-kwaliteit:
+- **CEO-zekerheid < 60%** (N=47 cumulatief) → 24% winRate
+- **Macro contraireert de richting** (N=4) → 0% winRate
+- **Rebuttal omlaag** (analist verloor vertrouwen na discussie, N=93) → 26% winRate
+
+Live Discord-performance was aanleiding: 1 TP op 17 trades (~6%).
+
+### Implementatie (commit e038fdc)
+- **`agents/agentAnalysis.js`**: `assessSignalQuality(sample)` toegevoegd.
+  Retourneert `{ passed: bool, blockers: string[] }`. Neutrale signalen / geen
+  discussion → altijd `passed: true`. De drie filters worden onafhankelijk
+  geëvalueerd (meerdere blockers mogelijk).
+- **`agents/boardroom.js`**: `qualityResult` toegevoegd aan het return-object
+  van `runDiscussion()`.
+- **`services/boardroomReporter.js`**: alle vier format-functies bijgewerkt:
+  - `formatSetupMarker`: `!qualityResult.passed` → `'🔶 Setup (gefilterd)'`
+  - `formatCeoMessage`: voegt `⚠️ Niet geadviseerd: ...` toe bij blockers
+  - `formatComboAlert`: retourneert `null` bij gefilterd signaal (geen ping)
+  - `formatTraceMessages`: CEO-regel bevat marker + optionele blocker-tekst
+  Alle parameters optioneel met safe defaults → geen bestaande tests gebroken.
+
+### Marker-systeem na Fase 20
+- 💤 Geen actie = neutraal CEO-besluit
+- 🔶 Setup (gefilterd) = minstens één filter niet gehaald (zichtbaar, maar geen 🚨)
+- 🚨 Setup gevonden = alle filters gehaald
+- 🚨 Setup gevonden 🌟 = alle filters + combo-signaal (rebuttal omhoog + R:R <1.5)
+
+### Validatie
+- 36 tests in `scripts/test-agentAnalysis.js` (7 nieuw).
+- 37 tests in `scripts/test-boardroomReporter.js` (11 nieuw).
+- Alle overige test-suites ongewijzigd groen.
+- Bot herstart: PID 64140.
+
+## Fase 21 - D1-trendcontext + R:R >2.5 als vierde kwaliteitsfilter (klaar)
+
+### Aanleiding
+Na Fase 20 (drie kwaliteitsfilters) twee verdere verbeteringen gebundeld:
+1. Agents zagen 50 H1-candles (~2 dagen) zonder hogere-tijdseenheid context — bij
+   een sterke dagtrend konden ze bullish gaan terwijl de dag-structuur bearish was.
+2. R:R >2.5 correleerde in de backtest-data al met lage winRates (16-20%) maar
+   was nog geen harde filter.
+
+### Implementatie (commit 28f3c33)
+- **`agents/dailyContext.js`** (nieuw): `computeDailyContext` (huidige dagkoers,
+  SMA20, 5-daagse verandering, ATR14, recente 5-daagse range) +
+  `formatDailyContextNote` (tekstuele samenvatting voor alle agents).
+- **`services/marketData.js`**: `getRecentXauD1Candles({ count: 30 })` met 24u-cache
+  (zelfde patroon als US2Y-dagdata).
+- **`agents/boardroom.js`**: `dailyContextNote` toegevoegd aan `contextNotes`;
+  accepteert nu ook `d1Candles = null` als opt.
+- **`agents/agentAnalysis.js`**: vierde blocker in `assessSignalQuality`:
+  `classifyRiskReward === '>2.5'` → "risico/winst-verhouding te ambitieus (>2.5)".
+  Guard op `sample.entryPrice != null` voorkomt false-trigger bij ontbrekende prijs.
+- **Call sites** bijgewerkt: `scheduler.js`, `discord/bot.js`, `analyseNow.js`,
+  `scripts/backtest.js` (met `d1WindowFor(sampleTime)`, zelfde patroon als yield).
+- `analyseNow.js`: ook `result.qualityResult` doorgegeven aan `formatCeoMessage`.
+
+### Tests
+- 27 nieuwe tests (`scripts/test-dailyContext.js`).
+- 3 nieuwe tests in `scripts/test-agentAnalysis.js` (R:R >2.5 filter + guard).
+- Totaal 184 tests groen. Bot herstart: PID 64858.
+
+### Validatie - backtest record #17 (eerste run met Fase 21-prompts)
+14 samples (2 neutraal, 12 trades: 5 TP / 6 SL / 1 geen), winRate 41.7%.
+
+**D1-context bevestigd actief**: analist schrijft expliciet "onder het 20-daags
+daggemiddelde (4598.89)" en "5-daagse dagtrend -0.8%" in zijn redenering.
+
+**Kwaliteitsfilter-impact (cumulatief, N=191 met discussion-data)**:
+- Passed (alle 4 filters groen): N=90 → **winRate 55.1%** (TP:43, SL:30)
+- Filtered (≥1 blocker): N=101 → **winRate 26.7%** (TP:27, SL:67)
+- Scheiding: 2x verschil in winRate; filters werken zoals bedoeld.
+
+**Record #17 filter-impact** (eerste echte Fase 21-run):
+- Passed N=7 → winRate 60%; Filtered N=7 → winRate 28.6%
+
+**Combo-signaal** (rebuttal omhoog + R:R <1.5): N=21, winRate 66.7%
+(TP:12, SL:5, geen:1). Gestabiliseerd rond 65-67% na eerdere daling
+(90%→84.6%→73.3%→64.7%→66.7%). Nog steeds ~1.85x boven rest (36%).
+
+**Blocker-verdeling** (N=101 gefilterde trades):
+- Rebuttal omlaag: 90 (meest voorkomend)
+- CEO <60%: 39
+- R:R >2.5: 17 (nieuwe filter, bevestigd: 17.6% winRate N=17)
+- Macro contrarian: 4 (0% winRate, N=4)
+
+**Kanttekening**: de filters zijn deels gedesigned op dezelfde dataset waarop we
+ze nu evalueren (in-sample). Echte validatie volgt uit de live Discord-performance.
