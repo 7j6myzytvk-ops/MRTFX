@@ -55,6 +55,31 @@ export function isComboSignal(sample) {
   return classifyRebuttalShift(sample) === 'omhoog' && classifyRiskReward(sample) === '<1.5';
 }
 
+// Kwaliteitsfilter: drie onafhankelijk vastgestelde signalen die sterk
+// samenhangen met SL-uitkomsten. Geeft { passed, blockers } terug.
+// - passed: true = alle filters groen, signal mag gemeld worden als actie
+// - blockers: lijst van redenen bij passed=false (leeg als passed=true)
+// Neutrale besluiten altijd doorgelaten (geen positie, niets te filteren).
+export function assessSignalQuality(sample) {
+  if (!sample.discussion || sample.decision.signal === 'neutral') {
+    return { passed: true, blockers: [] };
+  }
+
+  const blockers = [];
+
+  if (sample.decision.confidence < 60) {
+    blockers.push('CEO-zekerheid onder 60%');
+  }
+  if (classifyMacroAlignment(sample) === 'contrarian') {
+    blockers.push('macro contraireert de richting');
+  }
+  if (classifyRebuttalShift(sample) === 'omlaag') {
+    blockers.push('analist verloor vertrouwen na discussie');
+  }
+
+  return { passed: blockers.length === 0, blockers };
+}
+
 // Groepeert samples per classificatie-label en berekent per groep de outcome-stats
 // via summarize(). Samples zonder discussion-data (oude backtests, vóór Fase 9)
 // worden overgeslagen - deze breakdowns hebben de teamdiscussie nodig.

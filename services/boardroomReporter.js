@@ -1,21 +1,14 @@
 import { config } from '../config/index.js';
 
-// Visuele markering of een CEO-besluit een "setup" is om naar te kijken
-// (bullish/bearish) of dat er bewust geen positie wordt genomen (neutral).
-const SETUP_MARKER = {
-  bullish: '🚨 Setup gevonden',
-  bearish: '🚨 Setup gevonden',
-  neutral: '💤 Geen actie',
-};
-
-// Extra markering naast 🚨/💤: rebuttal-shift 'omhoog' + risk/reward '<1.5'
-// (zie agents/agentAnalysis.js's isComboSignal) hangt in de backtests samen met
-// een duidelijk hogere winRate. Alleen relevant bij een setup (niet bij 💤).
-const COMBO_MARKER = ' 🌟';
-
-export function formatSetupMarker(signal, comboSignal = false) {
-  const base = SETUP_MARKER[signal];
-  return signal !== 'neutral' && comboSignal ? `${base}${COMBO_MARKER}` : base;
+// Visuele markering op basis van signaalrichting en kwaliteitsfilter:
+// - 🚨 Setup gevonden   → setup die alle kwaliteitsfilters passeert
+// - 🔶 Setup (gefilterd) → setup die minstens één kwaliteitsfilter niet haalt
+// - 💤 Geen actie       → CEO neemt bewust geen positie
+// Combo-markering 🌟 wordt alleen toegevoegd als het kwaliteitsfilter is gepasseerd.
+export function formatSetupMarker(signal, comboSignal = false, qualityResult = { passed: true }) {
+  if (signal === 'neutral') return '💤 Geen actie';
+  if (!qualityResult.passed) return '🔶 Setup (gefilterd)';
+  return comboSignal ? '🚨 Setup gevonden 🌟' : '🚨 Setup gevonden';
 }
 
 function formatDecisionBody(decision) {
@@ -26,20 +19,36 @@ function formatDecisionBody(decision) {
   );
 }
 
-export function formatCeoMessage(decision, comboSignal = false) {
-  return `**👔 CEO-besluit - ${formatSetupMarker(decision.signal, comboSignal)}**\n${formatDecisionBody(decision)}`;
+export function formatCeoMessage(decision, comboSignal = false, qualityResult = { passed: true, blockers: [] }) {
+  const marker = formatSetupMarker(decision.signal, comboSignal, qualityResult);
+  let msg = `**👔 CEO-besluit - ${marker}**\n${formatDecisionBody(decision)}`;
+  if (!qualityResult.passed && qualityResult.blockers?.length > 0) {
+    msg += `\n⚠️ Niet geadviseerd: ${qualityResult.blockers.join(', ')}.`;
+  }
+  return msg;
 }
 
 // Proactieve melding bovenop het CEO-bericht: alleen bij een combo-signaal
-// (zie agents/agentAnalysis.js's isComboSignal) op een echte setup, en alleen
-// als er een Discord user-ID is geconfigureerd om te pingen.
-export function formatComboAlert(signal, comboSignal, alertUserId) {
+// dat ook het kwaliteitsfilter passeert. Gefilterde signalen krijgen geen ping.
+export function formatComboAlert(signal, comboSignal, alertUserId, qualityResult = { passed: true }) {
   if (signal === 'neutral' || !comboSignal || !alertUserId) return null;
+  if (!qualityResult.passed) return null;
   return `🌟 <@${alertUserId}> Combo-signaal gedetecteerd - bekijk het CEO-besluit hierboven!`;
 }
 
-export function formatTraceMessages({ discussion, decision, comboSignal = false }) {
+export function formatTraceMessages({
+  discussion,
+  decision,
+  comboSignal = false,
+  qualityResult = { passed: true, blockers: [] },
+}) {
   const { analyst, riskManager, devilsAdvocate, macro, analystRebuttal } = discussion;
+  const ceoLine =
+    `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal, comboSignal, qualityResult)}**\n` +
+    formatDecisionBody(decision) +
+    (!qualityResult.passed && qualityResult.blockers?.length > 0
+      ? `\n⚠️ Niet geadviseerd: ${qualityResult.blockers.join(', ')}.`
+      : '');
 
   return [
     `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal.toUpperCase()} (zekerheid: ${analyst.confidence}%)\n${analyst.reasoning}`,
@@ -47,25 +56,31 @@ export function formatTraceMessages({ discussion, decision, comboSignal = false 
     `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
     `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal.toUpperCase()} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
-    `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal, comboSignal)}**\n${formatDecisionBody(decision)}`,
+    ceoLine,
   ];
 }
 
 export async function reportToDiscord(client, result) {
   const { ceoChannelId, traceChannelId } = config.boardroom;
+  const qualityResult = result.qualityResult ?? { passed: true, blockers: [] };
 
   if (traceChannelId) {
     const channel = await client.channels.fetch(traceChannelId);
-    for (const msg of formatTraceMessages(result)) {
+    for (const msg of formatTraceMessages({ ...result, qualityResult })) {
       await channel.send(msg);
     }
   }
 
   if (ceoChannelId) {
     const channel = await client.channels.fetch(ceoChannelId);
-    await channel.send(formatCeoMessage(result.decision, result.comboSignal));
+    await channel.send(formatCeoMessage(result.decision, result.comboSignal, qualityResult));
 
-    const alert = formatComboAlert(result.decision.signal, result.comboSignal, config.boardroom.alertUserId);
+    const alert = formatComboAlert(
+      result.decision.signal,
+      result.comboSignal,
+      config.boardroom.alertUserId,
+      qualityResult,
+    );
     if (alert) await channel.send(alert);
   }
 }

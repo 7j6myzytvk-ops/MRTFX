@@ -181,5 +181,56 @@ function check(name, actual, expected) {
   }
 }
 
+// 11. formatSetupMarker - gefilterd signaal krijgt 🔶
+{
+  const filtered = { passed: false, blockers: ['CEO-zekerheid onder 60%'] };
+  check('formatSetupMarker bullish + gefilterd -> 🔶', formatSetupMarker('bullish', false, filtered), '🔶 Setup (gefilterd)');
+  check('formatSetupMarker bearish + comboSignal + gefilterd -> 🔶', formatSetupMarker('bearish', true, filtered), '🔶 Setup (gefilterd)');
+  check('formatSetupMarker neutral + gefilterd (genegeerd) -> 💤', formatSetupMarker('neutral', false, filtered), '💤 Geen actie');
+}
+
+// 12. formatCeoMessage - gefilterd signaal bevat ⚠️-waarschuwing
+{
+  const filtered = { passed: false, blockers: ['CEO-zekerheid onder 60%', 'macro contraireert de richting'] };
+  const msg = formatCeoMessage(decision, false, filtered);
+  check('formatCeoMessage - gefilterd: marker is 🔶', msg.startsWith('**👔 CEO-besluit - 🔶 Setup (gefilterd)**'), true);
+  check('formatCeoMessage - gefilterd: bevat ⚠️-waarschuwing', msg.includes('⚠️ Niet geadviseerd:'), true);
+  check('formatCeoMessage - gefilterd: bevat eerste blocker', msg.includes('CEO-zekerheid onder 60%'), true);
+
+  // Passed signaal geen waarschuwing
+  const passedMsg = formatCeoMessage(decision, false, { passed: true, blockers: [] });
+  check('formatCeoMessage - passed: geen ⚠️', passedMsg.includes('⚠️'), false);
+}
+
+// 13. formatComboAlert - gefilterd comboSignal geeft geen ping
+{
+  const filtered = { passed: false, blockers: ['analist verloor vertrouwen na discussie'] };
+  check(
+    'formatComboAlert - comboSignal + gefilterd -> null',
+    formatComboAlert('bullish', true, '123456789', filtered),
+    null,
+  );
+  check(
+    'formatComboAlert - comboSignal + passed -> mention',
+    formatComboAlert('bullish', true, '123456789', { passed: true }),
+    '🌟 <@123456789> Combo-signaal gedetecteerd - bekijk het CEO-besluit hierboven!',
+  );
+}
+
+// 14. formatTraceMessages - gefilterd signaal: CEO-regel heeft 🔶 + ⚠️
+{
+  const discussion = {
+    analyst: { signal: 'bullish', confidence: 70, reasoning: 'r1' },
+    riskManager: { stopLoss: 4300, takeProfit: 4400, positionSize: 'klein', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 40, argument: 'r3' },
+    macro: { sentiment: 'risk-on', confidence: 60, reasoning: 'r4' },
+    analystRebuttal: { signal: 'bullish', confidence: 65, reasoning: 'r5' },
+  };
+  const filtered = { passed: false, blockers: ['macro contraireert de richting'] };
+  const msgs = formatTraceMessages({ discussion, decision, qualityResult: filtered });
+  check('formatTraceMessages - gefilterd: CEO-regel heeft 🔶', msgs[5].startsWith('**👔 CEO - eindbeslissing - 🔶 Setup (gefilterd)**'), true);
+  check('formatTraceMessages - gefilterd: CEO-regel heeft ⚠️', msgs[5].includes('⚠️ Niet geadviseerd:'), true);
+}
+
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
 if (fail > 0) process.exit(1);

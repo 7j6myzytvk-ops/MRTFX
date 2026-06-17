@@ -7,6 +7,7 @@ import {
   classifyRiskReward,
   isComboSignal,
   breakdown,
+  assessSignalQuality,
 } from '../agents/agentAnalysis.js';
 
 let pass = 0;
@@ -219,6 +220,54 @@ check(
     avgConfidenceTp: 75,
     avgConfidenceSl: null,
   });
+}
+
+// --- assessSignalQuality ---
+{
+  const base = {
+    entryPrice: 3000,
+    decision: { signal: 'bullish', confidence: 65, stopLoss: 2950, takeProfit: 3100 },
+    discussion: {
+      analyst: { confidence: 60 },
+      analystRebuttal: { confidence: 65 }, // omhoog
+      macro: { sentiment: 'risk-off' },    // risk-off + bullish = contrarian
+      devilsAdvocate: { counterSignal: 'bearish' },
+      riskManager: {},
+    },
+  };
+
+  // Alle filters groen
+  const groen = {
+    ...base,
+    decision: { signal: 'bullish', confidence: 65, stopLoss: 2950, takeProfit: 3100 },
+    discussion: {
+      ...base.discussion,
+      macro: { sentiment: 'risk-on' }, // aligned
+    },
+  };
+  check('assessSignalQuality - alles groen -> passed', assessSignalQuality(groen), { passed: true, blockers: [] });
+
+  // Zekerheid te laag
+  const laag = { ...base, decision: { ...base.decision, confidence: 55 }, discussion: { ...base.discussion, macro: { sentiment: 'risk-on' } } };
+  check('assessSignalQuality - confidence 55 -> geblokkeerd', assessSignalQuality(laag).passed, false);
+  check('assessSignalQuality - confidence 55 -> juiste blocker', assessSignalQuality(laag).blockers.includes('CEO-zekerheid onder 60%'), true);
+
+  // Macro contraireert
+  check('assessSignalQuality - macro contrarian -> geblokkeerd', assessSignalQuality(base).blockers.includes('macro contraireert de richting'), true);
+
+  // Rebuttal omlaag
+  const rebuttalDaalt = {
+    ...groen,
+    discussion: { ...groen.discussion, analystRebuttal: { confidence: 55 } }, // omlaag
+  };
+  check('assessSignalQuality - rebuttal omlaag -> geblokkeerd', assessSignalQuality(rebuttalDaalt).blockers.includes('analist verloor vertrouwen na discussie'), true);
+
+  // Neutraal signaal altijd doorgelaten
+  const neutraal = { ...base, decision: { ...base.decision, signal: 'neutral', confidence: 45 } };
+  check('assessSignalQuality - neutral signaal altijd passed', assessSignalQuality(neutraal), { passed: true, blockers: [] });
+
+  // Geen discussion -> altijd passed
+  check('assessSignalQuality - geen discussion -> passed', assessSignalQuality({ decision: { signal: 'bullish', confidence: 45 } }), { passed: true, blockers: [] });
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
