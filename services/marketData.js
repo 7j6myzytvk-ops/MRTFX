@@ -147,6 +147,25 @@ export async function getRecentUsYieldCandles({ count = 25 } = {}) {
   return data;
 }
 
+// XAU/USD weekcandles als W1-trendcontext (zie agents/multiTimeframeAlignment.js).
+// Weekdata verandert maar 1x per week, dus 24u-cache is ruim voldoende.
+const W1_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let w1CandlesCache = null;
+
+export async function getRecentXauW1Candles({ count = 20 } = {}) {
+  if (
+    w1CandlesCache &&
+    w1CandlesCache.count === count &&
+    isCacheValid(w1CandlesCache.fetchedAt, W1_CACHE_TTL_MS)
+  ) {
+    return w1CandlesCache.data;
+  }
+  const raw = await getXauUsdCandles({ granularity: 'W', count: count + 5 });
+  const data = raw.filter((c) => c.high !== c.low).slice(-count);
+  w1CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
+
 // XAU/USD dagcandles als D1-trendcontext (zie agents/dailyContext.js). Dagdata
 // verandert maar 1x per dag, dus 24u-cache voorkomt onnodige calls per tick.
 const D1_CACHE_TTL_MS = 24 * 60 * 60 * 1000;

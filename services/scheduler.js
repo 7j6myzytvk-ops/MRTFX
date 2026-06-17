@@ -1,60 +1,79 @@
 import { config } from '../config/index.js';
-import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles, getRecentXauD1Candles } from './marketData.js';
+import {
+  getRecentRealCandles,
+  getRecentEurUsdCandles,
+  getRecentUsYieldCandles,
+  getRecentXauD1Candles,
+  getRecentXauW1Candles,
+} from './marketData.js';
 import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
+import { checkConditions, formatConditionContext } from './conditionChecker.js';
 
-async function tick(client, { granularity, candleCount, ceoChannelId, traceChannelId, evaluateOutcomes }) {
+// Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
+const POLL_INTERVAL_MS = 5 * 60 * 1000;
+
+// Na een signaal wachten we minimaal 4 uur voordat een nieuw signaal mogelijk is.
+// Voorkomt dat een aanhoudende trend tientallen signalen achter elkaar genereert.
+const COOLDOWN_MS = 4 * 60 * 60 * 1000;
+
+let lastSignalTime = null;
+
+async function poll(client) {
   try {
-    const candles = await getRecentRealCandles({ granularity, count: candleCount });
+    // Cooldown-check (goedkoopste check — eerst uitvoeren)
+    if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
+
+    // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
+    const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
+      getRecentRealCandles({ granularity: 'M15', count: 100 }),
+      getRecentRealCandles({ granularity: 'M30', count: 100 }),
+      getRecentRealCandles({ granularity: 'H1', count: 50 }),
+      getRecentXauD1Candles({ count: 30 }),
+      getRecentXauW1Candles({ count: 20 }),
+    ]);
+
+    // Alle vier voorwaarden controleren
+    const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
+
+    if (!conditions.triggered) return;
+
+    // Alle voorwaarden voldaan → boardroom samenstellen
+    console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
+    lastSignalTime = Date.now();
+
     const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
     const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
-    const d1Candles = await getRecentXauD1Candles({ count: 30 });
     const newsItems = await fetchGoldNews({ maxItems: 12 });
-    const result = await runBoardroom(candles, { granularity, dollarCandles, yieldCandles, d1Candles, newsItems });
-    await reportToDiscord(client, result, { ceoChannelId, traceChannelId });
-    if (evaluateOutcomes) await evaluateOpenSignals(client);
+    const conditionContext = formatConditionContext(conditions);
+
+    // Boardroom gebruikt H1-candles als basis; de condition-context wordt
+    // als aanvullende noot meegegeven aan alle agents via contextNotes.
+    const result = await runBoardroom(h1Candles, {
+      granularity: 'H1',
+      dollarCandles,
+      yieldCandles,
+      d1Candles,
+      newsItems,
+      newsContext: conditionContext,
+    });
+
+    await reportToDiscord(client, result);
+    await evaluateOpenSignals(client);
   } catch (err) {
-    console.error(`Boardroom-scheduler [${granularity}] mislukt:`, err.message);
+    console.error('Setup-detector mislukt:', err.message);
   }
 }
 
-function startTimeframeScheduler(client, { granularity, intervalMinutes, candleCount, ceoChannelId, traceChannelId, evaluateOutcomes = false, startDelayMs = 0 }) {
-  if (!ceoChannelId) return;
-  const intervalMs = intervalMinutes * 60 * 1000;
-  console.log(`Boardroom-scheduler [${granularity}] actief, elke ${intervalMinutes} minuten.`);
-  setTimeout(() => {
-    tick(client, { granularity, candleCount, ceoChannelId, traceChannelId, evaluateOutcomes });
-    setInterval(() => tick(client, { granularity, candleCount, ceoChannelId, traceChannelId, evaluateOutcomes }), intervalMs);
-  }, startDelayMs);
-}
-
 export function startSignalScheduler(client) {
-  startTimeframeScheduler(client, {
-    granularity: 'H1',
-    intervalMinutes: 60,
-    candleCount: 50,
-    ceoChannelId: config.boardroom.ceoChannelId,
-    traceChannelId: config.boardroom.traceChannelId,
-    evaluateOutcomes: true,
-  });
-
-  startTimeframeScheduler(client, {
-    granularity: 'M30',
-    intervalMinutes: 30,
-    candleCount: 100,
-    ceoChannelId: config.boardroom.m30CeoChannelId,
-    traceChannelId: config.boardroom.m30TraceChannelId,
-    startDelayMs: 75_000,
-  });
-
-  startTimeframeScheduler(client, {
-    granularity: 'M15',
-    intervalMinutes: 15,
-    candleCount: 100,
-    ceoChannelId: config.boardroom.m15CeoChannelId,
-    traceChannelId: config.boardroom.m15TraceChannelId,
-    startDelayMs: 150_000,
-  });
+  const { ceoChannelId } = config.boardroom;
+  if (!ceoChannelId) {
+    console.log('Setup-detector uitgeschakeld: stel DISCORD_CEO_CHANNEL_ID in.');
+    return;
+  }
+  console.log(`Setup-detector actief — controleert elke ${POLL_INTERVAL_MS / 60000} minuten op setups.`);
+  poll(client);
+  setInterval(() => poll(client), POLL_INTERVAL_MS);
 }
