@@ -5,6 +5,7 @@ import {
   getRecentRealCandles,
   getRecentEurUsdCandles,
   getRecentUsYieldCandles,
+  getRecentXauD1Candles,
 } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
@@ -95,7 +96,8 @@ export function createBot() {
         const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
         const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
         const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
-        const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles });
+        const d1Candles = await getRecentXauD1Candles({ count: 30 });
+        const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles });
         await reportToDiscord(interaction.client, result);
 
         const { decision, comboSignal } = result;

@@ -1,6 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import { config } from '../config/index.js';
-import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles } from '../services/marketData.js';
+import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles, getRecentXauD1Candles } from '../services/marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { formatTraceMessages, formatCeoMessage } from '../services/boardroomReporter.js';
 
@@ -12,12 +12,13 @@ console.log('Live H1-candles ophalen...');
 const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
 const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
 const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
+const d1Candles = await getRecentXauD1Candles({ count: 30 });
 
 if (newsContext) {
   console.log(`Marktcontext meegegeven aan het team: "${newsContext}"`);
 }
 
-const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles });
+const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles });
 console.log('\nResultaat:', JSON.stringify(result, null, 2));
 
 const { ceoChannelId, traceChannelId } = config.boardroom;
@@ -34,7 +35,7 @@ if (traceChannelId) {
 
 if (ceoChannelId) {
   await rest.post(Routes.channelMessages(ceoChannelId), {
-    body: { content: formatCeoMessage(result.decision, result.comboSignal) },
+    body: { content: formatCeoMessage(result.decision, result.comboSignal, result.qualityResult) },
   });
   console.log('CEO-besluit gepost naar', ceoChannelId);
 } else {

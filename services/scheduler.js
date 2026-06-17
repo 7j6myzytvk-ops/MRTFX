@@ -1,5 +1,5 @@
 import { config } from '../config/index.js';
-import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles } from './marketData.js';
+import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles, getRecentXauD1Candles } from './marketData.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
@@ -20,7 +20,8 @@ export function startSignalScheduler(client) {
       const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
       const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
       const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
-      const result = await runBoardroom(candles, { dollarCandles, yieldCandles });
+      const d1Candles = await getRecentXauD1Candles({ count: 30 });
+      const result = await runBoardroom(candles, { dollarCandles, yieldCandles, d1Candles });
       await reportToDiscord(client, result);
       await evaluateOpenSignals(client);
     } catch (err) {

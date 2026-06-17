@@ -268,6 +268,19 @@ check(
 
   // Geen discussion -> altijd passed
   check('assessSignalQuality - geen discussion -> passed', assessSignalQuality({ decision: { signal: 'bullish', confidence: 45 } }), { passed: true, blockers: [] });
+
+  // R:R te hoog (>2.5): entryPrice 3000, SL 2990 (risk 10), TP 3100 (reward 100) -> RR 10
+  const rrTeHoog = {
+    ...groen,
+    entryPrice: 3000,
+    decision: { ...groen.decision, stopLoss: 2990, takeProfit: 3100 },
+  };
+  check('assessSignalQuality - R:R >2.5 -> geblokkeerd', assessSignalQuality(rrTeHoog).blockers.includes('risico/winst-verhouding te ambitieus (>2.5)'), true);
+  check('assessSignalQuality - R:R >2.5 -> passed false', assessSignalQuality(rrTeHoog).passed, false);
+
+  // Geen entryPrice: R:R-filter mag niet triggeren
+  const geenEntry = { ...groen, entryPrice: undefined };
+  check('assessSignalQuality - geen entryPrice -> R:R niet geblokkeerd', assessSignalQuality(geenEntry).blockers.includes('risico/winst-verhouding te ambitieus (>2.5)'), false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

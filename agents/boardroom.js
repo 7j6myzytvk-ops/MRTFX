@@ -8,11 +8,12 @@ import { computeIndicators, formatIndicatorsNote } from './indicators.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
+import { computeDailyContext, formatDailyContextNote } from './dailyContext.js';
 import { appendSignal } from '../data/store.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null } = {},
 ) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
@@ -20,11 +21,13 @@ export async function runDiscussion(
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
   const yieldContextNote =
     yieldCandles && yieldCandles.length >= 2 ? formatYieldContextNote(computeYieldContext(yieldCandles)) : '';
-  // Alle drie de context-notes worden door elke agent op exact dezelfde plek
+  const dailyContextNote =
+    d1Candles && d1Candles.length >= 5 ? formatDailyContextNote(computeDailyContext(d1Candles)) : '';
+  // Alle context-notes worden door elke agent op exact dezelfde plek
   // (na newsContextNote, in deze volgorde) aan de prompt toegevoegd - daarom
-  // hier samengevoegd tot één string, zodat een nieuwe factor (Fase 16+) alleen
-  // hier en niet in alle 6 agent-bestanden hoeft te worden toegevoegd.
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote;
+  // hier samengevoegd tot één string, zodat een nieuwe factor alleen
+  // hier en niet in alle agent-bestanden hoeft te worden toegevoegd.
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote;
   const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);

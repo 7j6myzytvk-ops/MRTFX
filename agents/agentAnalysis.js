@@ -76,6 +76,9 @@ export function assessSignalQuality(sample) {
   if (classifyRebuttalShift(sample) === 'omlaag') {
     blockers.push('analist verloor vertrouwen na discussie');
   }
+  if (sample.entryPrice != null && classifyRiskReward(sample) === '>2.5') {
+    blockers.push('risico/winst-verhouding te ambitieus (>2.5)');
+  }
 
   return { passed: blockers.length === 0, blockers };
 }

@@ -64,6 +64,21 @@ function yieldWindowFor(sampleTime) {
   return yieldCandles.filter((c) => c.time <= sampleTime).slice(-25);
 }
 
+// XAU/USD dagcandles voor D1-trendcontext (zie agents/dailyContext.js).
+// Zelfde aanpak als yield: laatste 30 dagcandles vóór de sample-tijd.
+const d1From = new Date(from.getTime() - 40 * 24 * 60 * 60 * 1000);
+const rawD1Candles = await getXauUsdCandles({
+  granularity: 'D',
+  from: d1From.toISOString(),
+  to: to.toISOString(),
+});
+const d1AllCandles = rawD1Candles.filter((c) => c.high !== c.low);
+console.log(`${d1AllCandles.length} D1-candles (XAU/USD, dag) voor dagtrendcontext.`);
+
+function d1WindowFor(sampleTime) {
+  return d1AllCandles.filter((c) => c.time <= sampleTime).slice(-30);
+}
+
 // Schrijf na elke sample weg, zodat een trage/vastlopende Claude-call (de
 // boardroom-loop kan lang duren) niet betekent dat reeds voltooide samples
 // verloren gaan als het script crasht of wordt afgebroken.
@@ -95,6 +110,7 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
   const sampleTime = window[window.length - 1].time;
   const dollarCandles = eurWindowFor(window);
   const yieldCandlesForSample = yieldWindowFor(sampleTime);
+  const d1CandlesForSample = d1WindowFor(sampleTime);
 
   let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -104,6 +120,7 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
         granularity: 'H1',
         dollarCandles,
         yieldCandles: yieldCandlesForSample,
+        d1Candles: d1CandlesForSample,
       });
       break;
     } catch (err) {

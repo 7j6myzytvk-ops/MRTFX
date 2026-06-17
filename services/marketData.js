@@ -146,3 +146,23 @@ export async function getRecentUsYieldCandles({ count = 25 } = {}) {
   yieldCandlesCache = { count, data, fetchedAt: Date.now() };
   return data;
 }
+
+// XAU/USD dagcandles als D1-trendcontext (zie agents/dailyContext.js). Dagdata
+// verandert maar 1x per dag, dus 24u-cache voorkomt onnodige calls per tick.
+const D1_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let d1CandlesCache = null; // { count, data, fetchedAt }
+
+export async function getRecentXauD1Candles({ count = 30 } = {}) {
+  if (
+    d1CandlesCache &&
+    d1CandlesCache.count === count &&
+    isCacheValid(d1CandlesCache.fetchedAt, D1_CACHE_TTL_MS)
+  ) {
+    return d1CandlesCache.data;
+  }
+
+  const raw = await getXauUsdCandles({ granularity: 'D', count: count + 10 });
+  const data = raw.filter((c) => c.high !== c.low).slice(-count);
+  d1CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
