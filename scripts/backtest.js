@@ -9,6 +9,8 @@ const HORIZON = HORIZON_CANDLES; // candles (~2 dagen) om de uitkomst te bepalen
 const SAMPLE_STEP = 24; // candles tussen samples (~1x per dag)
 
 const DAYS = Number(process.argv[2]) || 10;
+// Optionele einddatum als derde argument, bv: node scripts/backtest.js 30 2026-04-30
+// Hiermee kun je out-of-sample backtests draaien op historische periodes.
 
 const FILE = path.join(process.cwd(), 'data', 'backtests.json');
 
@@ -22,7 +24,7 @@ async function readAll() {
   }
 }
 
-const to = new Date();
+const to = process.argv[3] ? new Date(process.argv[3]) : new Date();
 const from = new Date(to.getTime() - DAYS * 24 * 60 * 60 * 1000);
 
 console.log(`Candles ophalen van ${from.toISOString()} t/m ${to.toISOString()}...`);

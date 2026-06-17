@@ -9,11 +9,12 @@ import { computeDollarContext, formatDollarContextNote } from './dollarContext.j
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
 import { computeDailyContext, formatDailyContextNote } from './dailyContext.js';
+import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, newsItems = [] } = {},
 ) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
@@ -32,18 +33,19 @@ export async function runDiscussion(
 
   const analysis = await analyzeCandles(candles, opts);
 
-  const [risk, devilsAdvocate, macro] = await Promise.all([
+  const [risk, devilsAdvocate, macro, geopolitical] = await Promise.all([
     assessRisk(candles, analysis, opts),
     challengeAnalysis(candles, analysis, opts),
     assessSentiment(candles, analysis, opts),
+    assessGeopolitical(newsItems, { instrument, granularity }),
   ]);
 
-  const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro }, opts);
+  const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro, geopolitical }, opts);
 
-  const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, rebuttal }, opts);
+  const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, opts);
 
   const entryPrice = candles[candles.length - 1].close;
-  const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, analystRebuttal: rebuttal };
+  const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, geopolitical, analystRebuttal: rebuttal };
   const sample = { discussion, decision, entryPrice };
   const comboSignal = isComboSignal(sample);
   const qualityResult = assessSignalQuality(sample);

@@ -23,7 +23,7 @@ const DECISION_TOOL = {
 
 export async function decide(
   candles,
-  { analysis, risk, devilsAdvocate, macro, rebuttal },
+  { analysis, risk, devilsAdvocate, macro, geopolitical = null, rebuttal },
   { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
@@ -55,17 +55,26 @@ export async function decide(
           `(zekerheid ${devilsAdvocate.counterConfidence}%) - ${devilsAdvocate.argument}\n\n` +
           `4) Onafhankelijk macro/sentiment-oordeel: "${macro.sentiment}" ` +
           `(zekerheid ${macro.confidence}%) - ${macro.reasoning}\n\n` +
+          (geopolitical && geopolitical.confidence > 0
+            ? `5) Geopolitieke/nieuws-analyse: "${geopolitical.assessment}" ` +
+              `(zekerheid ${geopolitical.confidence}%) - ${geopolitical.reasoning}` +
+              (geopolitical.keyEvents?.length
+                ? ` | Sleutel-events: ${geopolitical.keyEvents.join('; ')}`
+                : '') +
+              `\n\n`
+            : '') +
           `Na de discussie herzag de technisch analist zijn standpunt: signaal "${rebuttal.signal}" ` +
           `(zekerheid ${rebuttal.confidence}%) - ${rebuttal.reasoning}\n\n` +
-          `Neem nu het definitieve besluit. De drie directionele invalshoeken (technische analyse, ` +
-          `tegenscenario en macro/sentiment) wegen elk even zwaar - er is geen standaard-standpunt. ` +
-          `Kalibreer je zekerheid op basis van consensus: drie stemmen eensgezind → boven 70%; ` +
-          `twee tegen één → 55-70%; verdeeld of sterke twijfel → overweeg neutraal. ` +
+          `Neem nu het definitieve besluit. De directionele invalshoeken (technische analyse, ` +
+          `tegenscenario, macro/sentiment${geopolitical && geopolitical.confidence > 0 ? ' en geopolitiek/nieuws' : ''}) ` +
+          `wegen elk even zwaar — er is geen standaard-standpunt. ` +
+          `Kalibreer je zekerheid op basis van consensus: alle drie (of vier) stemmen eensgezind → boven 70%; ` +
+          `meerderheid eensgezind → 55-70%; verdeeld of sterke twijfel → overweeg neutraal. ` +
           `De risicobeoordeling (invalshoek 2) informeert je SL/TP en positiegrootte, niet de richting. ` +
           `Als jouw signaal afwijkt van de technisch analist, stel dan ook nieuwe SL/TP-niveaus in ` +
           `die bij jouw richting passen — de risicomanager's niveaus zijn berekend voor het analist-signaal. ` +
-          `Onderbouw je besluit met concrete verwijzingen naar alle drie de directionele ` +
-          `invalshoeken.${newsContextNote}${contextNotes}`,
+          `Onderbouw je besluit met concrete verwijzingen naar de directionele invalshoeken.` +
+          `${newsContextNote}${contextNotes}`,
       },
     ],
   });

@@ -74,7 +74,7 @@ export async function analyzeCandles(
 export async function reviewDiscussion(
   candles,
   analysis,
-  { risk, devilsAdvocate, macro },
+  { risk, devilsAdvocate, macro, geopolitical = null },
   { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
@@ -102,9 +102,14 @@ export async function reviewDiscussion(
           `Devil's Advocate (tegen-signaal "${devilsAdvocate.counterSignal}", zekerheid ${devilsAdvocate.counterConfidence}%): ` +
           `${devilsAdvocate.argument}\n\n` +
           `Marktcontext/Sentiment ("${macro.sentiment}", zekerheid ${macro.confidence}%): ${macro.reasoning}\n\n` +
+          (geopolitical && geopolitical.confidence > 0
+            ? `Geopolitieke/nieuws-analist ("${geopolitical.assessment}", zekerheid ${geopolitical.confidence}%): ` +
+              `${geopolitical.reasoning}\n\n`
+            : '') +
           `Geef je herziene of bevestigde signaal en zekerheid, met een korte reactie op de discussie. ` +
-          `Weeg elk argument inhoudelijk: als het macro-oordeel of het tegenscenario steekhoudende ` +
-          `punten maakt, pas dan je zekerheidspercentage aan — ook als je bij je richting blijft. ` +
+          `Weeg elk argument inhoudelijk: als het macro-oordeel, het tegenscenario of de geopolitieke ` +
+          `analyse steekhoudende punten maakt, pas dan je zekerheidspercentage aan — ook als je bij ` +
+          `je richting blijft. ` +
           `Een onveranderd percentage is alleen gerechtvaardigd als je elk argument ` +
           `concreet kunt weerleggen.${newsContextNote}${contextNotes}`,
       },

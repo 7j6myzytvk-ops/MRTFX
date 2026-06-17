@@ -21,4 +21,9 @@ export const config = {
     traceChannelId: process.env.DISCORD_TRACE_CHANNEL_ID,
     alertUserId: process.env.DISCORD_ALERT_USER_ID,
   },
+  news: {
+    newsApiKey: process.env.NEWS_API_KEY,
+    finnhubApiKey: process.env.FINNHUB_API_KEY,
+    gNewsApiKey: process.env.GNEWS_API_KEY,
+  },
 };

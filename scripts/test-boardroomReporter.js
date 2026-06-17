@@ -232,5 +232,53 @@ function check(name, actual, expected) {
   check('formatTraceMessages - gefilterd: CEO-regel heeft ⚠️', msgs[5].includes('⚠️ Niet geadviseerd:'), true);
 }
 
+// 15. formatTraceMessages - geopolitieke agent aanwezig + confidence > 0 → 7 berichten
+{
+  const discussion = {
+    analyst: { signal: 'bullish', confidence: 70, reasoning: 'r1' },
+    riskManager: { stopLoss: 4300, takeProfit: 4400, positionSize: 'klein', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 40, argument: 'r3' },
+    macro: { sentiment: 'risk-on', confidence: 60, reasoning: 'r4' },
+    geopolitical: { assessment: 'bullish', confidence: 75, reasoning: 'Iran-spanningen stijgen.', keyEvents: ['Iran-sancties uitgebreid'] },
+    analystRebuttal: { signal: 'bullish', confidence: 65, reasoning: 'r5' },
+  };
+  const msgs = formatTraceMessages({ discussion, decision });
+  check('formatTraceMessages - geo actief: 7 berichten', msgs.length, 7);
+  check('formatTraceMessages - geo actief: bericht 5 is geopolitiek', msgs[4].startsWith('**📰 Geopolitieke/nieuws-analyse**'), true);
+  check('formatTraceMessages - geo actief: bevat assessment', msgs[4].includes('bullish (zekerheid: 75%)'), true);
+  check('formatTraceMessages - geo actief: bevat keyEvents', msgs[4].includes('Iran-sancties uitgebreid'), true);
+  check('formatTraceMessages - geo actief: laatste bericht is CEO', msgs[6].startsWith('**👔 CEO - eindbeslissing'), true);
+}
+
+// 16. formatTraceMessages - geopolitieke agent aanwezig maar confidence === 0 → 6 berichten
+{
+  const discussion = {
+    analyst: { signal: 'bullish', confidence: 70, reasoning: 'r1' },
+    riskManager: { stopLoss: 4300, takeProfit: 4400, positionSize: 'klein', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 40, argument: 'r3' },
+    macro: { sentiment: 'risk-on', confidence: 60, reasoning: 'r4' },
+    geopolitical: { assessment: 'neutraal', confidence: 0, reasoning: 'Geen nieuws.', keyEvents: [] },
+    analystRebuttal: { signal: 'bullish', confidence: 65, reasoning: 'r5' },
+  };
+  const msgs = formatTraceMessages({ discussion, decision });
+  check('formatTraceMessages - geo inactief (conf=0): 6 berichten', msgs.length, 6);
+  check('formatTraceMessages - geo inactief: geen geo-bericht', msgs.every((m) => !m.startsWith('**📰')), true);
+}
+
+// 17. formatTraceMessages - geopolitieke agent zonder keyEvents
+{
+  const discussion = {
+    analyst: { signal: 'bearish', confidence: 65, reasoning: 'r1' },
+    riskManager: { stopLoss: 4500, takeProfit: 4350, positionSize: 'normaal', reasoning: 'r2' },
+    devilsAdvocate: { counterSignal: 'bullish', counterConfidence: 30, argument: 'r3' },
+    macro: { sentiment: 'risk-off', confidence: 70, reasoning: 'r4' },
+    geopolitical: { assessment: 'bearish', confidence: 55, reasoning: 'Vrede-akkoord nabij.', keyEvents: [] },
+    analystRebuttal: { signal: 'bearish', confidence: 60, reasoning: 'r5' },
+  };
+  const msgs = formatTraceMessages({ discussion, decision });
+  check('formatTraceMessages - geo zonder keyEvents: 7 berichten', msgs.length, 7);
+  check('formatTraceMessages - geo zonder keyEvents: geen keyEvents-regel', !msgs[4].includes('Sleutel-events:'), true);
+}
+
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
 if (fail > 0) process.exit(1);

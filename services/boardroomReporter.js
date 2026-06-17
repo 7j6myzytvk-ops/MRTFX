@@ -42,7 +42,7 @@ export function formatTraceMessages({
   comboSignal = false,
   qualityResult = { passed: true, blockers: [] },
 }) {
-  const { analyst, riskManager, devilsAdvocate, macro, analystRebuttal } = discussion;
+  const { analyst, riskManager, devilsAdvocate, macro, geopolitical, analystRebuttal } = discussion;
   const ceoLine =
     `**👔 CEO - eindbeslissing - ${formatSetupMarker(decision.signal, comboSignal, qualityResult)}**\n` +
     formatDecisionBody(decision) +
@@ -50,14 +50,28 @@ export function formatTraceMessages({
       ? `\n⚠️ Niet geadviseerd: ${qualityResult.blockers.join(', ')}.`
       : '');
 
-  return [
+  const messages = [
     `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal.toUpperCase()} (zekerheid: ${analyst.confidence}%)\n${analyst.reasoning}`,
     `**🛡️ Risicomanager**\nSL: ${riskManager.stopLoss} | TP: ${riskManager.takeProfit} | Positiegrootte: ${riskManager.positionSize}\n${riskManager.reasoning}`,
     `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
+  ];
+
+  if (geopolitical && geopolitical.confidence > 0) {
+    const keyEventsNote = geopolitical.keyEvents?.length
+      ? `\nSleutel-events: ${geopolitical.keyEvents.join('; ')}`
+      : '';
+    messages.push(
+      `**📰 Geopolitieke/nieuws-analyse**\nOordeel: ${geopolitical.assessment} (zekerheid: ${geopolitical.confidence}%)\n${geopolitical.reasoning}${keyEventsNote}`,
+    );
+  }
+
+  messages.push(
     `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal.toUpperCase()} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
     ceoLine,
-  ];
+  );
+
+  return messages;
 }
 
 export async function reportToDiscord(client, result) {
