@@ -610,3 +610,82 @@ vermeden call mee naarmate er meer candle-series per tick bijkomen.
   2026-06-16), 2e call 0ms (cache-hit), identieke data.
 - Volledige regressiesuite (alle `scripts/test-*.js`) groen.
 - Bot herstart 32179 -> 32331.
+
+## Fase 19 - Agent-onafhankelijkheid hersteld + volledige prompt-audit (klaar)
+
+### Aanleiding
+Backtest-analyse (N=18 combo-samples, records #10-#14) onthulde twee
+structurele problemen:
+1. **Drie van vijf agents toonden nul variatie** in alle 47+ samples:
+   Devil's Advocate altijd "oneens" (100%), macro altijd "aligned" (100%),
+   CEO altijd "volgt-analist" (100%). De boardroom-discussie had geen
+   werkelijk effect op het besluit - de analist bepaalde alles.
+   Root cause: de macro-analist kreeg het analist-signaal mee in zijn prompt
+   en werd gevraagd of dit "ondersteunt of relativeert" → structureel
+   afhankelijk, nooit onafhankelijk. De CEO stond de analist als input #1 én
+   #5 (weerwoord) en kon "afwijken als de discussie dat rechtvaardigt" →
+   impliciete default richting de analist.
+2. **🌟-combo-signaal gebaseerd op dunne, niet-onafhankelijke data**: N=18
+   samples alle uit dezelfde 30-daagse bearish periode (mei-juni 2026).
+   WinRate daalde als N groeide: 90%→84.6%→73.3%→64.7%.
+
+### Eerste fix - agent-onafhankelijkheid (commit 865229a)
+- **`agents/macroAnalyst.js`**: analist-signaal volledig uit de prompt
+  verwijderd (parameter hernoemd naar `_analysis`). Macro-analist vormt nu
+  een volledig onafhankelijk sentiment-oordeel op basis van candles, dollar
+  en rente - zonder te weten wat de technisch analist heeft geconcludeerd.
+- **`agents/ceo.js`**: expliciete meerderheidsregel ingevoerd: als drie of
+  vier invalshoeken dezelfde richting wijzen, is dat doorslaggevend. "Je mag
+  afwijken als de discussie dat rechtvaardigt" vervangen door "er is geen
+  standaard-standpunt".
+
+### Volledige prompt-audit en correcties (commit 256fe11)
+Na een zorgvuldige analyse van alle agent-prompts en context-bestanden
+zijn de volgende aanvullende verbeteringen doorgevoerd:
+
+- **Analist (`analyzeCandles`)**: events-noot toegevoegd (zelfde patroon als
+  risicomanager en macro-analist) - analist weet nu van aankomende
+  marktbewegende USD-events en past zijn zekerheid daarop aan.
+- **Analist (`reviewDiscussion`)**: escape-hatch verwijderd. "Je mag bij je
+  eigen analyse blijven als de tegenargumenten je niet overtuigen" is
+  vervangen door: "Weeg elk argument inhoudelijk. Pas je
+  zekerheidspercentage aan als andere invalshoeken steekhoudende punten
+  maken - ook als je bij je richting blijft. Een onveranderd percentage is
+  alleen gerechtvaardigd als je elk argument concreet kunt weerleggen."
+- **Risicomanager**: kwalitatief risico-oordeel toegevoegd. Beoordeelt nu
+  ook de kwaliteit van de trade (R:R-verhouding, te hoge volatiliteit) en
+  kan expliciet adviseren voor "kleinste positiegrootte" als handelen niet
+  verantwoord is - zodat de CEO een "skip this trade"-signaal kan ontvangen.
+- **Devil's Advocate**: events-noot toegevoegd - kan aankomende grote events
+  inzetten als sterkste tegenargument ("technische setups kunnen binnen
+  uren worden omgekeerd").
+- **Macro-analist**: parenthetische richting-toelichting verwijderd
+  ("risk-on = goud onder druk"). Macro-analist redeneert nu zelf wat
+  risk-on/off betekent voor XAU/USD in de specifieke marktomgeving.
+- **CEO**: drie verbeteringen:
+  (a) Risicomanager expliciet gelabeld als "sizing en niveaus, geen
+      directioneel oordeel" - telt niet mee als directionele stem.
+  (b) Zekerheidsschaal op basis van consensus: drie stemmen eensgezind
+      → >70%; twee tegen één → 55-70%; verdeeld → overweeg neutraal.
+  (c) Expliciete instructie: als CEO-signaal afwijkt van het analist-signaal,
+      stel dan ook nieuwe SL/TP-niveaus in die bij de CEO-richting passen.
+- **Economische kalender**: uitgebreid van 3 events (alleen 17 juni 2026)
+  naar 12 events t/m augustus 2026 (NFP, CPI, FOMC juli/aug, Jackson Hole).
+
+### Validatie
+- 62 bestaande tests groen (geen nieuwe tests: dit zijn pure prompt-wijzigingen,
+  geen logica-wijzigingen).
+- Bot herstart na commit: PID 47992.
+- Eerste backtest-run met Fase 19-prompts gestart als achtergrondproces
+  (PID 55317, log `/tmp/backtest_fase19.log`, wordt record #15). Dit levert
+  de eerste data waarbij de agents écht onafhankelijk redeneren - voor
+  vergelijking met de pre-Fase-19-bevindingen (macro altijd aligned, CEO
+  altijd volgt-analist).
+
+### Openstaand
+- Wacht op eerste scheduler-ticks met de nieuwe prompts om te verifiëren
+  dat macro nu wél soms een richtingafwijking geeft en de CEO die meeneemt.
+- Record #15 (backtest met Fase 19-prompts) analyseren zodra compleet:
+  - Heeft macro nog steeds 100% "aligned"?
+  - Wijkt de CEO nu soms af van de analist?
+  - Houdt het combo-signaal stand met genuïnere deliberatie?
