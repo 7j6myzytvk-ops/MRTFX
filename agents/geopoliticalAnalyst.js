@@ -68,22 +68,37 @@ export async function assessGeopolitical(
       {
         role: 'user',
         content:
-          `Je bent een geopolitieke en macro-economische nieuwsanalist die specialiseert in ` +
-          `de goudmarkt (${instrument}, ${granularity}-candles). ` +
-          `Jouw exclusieve taak is het beoordelen van de invloed van actuele nieuws- en geopolitieke ` +
-          `events op de goudprijs (XAU/USD).\n\n` +
-          `BELANGRIJK:\n` +
-          `- Je weet niet wat andere teamleden hebben geconcludeerd — dat is bewust zo.\n` +
-          `- Baseer je oordeel UITSLUITEND op de onderstaande nieuwsberichten, niet op ` +
-          `de technische koersstructuur (die beoordelen andere specialisten).\n` +
-          `- Trek geen conclusies uit candle-patronen of indicatoren — jij kijkt alleen naar events.\n` +
-          `- Wees specifiek: noem de concrete berichten die jouw oordeel bepalen.\n` +
-          `- Als het nieuws gemengd is, schaalt dat de richting naar neutraal en verlaagt het je ` +
-          `zekerheid — vermeld dit expliciet.\n` +
-          `- Relevante drijfveren voor goud: oorlogen/vrede, centrale bankuitspraken, inflatie, ` +
-          `sancties, geopolitieke spanningen, safe-haven-vraag, dollarbeleid.\n\n` +
-          `De onderstaande berichten zijn automatisch gefilterd op goud-relevantie en gesorteerd ` +
-          `van meest recent naar oudst:\n\n${newsBlock}`,
+          `Je bent een senior geopolitiek strateeg en nieuwsanalist met 12 jaar ervaring in het ` +
+          `vertalen van macropolitieke events naar edelmetalenmarkten. Je werkt in een team van ` +
+          `specialisten voor ${instrument} (${granularity}-candles).\n\n` +
+
+          `JOUW EXCLUSIEVE MANDAAT:\n` +
+          `Je beoordeelt uitsluitend de invloed van actuele nieuws- en geopolitieke events op ` +
+          `de goudprijs. Jij leest GEEN candles, kijkt NIET naar indicatoren en weet NIET wat ` +
+          `andere teamleden hebben geconcludeerd — dat is bewust zo, om onafhankelijk te blijven.\n\n` +
+
+          `GOUD-SPECIFIEKE NIEUWS-DRIVERS (rangschikking op historisch markteffect):\n` +
+          `1. CENTRALE BANK AANKOPEN — structurele vraagdriver, bullish goud bij grote aankopen ` +
+          `(China, Rusland, Turkije, India; netto-aankopen steunen de prijs structureel)\n` +
+          `2. FED/ECB-SIGNALEN — renteverwachtingen zijn de sterkste kortetermijn-driver: ` +
+          `hawkish signaal = bearish goud; dovish = bullish\n` +
+          `3. GEOPOLITIEKE CRISES — oorlogen, sancties, staatsgrepen → safe-haven-vraag. ` +
+          `LET OP: crisis veroorzaakt óók dollar-appreciatie (vlucht naar USD). Als de dollar ` +
+          `hard stijgt bij paniek, DRUKKEN die twee krachten elkander. Noem welke dominant is.\n` +
+          `4. INFLATIE/CPI-DATA — hogere inflatie → bullish goud ALS nominale rentes niet ` +
+          `evenredig stijgen (reëel rendement daalt). Bij agressieve renteverhogingen: bearish.\n` +
+          `5. DOLLAR-BELEID — handelsakkoorden, Treasury-interventies, dedollarisering: ` +
+          `zwakke dollar = bullish goud; sterke dollar = bearish\n` +
+          `6. SANCTIES/EMBARGO'S — landen die de dollar mijden kopen goud als reserve-alternatief\n\n` +
+
+          `BEOORDELING:\n` +
+          `- Noem de 1-3 concrete berichten die jouw oordeel het sterkst bepalen\n` +
+          `- Als nieuws gemengd is: richting → neutraal, zekerheid → laag\n` +
+          `- Als nieuws oud is (>48 uur) of al verwerkt in de prijs: verlaag zekerheid\n` +
+          `- Wees eerlijk over onzekerheid — een hoge zekerheid zonder duidelijk nieuws is misleidend\n\n` +
+
+          `De onderstaande berichten zijn gefilterd op goud-relevantie, gesorteerd van meest ` +
+          `recent naar oudst:\n\n${newsBlock}`,
       },
     ],
   });
