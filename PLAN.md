@@ -922,14 +922,56 @@ Senior institutioneel risicomanager. Gold-specifieke SL/TP: stop voorbij ronde
 $50-niveaus (stop hunt preventie), minimum 0.5×ATR, TP max 2×ATR voor intraday.
 Volatiliteitsdrempel: avg range >30 → positiegrootte één stap lager.
 
-### Backtest #22 (lopend)
-45-dagenrun met nieuwe prompts gestart (vergelijking met record #21: N=29,
-winRate 37.5%, oude prompts). Eerste 8 samples: 4 TP / 1 SL / 3 neutraal
-→ winRate 80% (N=5). Nog lopend.
+### Backtest #22 (klaar)
+45-dagenrun (N=29), vergelijking Record #21 vs #22 (exacte zelfde periode):
+- Record #21 (oude prompts): 37.5% winRate (9 TP / 10 SL / 0 neutraal / 10 neutral)
+- Record #22 (Fase 29 prompts): **56.3% winRate** (9 TP / 7 SL / 13 neutraal)
+- Verbetering: +18.8pp. Nieuwe prompts filteren agressiever (13 vs 1 neutraal)
+  en winnen vaker wanneer ze wél handelen. Gedragsverandering correct.
 
-### Cumulatieve analyse (N=286, 22 runs)
+### Cumulatieve analyse (N=313, 22 runs)
 Sterkste voorspellers bevestigd:
-- Rebuttal omhoog: 48.2% winRate vs. omlaag: 30.5% (17.7pp gap)
+- Rebuttal omhoog: 49.6% winRate vs. omlaag: 30.3% (19.3pp gap)
 - R:R >2.5: 24% winRate (filter correct)
-- DA "eens" met besluit: 50% vs. "oneens": 38.9%
-- CEO confidence >70% presteert niet beter dan 60-70% (overconfidence risico)
+- DA "eens" met besluit: 50% (N=20)
+- CEO confidence >70%: 43.3% vs. 60-70%: 43.2% (nauwelijks verschil)
+
+## Fase 30 - ICT/SMC prompt-optimalisatie (klaar)
+
+Op basis van online research naar ICT (Inner Circle Trader) en SMC (Smart Money
+Concepts) frameworks, gevalideerd door backtest #22 (+18.8pp).
+
+### Technisch analist (`agents/analyst.js`)
+Volledige vervanging van generieke gold-kennis door ICT/SMC-framework:
+- BOS (Break of Structure) vs CHoCH (Change of Character) — CHoCH is zwaarder
+- Premium/Discount zones: equilibrium (50%-punt van recente range) als referentie
+- Liquiditeitslogica: gelijke H/L als stop-clusters, institutioneel "sweepen"
+- Judas Swing (London 07:00-10:00 UTC): valse breakout Aziatische range
+- New York Kill Zone (12:00-15:00 UTC): echte institutionele beweging
+- Inducement, Order Blocks, Breaker Blocks, Fair Value Gaps (FVG)
+- Ronde $50-niveaus als harde institutionele zones
+CoT uitgebreid van 6 naar 7 stappen — stap 4: SESSIE & MANIPULATIECONTEXT.
+Weerwoord: specifieke reactie op elk van de 5 DA-categorieën verplicht;
+Judas Swing (②) = zwaar wegende informatie.
+
+### Bear Researcher (`agents/devilsAdvocate.js`)
+5-categorieën mandaat nu gebaseerd op onderzoek ("Only the Devil's Advocate
+Works" paper): expliciete structuur geeft 99.2% challenge-rate vs. 55% voor
+zachte mandaten. Verplichte zoekgebieden met concrete ICT/SMC-criteria:
+① Marktstructuur (CHoCH hogere TF), ② Liquiditeitsval/Judas Swing (stop-cluster,
+premium/discount), ③ Macro-tegenwind, ④ Momentum-waarschuwing (RSI/MACD),
+⑤ Entry-kwaliteit (trigger, te laat, SL logisch). max_tokens: 512 → 1024.
+
+### Macro-analist (`agents/macroAnalyst.js`)
+Sessie-context voor goud toegevoegd: Aziatische sessie (accumulatie, low
+liquiditeit), London Kill Zone (manipulatiefase, Judas Swings), NY Kill Zone
+(echte institutionele beweging), London Close (positie-sluiting).
+
+### CEO (`agents/ceo.js`, Fase 30b)
+Specifieke DA-categorie weging toegevoegd:
+- Categorie ② (Judas Swing/liquiditeitsval) = zwaarste single-factor risico
+  in goudhandel. Verlaag zekerheid significant of kies neutraal.
+- Lage counter-zekerheid zonder argumenten in alle vijf categorieën = sterk
+  bevestigingssignaal.
+Vaste drempel 4 toegevoegd: sessie-check (London Kill Zone zonder bewijs van
+afgeronde Judas Swing → zekerheid verlagen of neutraal).
