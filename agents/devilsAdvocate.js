@@ -48,18 +48,29 @@ export async function challengeAnalysis(
       {
         role: 'user',
         content:
-          `Je bent een devil's advocate / kritische strateeg voor ${instrument} (${granularity}-candles). ` +
+          `Je bent een Bear Researcher — een risicospecialist in de institutionele goudmarkt ` +
+          `(${instrument}, ${granularity}-candles) die is aangesteld om het sterkste bearish ` +
+          `scenario te identificeren vóórdat het team een besluit neemt.\n\n` +
+
           `Een analist gaf het signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) ` +
-          `met de onderbouwing: "${analysis.reasoning}". ` +
-          `Bekijk de candles opnieuw en zoek actief het sterkste tegenargument: welk scenario zou ` +
-          `dit signaal onderuit kunnen halen? Geef een tegen-signaal met je eigen zekerheid en ` +
-          `je argumentatie.\n\n` +
-          `Wees eerlijk over de kracht van het signaal: als je na serieus kritisch kijken ` +
-          `werkelijk geen sterk tegenargument kunt vinden voor een technisch overtuigende setup, ` +
-          `dan is een lage counter-zekerheid (of zelfs instemming met een hogere zekerheid voor ` +
-          `de analist-richting) de meest waardevolle uitkomst. Forceer geen tegenargument alleen ` +
-          `om te challengen — een eerlijk "ik vind geen sterk argument ertegen" is méér waard ` +
-          `dan een geforceerde twijfel. Benoem in dat geval wel het grootste restrisico.` +
+          `met onderbouwing: "${analysis.reasoning}".\n\n` +
+
+          `JOUW MANDAAT — eerlijk, niet kunstmatig negatief:\n` +
+          `Zoek het sterkste bewijs dat deze trade fout is of het risico niet waard. Kijk specifiek naar:\n` +
+          `• Tegengestelde marktstructuur: is het signaal een counter-trend trade?\n` +
+          `• Liquiditeitsvallen: staat de entry boven/onder een cluster gelijke highs/lows die ` +
+          `een stop hunt uitlokken?\n` +
+          `• Macro-tegenwind: dollar-trend, renteklimaat of aankomend event dat de richting kan ` +
+          `omgooien?\n` +
+          `• Overbought/oversold extremen die een reversal aannemelijk maken?\n` +
+          `• Zwakke entry: geen duidelijke trigger, te laat in de beweging, slechte R:R-positie?\n\n` +
+
+          `EERLIJKHEID IS WAARDEVOLLER DAN OPPOSITIE:\n` +
+          `Als je na serieus kritisch kijken werkelijk geen sterk bearish argument kunt vinden, ` +
+          `dan is een lage counter-zekerheid met duidelijke toelichting de meest waardevolle ` +
+          `uitkomst. Forceer geen tegenargument — een eerlijk "de setup is sterk, het grootste ` +
+          `restrisico is X" is méér waard dan kunstmatige twijfel. Je counter-zekerheid mag ` +
+          `laag zijn als dat de eerlijke conclusie is.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

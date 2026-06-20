@@ -49,17 +49,30 @@ export async function assessSentiment(
       {
         role: 'user',
         content:
-          `Je bent een marktcontext/sentiment-analist voor ${instrument} (${granularity}-candles). ` +
-          `Geef een volledig onafhankelijk oordeel van het marktsentiment - je weet niet wat andere ` +
-          `teamleden hebben geconcludeerd en dat is bewust zo. ` +
-          `Baseer je inschatting UITSLUITEND op (1) het karakter van de candles hieronder ` +
-          `(momentum, volatiliteit, trendstructuur) en (2) de dollar- en rentecontext die het team ` +
-          `hieronder meegeeft. Claim geen actueel nieuws of macro-events die je niet zeker weet, ` +
-          `tenzij het team dit expliciet meegeeft. ` +
-          `Bepaal zelf of het overheersende sentiment risk-on, risk-off of neutraal is, ` +
-          `en leg in je redenering uit wat dit concreet betekent voor XAU/USD in de huidige ` +
-          `marktomgeving. Onderbouw dit met concrete observaties uit de candles en de ` +
-          `contextnotities, niet met aannames over de richting van de markt.` +
+          `Je bent een macro-econoom en marktsentiment-specialist met diepgaande expertise in ` +
+          `edelmetalen en goudmarkten. Je analyseert ${instrument} (${granularity}-candles). ` +
+          `Je oordeel is volledig onafhankelijk — je weet niet wat andere teamleden concludeerden.\n\n` +
+
+          `CRUCIALE GOUD-MACRO KENNIS — goud is GEEN standaard risk-on/off asset:\n` +
+          `Vier onafhankelijke drijfveren, ranggeschikt op historisch belang:\n` +
+          `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud (lagere opportunity ` +
+          `cost van niet-rentedragend bezit). Stijgende reële rentes → bearish.\n` +
+          `2. DOLLAR (directe inverse correlatie): zwakke dollar → bullish goud; sterke dollar → ` +
+          `bearish. Gebruik de dollar- en rentecontext hieronder.\n` +
+          `3. SAFE HAVEN (nuance!): geopolitieke crisis of marktpaniek → bullish, MAAR dit veroorzaakt ` +
+          `óók dollar-appreciatie (vlucht naar veiligheid in USD). De twee krachten werken dan TEGEN ` +
+          `elkaar. Analyseer welke dominant is: als dollar hard stijgt bij paniek, drukt dat goud.\n` +
+          `4. INFLATIE HEDGE: stijgende inflatie → bullish, maar hogere nominale rentes volgen → ` +
+          `netto-effect hangt af van reële rentes. Hogere inflatie met onveranderde nominale rentes ` +
+          `= lagere reële rentes = bullish goud.\n\n` +
+
+          `RISK-ON / RISK-OFF DEFINITIE VOOR GOUD:\n` +
+          `• Risk-off bij goud: BEIDE dollar EN reële rentes stijgen → sterkste bearish combinatie\n` +
+          `• Risk-on bij goud: dollar verzwakt EN reële rentes dalen → sterkste bullish combinatie\n` +
+          `• Gemengd: dollar stijgt maar reële rentes dalen (of vice versa) → neutraal of subtiel\n\n` +
+
+          `Baseer je oordeel op (1) het karakter van de candles (momentum, volatiliteit, trendstructuur) ` +
+          `en (2) de dollar- en rentecontext hieronder. Claim geen macro-events die je niet zeker weet.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

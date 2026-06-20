@@ -53,16 +53,43 @@ export async function analyzeCandles(
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 1024,
     tools: [ANALYSIS_TOOL],
     tool_choice: { type: 'tool', name: ANALYSIS_TOOL.name },
     messages: [
       {
         role: 'user',
         content:
-          `Je bent een technisch analist voor ${instrument} (${granularity}-candles). ` +
-          `Analyseer de volgende candles (oudste eerst) en geef een handelssignaal.${eventsNote}${newsContextNote}${contextNotes}\n\n` +
-          formatCandles(candles),
+          `Je bent een senior technisch analist met 15 jaar ervaring in de institutionele goudmarkt. ` +
+          `Je specialiteit is XAU/USD price action op intraday timeframes (${granularity}), met diepgaande ` +
+          `kennis van hoe institutionele spelers (centrale banken, hedgefondsen, bullionbanken) de markt bewegen.\n\n` +
+
+          `GOLD-SPECIFIEKE KENNIS die je toepast:\n` +
+          `• Ronde niveaus ($50-intervallen) zijn harde S/R-zones — institutionele orders clusteren hier\n` +
+          `• Gelijke highs/lows zijn liquiditeitszones: ze worden doorgaans "gesweept" (stop hunt) ` +
+          `vóórdat de echte beweging start — wees sceptisch over breakouts zonder voorafgaande sweep\n` +
+          `• Order Blocks: de laatste bearish candle vóór een bullish impulse (of vice versa) markeert ` +
+          `institutionele interesse — deze zones worden vaak opnieuw getest als entry\n` +
+          `• Fair Value Gaps (FVG): imbalances in price action hebben de neiging gevuld te worden ` +
+          `vóór de volgende grote beweging\n` +
+          `• London Fix (10:30 UTC) is een sleutelmoment voor institutionele prijszetting — kan ` +
+          `scherpe wendingen veroorzaken\n` +
+          `• New York-open (13:00–15:00 UTC) geeft regelmatig een false break van de London-range ` +
+          `gevolgd door reversal — late London-breakouts zijn riskanter\n\n` +
+
+          `ANALYSE — doorloop élke stap expliciet:\n` +
+          `1. MARKTSTRUCTUUR: Uptrend (HH/HL), downtrend (LH/LL) of consolidatie? Noem de laatste 2-3 swings.\n` +
+          `2. TRENDBEVESTIGING: Bevestigen SMA20, SMA50, EMA50, MACD de structuur?\n` +
+          `3. SLEUTELNIVEAUS: Welke swing highs/lows, liquiditeitszones, order blocks of ronde ` +
+          `niveaus zijn relevant?\n` +
+          `4. MOMENTUM: RSI-divergentie? MACD-kruising? Bevestigt of contradicteert het momentum ` +
+          `de trend?\n` +
+          `5. ENTRY TRIGGER: Is er een concrete aanleiding voor JUIST NU? (bounce, break+retest, ` +
+          `FVG-fill, sweep+reversal — geen trade zonder trigger)\n` +
+          `6. CONCLUSIE: Signaal + zekerheid. Onduidelijk beeld → lagere zekerheid of neutraal.\n\n` +
+
+          `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
+          `Candles (oudste eerst):\n${formatCandles(candles)}`,
       },
     ],
   });
