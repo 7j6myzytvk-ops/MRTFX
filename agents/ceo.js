@@ -82,12 +82,23 @@ export async function decide(
           `• Technisch en macro eensgezind maar DA sterk tegenargument → 55-65%, klein formaat\n` +
           `• Verdeeld of sterke tegenstemmen → neutraal; forceer geen directioneel signaal\n\n` +
 
+          `SPECIFIEKE DA-WEGING [C] — de Bear Researcher onderzocht vijf categorieën:\n` +
+          `• Als [C] een Judas Swing of liquiditeitsval (categorie ②) signaleert: dit is het ` +
+          `zwaarste single-factor risico in goudhandel. Verlaag zekerheid significant of ` +
+          `kies neutraal, zelfs als [A]/[F] sterk zijn.\n` +
+          `• Als [C] marktstructuur-tegenwind (categorie ①) signaleert: weeg mee of de hogere ` +
+          `timeframe trend het signaal ondersteunt of tegenwerkt.\n` +
+          `• Als [C] lage counter-zekerheid meldt EN geen concreet argument in alle vijf ` +
+          `categorieën: dit is een sterk bevestigingssignaal — verhoog zekerheid.\n\n` +
+
           `VASTE DREMPELS (niet te omzeilen):\n` +
           `1) Weerwoord [F] lager dan eerste oordeel [A]: kies neutraal tenzij macro én DA ` +
           `beide onomwonden jouw richting steunen\n` +
           `2) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +
           `3) Gebruik SL/TP van de risicomanager [B] als jouw signaal overeenkomt met [A]; ` +
           `als je van richting afwijkt, stel eigen SL/TP in die bij jouw richting passen\n` +
+          `4) Sessie-check: als de entry in de London Kill Zone valt (07:00-10:00 UTC) zonder ` +
+          `bewijs dat de Judas Swing al heeft plaatsgevonden, verlaag zekerheid of kies neutraal\n` +
           `Onderbouw je besluit met concrete verwijzingen naar de letters [A]–[F].` +
           `${newsContextNote}${contextNotes}`,
       },
