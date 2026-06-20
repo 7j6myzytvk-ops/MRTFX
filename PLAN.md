@@ -975,3 +975,150 @@ Specifieke DA-categorie weging toegevoegd:
   bevestigingssignaal.
 Vaste drempel 4 toegevoegd: sessie-check (London Kill Zone zonder bewijs van
 afgeronde Judas Swing → zekerheid verlagen of neutraal).
+
+### Backtest #23 (klaar)
+Validatie van Fase 30 (ICT/SMC) op een verse 30-dagenperiode: **58.3% winRate**
+(7 TP / 5 SL). Bevestigt dat ICT/SMC-framework stand houdt op een andere periode
+dan het development-window van Fase 29.
+
+## Fase 31 - Unieke agent-specialisaties: geen overlap, geen ja-knikkers (klaar)
+
+### Aanleiding
+Audit van de agent-prompts toonde structurele overlap: meerdere agents beoordeelden
+dezelfde dimensies (o.a. sessie-context in zowel macro-analist als geo-analist, geen
+strikte taakverdeling). Gevolg: agents bevestigden elkaar eerder dan dat ze echt
+andere invalshoeken aandroegen. Elke agent heeft nu één exclusieve vraag die de
+anderen níet beantwoorden.
+
+### Exclusieve mandaten per agent
+
+| Agent | Exclusieve vraag |
+|---|---|
+| Analyst [A] | "Wat zegt de marktstructuur en waar ligt de liquiditeit?" |
+| RiskManager [B] | "Wat zijn de exacte trade-parameters incl. entry-zone?" |
+| DevilsAdvocate [C] | "Stel de trade mislukt — wat hebben we gemist?" (pre-mortem) |
+| MacroAnalyst [D] | "Wat is het macro-regime EN bevestigt het momentum dat?" |
+| GeopoliticalAnalyst [E] | "Wat zeggen events + sessie-timing over betrouwbaarheid?" |
+| CEO [F] | Weegt 5 unieke perspectieven; rapporteert als enige naar buiten |
+
+### Pre-mortem methodologie (`agents/devilsAdvocate.js`)
+Volledige transformatie: van "toon bezwaren" naar prospective hindsight. De DA
+stelt zich voor dat de trade al gestopt is op de stop-loss en reconstrueert wat er
+mis ging. 5 verplichte faalscenario's met concrete ICT/SMC-criteria:
+① HTF-structuur fout (CHoCH genegeerd), ② Institutionele val/Judas Swing
+(stop-cluster geraakt), ③ Timing mismatch (verkeerde sessie), ④ Zone al verwerkt
+(OB/FVG al uitgeput), ⑤ Genegeerd bewijs (indicator-divergentie). Als na grondig
+onderzoek geen overtuigend faalscenario gevonden wordt: lage counterConfidence
+melden — "setup houdt stand tegen pre-mortem" is de meest waardevolle uitkomst.
+
+### Momentum als regimebevestiging (`agents/macroAnalyst.js`)
+Sessie-context verwijderd (verplaatst naar geo-analist). Nieuwe sectie toegevoegd:
+TECHNISCH MOMENTUM ALS REGIMEBEVESTIGING — EMA50, RSI en MACD als bevestiging of
+contradictie van het macro-regime. max_tokens: 512 → 1024.
+
+### Sessie & timing (`agents/geopoliticalAnalyst.js`)
+Nieuw exclusief mandaat: geopolitieke events + sessie-timing + near-term event risk.
+Monetair beleid (Fed/rente) expliciet uitgesloten ("valt onder de macro-analist").
+Sessie-timing inferred uit recente nieuwskoppen. max_tokens: 512 → 768.
+
+### Entry-zone (`agents/riskManager.js`)
+Nieuwe ENTRY-ZONE sectie: geeft een concrete prijsrange ("Optimale entry-zone:
+$X–$Y") op basis van OB/FVG-locaties. Meldt expliciet als de huidige prijs al
+te ver van de zone is ("entry te laat").
+
+### CEO-weegschema bijgewerkt (`agents/ceo.js`)
+Nieuwe gewichten op basis van de 5 exclusieve perspectieven:
+- Structuur + Liquiditeit [A + F rebuttal]: 35%
+- Macro + Momentum [D]: 25%
+- Pre-mortem [C]: 20%
+- Geo + Timing [E]: 20%
+Vaste drempel 3 bijgewerkt: pre-mortem scenario ② (institutionele val/Judas Swing)
+met hoge overtuigingskracht → zwaarste single-factor risico.
+
+### Backtest #24 (klaar)
+Validatie van Fase 31 (niet-overlappende specialisaties): **80.0% winRate**
+(N=10 trades: 8 TP / 2 SL / 19 neutraal). Grootste sprong tot dan toe:
+backtest-progressie #21→#22→#23→#24 = 37.5%→56.3%→58.3%→80.0%.
+
+## Fase 32 - Pre-mortem counterConfidence als vijfde kwaliteitsfilter (klaar)
+
+### Aanleiding
+Pre-mortem scenario ② (institutionele val/Judas Swing) met counterConfidence >70%
+was al het zwaarste single-factor risico in de CEO-weging (Fase 31). Consistente
+toepassing vereist dat dit ook als harde blocker in `assessSignalQuality` zit,
+zodat het filter ook buiten de CEO-redenering actief is.
+
+### Implementatie (`agents/agentAnalysis.js`)
+Vijfde blocker toegevoegd aan `assessSignalQuality`:
+```javascript
+if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
+  blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
+}
+```
+Optioneel chaining + nullish coalescing zorgt dat ontbrekende discussie-data
+geen false trigger geeft.
+
+### Vijf kwaliteitsfilters na Fase 32
+1. CEO-zekerheid < 60%
+2. Macro contraireert de richting
+3. Analist verloor vertrouwen na discussie (rebuttal omlaag)
+4. R:R > 2.5
+5. **Pre-mortem: duidelijk faalscenario gevonden (counterConfidence > 70%)**
+
+## Fase 33 - Momentum-contradictie regel + sessie-timing als pure context (klaar)
+
+### Root-cause analyse SL-trades uit backtest #24
+Twee SL-trades onderzocht op oorzaak:
+- **SL Trade 2**: MacroAnalyst zag MACD-divergentie maar negeerde het vanwege
+  sterke macro-drivers. Geen expliciete regel om momentum-contradictie te forceren.
+- **SL Trade 1**: DevilsAdvocate counterConfidence 62% (net onder de nieuwe >70%
+  blocker). Sessie-context ontbrak als aanvullend signaal.
+
+### Momentum-contradictie regel (`agents/macroAnalyst.js`)
+Verplichte cap: als technisch momentum de macro-richting tegenspreekt, max 55%
+zekerheid ongeacht hoe sterk de macro-drivers lijken:
+- Bearish macro MAAR MACD stijgt richting signaallijn → max 55%
+- Bearish macro MAAR RSI boven 50 of stijgend → max 55%
+- Bullish macro MAAR MACD daalt onder signaallijn → max 55%
+- Bullish macro MAAR RSI onder 45 of dalend → max 55%
+Reden: momentum-divergentie in een "bewezen" macro-regime is historisch een
+van de sterkste reversal-signalen.
+
+### Sessie-context als pure functie (`agents/sessionContext.js`, nieuw)
+**Probleem ontdekt**: de geo-analist retourneert `NO_NEWS_RESULT` (confidence=0)
+als `newsItems=[]` — in backtests waren er nooit nieuwsberichten, dus de
+sessie-timing werd in géén enkele backtest-sample gebruikt. Fix: pure UTC-tijdfunctie
+die volledig onafhankelijk van nieuws werkt.
+
+```javascript
+const SESSIONS = [
+  { zone: 'Asian',           from: 0,  to: 7,  reliability: 'laag',   note: '...' },
+  { zone: 'London Kill Zone',from: 7,  to: 10, reliability: 'RISICO', note: '...' },
+  { zone: 'London-NY overlap',from: 10, to: 12, reliability: 'matig', note: '...' },
+  { zone: 'NY Kill Zone',    from: 12, to: 15, reliability: 'hoog',   note: '...' },
+  { zone: 'London Close',    from: 15, to: 17, reliability: 'matig',  note: '...' },
+  { zone: 'Off-peak',        from: 17, to: 24, reliability: 'laag',   note: '...' },
+];
+```
+
+### Integratie (`agents/boardroom.js`)
+`sessionNote` toegevoegd aan `contextNotes` (alle agents ontvangen het):
+```javascript
+const sessionTime = currentTime ? new Date(currentTime) : new Date();
+const sessionNote = formatSessionNote(assessSession(sessionTime));
+const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote
+                   + dailyContextNote + briefingNote + sessionNote;
+```
+`scripts/backtest.js` geeft nu `currentTime: sampleTime` mee aan `runDiscussion`,
+zodat historische samples de correcte sessie-timing gebruiken (niet "nu").
+
+### Validatie
+- `scripts/test-sessionContext.js` (nieuw): 19 tests voor alle 6 sessiezones,
+  grenscondities (06:59/07:00, 09:59/10:00 etc.) en `formatSessionNote`.
+- Totaal: 221 tests, 0 mislukt.
+
+### Out-of-sample backtest gestart
+Ter validatie van of de 80.0% WinRate standhoudt op een volledig andere
+marktperiode: 150-dagenrun op jan–jun 2026 (backtest record #25, PID 30827,
+log `/tmp/backtest-oos.log`). Deze periode was niet gebruikt bij de ontwikkeling
+van Fase 29-33 en dient als echte out-of-sample test.

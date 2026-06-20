@@ -137,13 +137,17 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
     continue;
   }
 
-  const { decision, discussion } = result;
+  const { decision, discussion, qualityResult } = result;
   const entryPrice = window[window.length - 1].close;
   const outcome = evaluateOutcome(decision, horizonCandles);
   samples.push({ sampleTime, entryPrice, decision, discussion, outcome });
+  const blockerSuffix =
+    qualityResult && !qualityResult.passed && qualityResult.blockers.length
+      ? ` [geblokkeerd: ${qualityResult.blockers.join(', ')}]`
+      : '';
   console.log(
     `[${samples.length}] ${sampleTime} -> ${decision.signal.toUpperCase()} (${decision.confidence}%)` +
-      ` -> ${outcome.result}${outcome.candlesToHit ? ` (na ${outcome.candlesToHit} candles)` : ''}`,
+      ` -> ${outcome.result}${outcome.candlesToHit ? ` (na ${outcome.candlesToHit} candles)` : ''}${blockerSuffix}`,
   );
 
   record.summary = summarize(samples);
