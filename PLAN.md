@@ -780,3 +780,156 @@ daggemiddelde (4598.89)" en "5-daagse dagtrend -0.8%" in zijn redenering.
 
 **Kanttekening**: de filters zijn deels gedesigned op dezelfde dataset waarop we
 ze nu evalueren (in-sample). Echte validatie volgt uit de live Discord-performance.
+
+## Fase 22 - Geopolitieke/nieuws-agent als zesde boardroom-stem (klaar)
+
+Zesde onafhankelijke agent toegevoegd: `agents/geopoliticalAnalyst.js` beoordeelt
+XAU/USD-impact van actueel nieuws (oorlogen, centrale-bank-uitspraken, inflatie,
+sancties) uitsluitend op basis van nieuwskoppen — zonder toegang tot candles,
+indicatoren of conclusies van andere agents. Als er geen nieuws beschikbaar is,
+retourneert het `NO_NEWS_RESULT` (confidence 0, neutraal) zodat de boardroom-flow
+nooit blokkeert.
+
+- `services/newsService.js`: nieuwsaggregator met goud-keyword-filter,
+  deduplicatie en stille fallback bij API-fouten (NewsAPI, Finnhub, GNews parallel).
+- `agents/boardroom.js`: `assessGeopolitical` parallel met de andere agents; het
+  geopolitical-veld in het discussion-object. Analist-rebuttal en CEO wegen de
+  geopolitieke stem alleen mee als `confidence > 0` (guard).
+- `services/boardroomReporter.js`: 📰-regel in trace-berichten bij actief nieuws.
+- 39 nieuwe tests: `test-newsService.js` (19) + `test-geopoliticalAnalyst.js` (21)
+  + uitbreiding `test-boardroomReporter.js`. Totaal: 223 tests, 0 mislukt.
+
+## Fase 23 - Multi-timeframe analyse (M30 + M15 naast H1) (klaar)
+
+Drie onafhankelijke schedulers op eigen Discord-kanalen:
+- H1: elke 60 min, 50 candles (bestaand, ongewijzigd)
+- M30: elke 30 min, 100 candles → `#m30-ceo` / `#m30-trace`
+- M15: elke 15 min, 100 candles → `#m15-ceo` / `#m15-trace`
+
+Gestaggerde opstartvertraging (H1=0s, M30=75s, M15=150s) voorkomt gelijktijdige
+Twelve Data-calls bij bot-herstart (8 credits/min limiet). `reportToDiscord`
+accepteert nu optionele `{ ceoChannelId, traceChannelId }` override-parameters.
+
+## Fase 24 - Condition-based setup-detector (klaar)
+
+De bot analyseert niet meer blind op een klok maar alleen wanneer alle vier
+voorwaarden tegelijk voldaan zijn — hoog-kansen setups in plaats van ruis:
+
+1. **Sessiefilter**: alleen 08:00-17:00 UTC (London + NY overlap)
+2. **Multi-timeframe alignment**: H1 + M30 + M15 moeten allen dezelfde richting
+   laten zien (SMA20, RSI14, recente candle-structuur — meerderheid beslist)
+3. **Trendfilter**: D1 en W1 moeten dezelfde richting wijzen (counter-trend geblokkeerd)
+4. **Sleutelniveau-proximity**: prijs binnen 0.5×ATR(14) van een wekelijks pivot
+   (PP/R1/S1/R2/S2, vorige week H/L) of rond getal ($50-interval)
+
+Nieuwe bestanden: `agents/keyLevels.js`, `agents/multiTimeframeAlignment.js`,
+`services/conditionChecker.js`. Poll elke 5 minuten, 4u cooldown na signaal.
+69 nieuwe tests. Totaal: 292 tests, 0 mislukt.
+
+**Kritieke bug (gelijktijdig opgelost)**: `isActiveSession()` werd in
+`checkConditions()` pas na de API-calls gecheckt, waardoor de bot buiten
+08:00-17:00 UTC iedere poll alle Twelve Data-credits verbruikte. Fix: check
+vóór `Promise.all([...API-calls])` in `poll()`.
+
+## Fase 25 - Discord-alerting: fouten, heartbeat, startup (klaar)
+
+Tot Fase 25 was er geen terugkoppeling als de bot crashte, errors gooidde of
+stil werd (bv. door kredietlimiet). Twee dagen productie-monitoring gingen
+hierdoor verloren.
+
+- `services/botAlerts.js`: `sendDedupedAlert` (max 1x/uur per error-key),
+  `sendHeartbeat` (dagelijks 08:00 UTC), `sendStartupAlert` (bij deploy).
+- `formatErrorAlert`: detecteert krediet-, rate-limit- en generieke fouten.
+- `services/scheduler.js` bijgewerkt: heartbeat-check in `poll()`, startup-alert
+  in `startSignalScheduler()`, `sendDedupedAlert` in de catch-block.
+- 13 tests (`scripts/test-botAlerts.js`).
+
+## Fase 26 - Prompt-verbeteringen op basis van N=240 backtest-analyse (klaar)
+
+Gerichte verbeteringen op basis van gemeten patronen in `data/backtests.json`:
+- **Analist-rebuttal**: expliciete regels voor zekerheidsaanpassing op basis van
+  consensus (rebuttal omlaag → sterk waarschuwingssignaal voor CEO).
+- **Devil's Advocate**: eerlijk oppositioneel mandaat toegevoegd; geforceerd
+  tegenargument vervangen door "eerlijke oppositie is waardevoller dan kunstmatig
+  challengen".
+- **CEO**: minimale 65%-drempel voor directioneel signaal; neutraal bij dalende
+  rebuttal tenzij overige stemmen onmiskenbaar dezelfde richting wijzen.
+- **Risicomanager (26b)**: R:R-richtlijn 1:1.2–1:2.0 met expliciete waarschuwing
+  dat >2.5 de trefkans sterk verlaagt; confidence-linked positiegrootte.
+
+## Fase 27 - `/status` command + economische kalender uitgebreid (klaar)
+
+- `/status` toont live alle 4 condities (sessie, M15/M30/H1-alignment,
+  D1/W1-trend, proximity) met actuele marktdata.
+- Economische kalender uitgebreid tot december 2026 (NFP, CPI, PPI,
+  Retail Sales, FOMC, GDP).
+
+## Fase 28 - Macro-briefing: contextuele voorbereiding voor alle agents (klaar)
+
+**Filosifie**: "Als je alleen op basis van live data gaat traden, ben je in
+principe in een casino." Pre-market context (macro-thesis, komende events,
+marktsentiment) moet in het besluitvormingsproces mee.
+
+- `services/macroBriefing.js`: opslag in `data/macroBriefing.json` met 7-daagse
+  TTL. Functies: `getBriefing`, `setBriefing`, `clearBriefing`,
+  `isBriefingValid`, `formatBriefingNote`.
+- `/briefing` Discord-commando: set/view/clear.
+- `agents/boardroom.js`: briefing-note toegevoegd aan `contextNotes` (alle agents).
+- 15 tests (`scripts/test-macroBriefing.js`).
+
+## Fase 29 - Complete agent-rewrites: XAU-specifieke expert personas (klaar)
+
+Volledige herziening van alle 6 agent-prompts op basis van backtest-inzichten
+(N=286, 22 runs) en gold-market expertise. Doel: generieke agents → specialisten
+die redeneren zoals institutionele traders.
+
+### Indicatoren (`agents/indicators.js`)
+EMA50 en MACD(12,26,9) toegevoegd. 42 tests.
+
+### Technisch analist (`agents/analyst.js`)
+Senior XAU-specialist persona (15 jaar institutionele goudmarkt). 6-staps CoT
+structuur (marktstructuur → trendbevestiging → sleutelniveaus → momentum →
+entry trigger → conclusie). Gold-specifieke kennis: ronde $50-niveaus,
+liquiditeitszones, order blocks, FVGs, London Fix (10:30 UTC), NY-false-break.
+max_tokens: 512 → 1024.
+
+### Macro-analist (`agents/macroAnalyst.js`)
+4 goud-macro drivers gerangschikt op historisch belang: (1) reële rente,
+(2) dollar inverse, (3) safe haven met USD-paradox, (4) inflatie hedge.
+Gold-specifieke risk-on/off definitie (niet hetzelfde als equities).
+
+### Bear Researcher (`agents/devilsAdvocate.js`)
+Van "geforceerde oppositie" naar "eerlijk mandaat": lage counter-zekerheid is
+waardevoller dan kunstmatige twijfel. Specifieke zoekgebieden: counter-trend
+structuur, liquiditeitsvallen, macro-tegenwind, overbought/oversold extremen,
+zwakke entry. Backtest-bevestiging: DA "eens" → 50% winRate (N=20) vs.
+"oneens" → 38.9%.
+
+### CEO (`agents/ceo.js`)
+Expliciet 40/30/30 weegschema: technische analyse (analist + weerwoord) 40%,
+macro/geopolitiek 30%, tegenscenario 30%. Zekerheidsdrempels per consensus-niveau:
+alle eensgezind >70%, tech+macro eensgezind 60-70%, verdeeld → neutraal.
+Twee vaste drempels: weerwoord omlaag → neutraal, minimaal 65% voor directie.
+max_tokens: 1024 → 1536.
+
+### Geopolitieke analist (`agents/geopoliticalAnalyst.js`, fase 29b)
+Senior strateeg persona. 6 goud-nieuws drivers gerangschikt: centrale bankaankopen,
+Fed-signalen, geopolitieke crises (met USD-paradox uitgelegd), inflatie/CPI-nuance,
+dollarbeleid, sancties/embargo's.
+
+### Risicomanager (`agents/riskManager.js`, fase 29c)
+Senior institutioneel risicomanager. Gold-specifieke SL/TP: stop voorbij ronde
+$50-niveaus (stop hunt preventie), minimum 0.5×ATR, TP max 2×ATR voor intraday.
+Volatiliteitsdrempel: avg range >30 → positiegrootte één stap lager.
+
+### Backtest #22 (lopend)
+45-dagenrun met nieuwe prompts gestart (vergelijking met record #21: N=29,
+winRate 37.5%, oude prompts). Eerste 8 samples: 4 TP / 1 SL / 3 neutraal
+→ winRate 80% (N=5). Nog lopend.
+
+### Cumulatieve analyse (N=286, 22 runs)
+Sterkste voorspellers bevestigd:
+- Rebuttal omhoog: 48.2% winRate vs. omlaag: 30.5% (17.7pp gap)
+- R:R >2.5: 24% winRate (filter correct)
+- DA "eens" met besluit: 50% vs. "oneens": 38.9%
+- CEO confidence >70% presteert niet beter dan 60-70% (overconfidence risico)
