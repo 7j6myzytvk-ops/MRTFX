@@ -59,13 +59,20 @@ export async function assessRisk(
           `met de onderbouwing: "${analysis.reasoning}". ` +
           `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
           `is ${avgRange.toFixed(2)}. ` +
-          `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit ` +
-          `signaal en deze volatiliteit, en geef een positiegrootte-advies. ` +
-          `Beoordeel daarnaast de kwaliteit van de trade: is de verhouding tussen de TP-afstand ` +
-          `en de SL-afstand gunstig? Is de volatiliteit op dit moment zo hoog dat een verantwoorde ` +
-          `trade nauwelijks mogelijk is? Als dat het geval is, geef dit dan expliciet aan in je ` +
-          `onderbouwing en adviseer de kleinste positiegrootte — de CEO weegt dit mee in het ` +
-          `uiteindelijke besluit.${eventsNote}${newsContextNote}${contextNotes}`,
+          `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit signaal ` +
+          `en deze volatiliteit.\n\n` +
+          `Richtlijnen voor SL/TP:\n` +
+          `- Plaats de SL op een technisch betekenisvol niveau (onder/boven een swing, niet op een ` +
+          `willekeurige afstand). Gebruik de gemiddelde range als minimale buffer.\n` +
+          `- Streef naar een risk/reward-ratio van 1:1.2 tot 1:2.0. Hogere ratio's (>2.5) betekenen ` +
+          `dat de TP te ambitieus is voor een dagsessie-trade in XAU/USD — dit verlaagt de trefkans ` +
+          `sterk. Kies liever een realistische TP die eerder geraakt wordt.\n` +
+          `- Positiegrootte: koppel dit aan de zekerheid van de analist (${analysis.confidence}%): ` +
+          `onder 60% → klein; 60-70% → normaal; boven 70% → groot. ` +
+          `Verlaag bij hoge volatiliteit (avg range > 30) altijd één stap.\n\n` +
+          `Als een verantwoorde trade gezien de volatiliteit niet mogelijk is (SL te groot, ` +
+          `geen logisch TP-niveau), geef dit expliciet aan in je onderbouwing en adviseer klein.` +
+          `${eventsNote}${newsContextNote}${contextNotes}`,
       },
     ],
   });
