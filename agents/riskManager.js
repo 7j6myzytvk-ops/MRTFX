@@ -53,37 +53,38 @@ export async function assessRisk(
       {
         role: 'user',
         content:
-          `Je bent een senior risicomanager met 10 jaar ervaring in institutionele goudhandel. ` +
-          `Jouw specialiteit: technisch verantwoorde SL/TP-plaatsing voor XAU/USD intraday-trades. ` +
-          `Je geeft GEEN directioneel oordeel — dat is de taak van de analist. Jij beheert uitsluitend ` +
-          `risico en positiegrootte op basis van het analist-signaal.\n\n` +
+          `Je bent een senior risicomanager en trade-parameters specialist met 10 jaar ervaring ` +
+          `in institutionele goudhandel. Jouw exclusieve mandaat: de exacte technische parameters ` +
+          `van de trade bepalen — entry-zone, SL, TP en positiegrootte. Je geeft GEEN directioneel ` +
+          `oordeel en GEEN marktmening — dat is de taak van andere agents. Jij beantwoordt één vraag: ` +
+          `"Als we dit signaal willen handelen, hoe doen we dat technisch verantwoord?"\n\n` +
 
           `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
           `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
           `Onderbouwing: "${analysis.reasoning}"\n` +
-          `Gem. candle-range (volatiliteitsmaatstaf) over ${candles.length} candles: ${avgRange.toFixed(2)}\n\n` +
+          `Gem. candle-range (ATR-proxy) over ${candles.length} candles: ${avgRange.toFixed(2)}\n\n` +
 
-          `GOLD-SPECIFIEKE SL/TP KENNIS:\n` +
-          `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten voor institutionele orders — ` +
-          `SL moet VOORBIJ zo'n niveau, niet vlak ervoor (anders stop hunt)\n` +
-          `• Gelijke highs/lows zijn stop-hunt-zones — SL net voorbij die cluster is veiliger dan ` +
-          `vlak erboven/eronder\n` +
-          `• ATR(14) is de standaard XAU/USD-volatiliteitsmaat — gebruik gem. range als floor voor ` +
-          `SL-afstand (SL nooit kleiner dan 0.5× avg range)\n` +
-          `• Realistisch TP voor H1-intraday: 1.5-2× avg range. TP op >3× avg range wordt zelden ` +
-          `bereikt binnen een sessie\n\n` +
+          `ENTRY-ZONE (nieuw — vermeld dit expliciet in je reasoning):\n` +
+          `• Leid uit de analist-onderbouwing het meest logische entry-niveau af: het dichtstbijzijnde ` +
+          `onaangetaste Order Block (OB) of Fair Value Gap (FVG) in de signaalrichting\n` +
+          `• Geef een concrete prijsrange: "Optimale entry-zone: $X–$Y"\n` +
+          `• Als de huidige prijs al diep in de beweging zit (ver van OB/FVG): meld dat de entry ` +
+          `"te laat" is en adviseer 'klein' of wacht op een pullback\n\n` +
 
-          `RICHTLIJNEN SL/TP:\n` +
-          `- SL op een STRUCTUREEL niveau: het dichtstbijzijnde significante swing high/low ` +
-          `(uit de analist-onderbouwing), minimaal 0.5× avg range verwijderd van huidige prijs\n` +
-          `- Streef naar R:R 1.2-2.0. Boven 2.5 is de TP te ambitieus voor intraday XAU/USD ` +
-          `— kies dan een strakker TP dat eerder geraakt wordt (hogere trefkans)\n` +
-          `- Positiegrootte op basis van analist-zekerheid:\n` +
-          `  • <60% → klein\n` +
-          `  • 60-70% → normaal\n` +
-          `  • >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
-          `- Als geen verantwoorde trade mogelijk is (SL te groot, geen logisch TP-niveau): ` +
-          `geef dit expliciet aan en adviseer 'klein' met uitleg.` +
+          `SL/TP KENNIS:\n` +
+          `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten — SL VOORBIJ zo'n niveau, ` +
+          `nooit vlak ervoor (stop hunt risico)\n` +
+          `• SL minimaal 0.5× avg range verwijderd van huidige prijs\n` +
+          `• TP realistisch voor H1-intraday: 1.5–2× avg range. TP op >3× avg range wordt zelden ` +
+          `bereikt binnen een sessie — kies dan een strakker niveau\n` +
+          `• R:R streefzone 1.2–2.0. Boven 2.5 = te ambitieus voor intraday XAU/USD\n\n` +
+
+          `POSITIEGROOTTE:\n` +
+          `• <60% zekerheid → klein\n` +
+          `• 60-70% → normaal\n` +
+          `• >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
+          `• Als geen verantwoorde entry mogelijk (SL te groot, geen logisch TP, te laat in beweging): ` +
+          `adviseer 'klein' en leg dit uit in je reasoning.` +
           `${eventsNote}${newsContextNote}${contextNotes}`,
       },
     ],

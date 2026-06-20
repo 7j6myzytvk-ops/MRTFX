@@ -60,52 +60,42 @@ export async function analyzeCandles(
       {
         role: 'user',
         content:
-          `Je bent een senior technisch analist met 15 jaar ervaring in de institutionele goudmarkt. ` +
-          `Je specialiteit is XAU/USD price action op intraday timeframes (${granularity}), met diepgaande ` +
-          `kennis van hoe institutionele spelers (centrale banken, hedgefondsen, bullionbanken) de markt bewegen.\n\n` +
+          `Je bent een senior marktstructuur- en liquiditeitsanalist met 15 jaar ervaring in de ` +
+          `institutionele goudmarkt. Jouw exclusieve specialiteit: price action structuur en ` +
+          `liquiditeitskaarten voor XAU/USD (${granularity}-candles). Je analyseert GEEN indicatoren ` +
+          `(RSI/MACD), geen macro-context en geen sessie-timing — die vallen buiten jouw mandaat en ` +
+          `worden door gespecialiseerde collega's beoordeeld. Jij beantwoordt één vraag: ` +
+          `"Wat zegt de marktstructuur en waar ligt de liquiditeit?"\n\n` +
 
-          `INSTITUTIONELE GOLD-KENNIS (ICT/SMC-framework):\n` +
+          `ICT/SMC KENNIS (jouw gereedschapskist):\n` +
           `• MARKTSTRUCTUUR: onderscheid BOS (Break of Structure = trendbevestiging) van CHoCH ` +
-          `(Change of Character = potentiële trendwisseling). CHoCH is zwaarder dan BOS — alleen ` +
-          `bij CHoCH overweeg je een directiewijziging.\n` +
-          `• PREMIUM vs DISCOUNT: bereken het equilibrium (50%-punt) van de recente range. Prijs ` +
-          `boven equilibrium = premium-zone (instellingen verkopen); onder = discount-zone ` +
-          `(instellingen kopen). Geen longentries in premium; geen shortentries in discount.\n` +
-          `• LIQUIDITEITSLOGICA: gelijke highs/lows zijn stop-clusters (buy-side boven, sell-side ` +
-          `onder). Instellingen "sweepen" die liquidity vóór de echte beweging. Wees sceptisch ` +
-          `over breakouts zónder voorafgaande sweep.\n` +
-          `• JUDAS SWING (London, 07:00-10:00 UTC): London open maakt vaak een valse doorbraak van ` +
-          `de Aziatische range om retail-stops te triggeren, waarna de echte beweging omgekeerd ` +
-          `begint. Een London-breakout die NIET vergezeld gaat van sterke momentum-candles is ` +
-          `waarschijnlijk een Judas Swing.\n` +
-          `• NEW YORK KILL ZONE (12:00-15:00 UTC): de echte institutionele beweging na London ` +
-          `manipulatie. NY-open false breaks zijn een klassiek patroon — late London-breakouts ` +
-          `die bij NY-open reversal geven zijn sterke setups.\n` +
-          `• INDUCEMENT: instellingen creëren soms een "voor de hand liggend" S/R-niveau om ` +
-          `retail vroeg in te laten stappen, vóórdat ze die orders gebruiken als liquidity om ` +
-          `de echte positie te vullen. Herken dit als prijs te "netjes" weerkeert van een niveau.\n` +
-          `• ORDER BLOCKS: de laatste bearish candle vóór een bullish impulse (of vice versa). ` +
-          `Breaker Blocks zijn gefaalde order blocks die als omgekeerde S/R fungeren.\n` +
-          `• FAIR VALUE GAPS (FVG): drie-candle imbalances die gevuld worden vóór de volgende ` +
-          `beweging. Optimale entry: 50%-punt van de FVG.\n` +
-          `• RONDE NIVEAUS ($50-intervallen): harde institutionele zones — SL nooit vlak eronder ` +
-          `(stop hunt risico), TP niet vlak erboven (weerstand).\n\n` +
+          `(Change of Character = potentiële trendwisseling). CHoCH is zwaarder dan BOS.\n` +
+          `• HTF → LTF: lees eerst de Weekly/Daily bias, dan H1. Een entry tegen de Daily CHoCH ` +
+          `in is structureel onverantwoord — hogere timeframe wint altijd.\n` +
+          `• PREMIUM vs DISCOUNT: equilibrium (50%-punt van de recente range). Boven equilibrium ` +
+          `= premium (institutions verkopen); onder = discount (institutions kopen). Geen long in ` +
+          `premium, geen short in discount — tenzij CHoCH dit invalideer.\n` +
+          `• LIQUIDITEITSLOGICA: gelijke highs/lows zijn BSL/SSL-clusters (stop-concentraties). ` +
+          `Instellingen sweepen die pools vóór de echte beweging. Breakout zonder sweep = verdacht.\n` +
+          `• INDUCEMENT: te "nette" steun/weerstand is vaak een vangst. Herken het als prijs te ` +
+          `makkelijk van een niveau weerkeert — retailers stappen in, institutions gebruiken die ` +
+          `orders als liquiditeit voor hun echte positie.\n` +
+          `• ORDER BLOCKS: laatste bearish candle vóór bullish impulse (of vice versa). ` +
+          `Breaker Blocks = gefaalde OBs die als omgekeerde S/R fungeren.\n` +
+          `• FAIR VALUE GAPS (FVG): drie-candle imbalances. Optimale entry: 50%-punt van de FVG.\n` +
+          `• RONDE NIVEAUS ($50-intervallen): harde institutionele zones.\n\n` +
 
           `ANALYSE — doorloop élke stap expliciet:\n` +
-          `1. MARKTSTRUCTUUR: BOS of CHoCH? Noem de laatste 2-3 swings met exacte highs/lows. ` +
-          `Is er een trend of consolidatie?\n` +
-          `2. PREMIUM/DISCOUNT + TRENDBEVESTIGING: Waar staat de prijs t.o.v. het equilibrium? ` +
-          `Bevestigen SMA20, SMA50, EMA50, MACD de richting?\n` +
-          `3. SLEUTELNIVEAUS: Liquiditeitszones (gelijke H/L), order blocks, FVGs, ronde niveaus. ` +
-          `Welke zijn nog onaangetast?\n` +
-          `4. SESSIE & MANIPULATIECONTEXT: In welke kill zone zitten we? Heeft London al een Judas ` +
-          `Swing gemaakt? Is er recent liquidity gesweept?\n` +
-          `5. MOMENTUM: RSI-divergentie? MACD-kruising boven/onder nulsignaal? Bevestigt of ` +
-          `contradicteert het momentum de structuur?\n` +
-          `6. ENTRY TRIGGER: Is er een CONCRETE aanleiding voor JUIST NU? (sweep+reversal, ` +
-          `FVG-fill, OB-test, CHoCH — geen trade zonder trigger én killzone-context)\n` +
-          `7. CONCLUSIE: Signaal + zekerheid. Onduidelijk beeld, inducement-risico of verkeerde ` +
-          `premium/discount-zone → neutraal of lagere zekerheid.\n\n` +
+          `1. HTF BIAS: Wat is de Weekly/Daily trend? Is er een dominante richting of ` +
+          `is de hogere structuur onduidelijk/zijwaarts?\n` +
+          `2. MARKTSTRUCTUUR (H1): BOS of CHoCH? Noem de laatste 2-3 swings met exacte ` +
+          `highs/lows. Trend, consolidatie of trendbreuk?\n` +
+          `3. LIQUIDITEITSKAART: Waar liggen de BSL/SSL-clusters (gelijke highs/lows, swing-extremen)? ` +
+          `Welk liquiditeitspool is het meest logische volgende institutionele doel?\n` +
+          `4. IMBALANCE ZONES: Welke OBs, FVGs en Breaker Blocks zijn nog onaangetast en ` +
+          `dichtbij genoeg om als entry-niveau te dienen?\n` +
+          `5. CONCLUSIE: Signaal + zekerheid + het concrete prijs-invalidatieniveau (bij welk ` +
+          `niveau bewijst de markt dat deze analyse fout is?).\n\n` +
 
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           `Candles (oudste eerst):\n${formatCandles(candles)}`,
@@ -152,21 +142,25 @@ export async function reviewDiscussion(
             ? `Geopolitieke/nieuws-analist ("${geopolitical.assessment}", zekerheid ${geopolitical.confidence}%): ` +
               `${geopolitical.reasoning}\n\n`
             : '') +
-          `Geef je herziene of bevestigde signaal en zekerheid. Reageer SPECIFIEK op de vijf ` +
-          `categorieën die de Bear Researcher onderzocht:\n\n` +
-          `Voor elke DA-categorie: kun je het bezwaar concreet weerleggen? Of erkent het een ` +
-          `zwakte in je analyse? Doe dit beknopt maar inhoudelijk.\n\n` +
-          `ZEKERHEIDSREGEL — altijd aanpassen, nooit hetzelfde houden tenzij elk punt weerlegd:\n` +
-          `• DA vindt niets steekhoudends in alle vijf categorieën + macro bevestigt jouw ` +
-          `richting: VERHOOG zekerheid (dit is een sterk confluence-signaal — alle assen groen)\n` +
-          `• DA heeft 1-2 valide punten maar macro steunt jou: kleine aanpassing omhoog of behoud\n` +
-          `• DA heeft sterk argument ①②③ (structuur/liquiditeitsval/macro) OF macro contraireert: ` +
-          `VERLAAG zekerheid of switch naar neutraal\n` +
-          `• DA sterk + macro contra: serieus neutraal overwegen — twee onafhankelijke bronnen ` +
-          `wijzen dezelfde waarschuwing\n` +
-          `• Specifieke waarschuwing: als de DA een Judas Swing of liquiditeitsval signaleert ` +
-          `(categorie ②) die je zelf niet zag, is dat zwaar wegende informatie — verlaag ` +
-          `zekerheid significant of ga neutraal.` +
+          `Geef je herziene of bevestigde signaal en zekerheid. Reageer als marktstructuur-specialist ` +
+          `op wat het team heeft ingebracht:\n\n` +
+          `PRIMAIRE TAAK — reageer op het pre-mortem scenario van de Bear Researcher:\n` +
+          `• Faalscenario ① (HTF-structuur fout): Is er inderdaad een hogere CHoCH die je hebt ` +
+          `gemist? Of klopt de Daily/Weekly bias nog steeds?\n` +
+          `• Faalscenario ② (Institutionele val): Staan we inderdaad in een stop-cluster of ` +
+          `inducement-zone? Of is de entry structureel verantwoord?\n` +
+          `• Faalscenario ③ (Timing mismatch): Heeft de macro-analist of geo-analist informatie ` +
+          `gegeven die de timing van je entry in twijfel trekt?\n` +
+          `• Faalscenario ④ (Zone al verwerkt): Is het OB of de FVG die je als entry zag al ` +
+          `eerder bezocht en daarmee verbruikt?\n` +
+          `• Faalscenario ⑤ (Genegeerd bewijs): Zijn er structurele signalen die je eerder ` +
+          `wegrationaliseerde maar die nu, na de discussie, zwaarder wegen?\n\n` +
+          `ZEKERHEIDSREGEL:\n` +
+          `• Pre-mortem vindt geen overtuigend faalscenario + macro bevestigt: VERHOOG zekerheid\n` +
+          `• Pre-mortem heeft 1 steekhoudend punt: kleine aanpassing omlaag of behoud\n` +
+          `• Pre-mortem scenario ① of ② bevestigd (HTF-structuur of institutionele val): ` +
+          `VERLAAG significant of switch naar neutraal\n` +
+          `• Meerdere faalscenario's bevestigd: neutraal — de structurele basis is onzeker.` +
           `${newsContextNote}${contextNotes}`,
       },
     ],

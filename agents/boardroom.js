@@ -40,7 +40,7 @@ export async function runDiscussion(
     assessRisk(candles, analysis, opts),
     challengeAnalysis(candles, analysis, opts),
     assessSentiment(candles, analysis, opts),
-    assessGeopolitical(newsItems, { instrument, granularity }),
+    assessGeopolitical(newsItems, { instrument, granularity, events: opts.events || [] }),
   ]);
 
   const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro, geopolitical }, opts);

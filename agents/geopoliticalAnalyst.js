@@ -46,7 +46,7 @@ const NO_NEWS_RESULT = {
 
 export async function assessGeopolitical(
   newsItems = [],
-  { instrument = 'XAU_USD', granularity = 'H1' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [] } = {},
 ) {
   // Geen nieuws → meteen neutraal teruggeven, geen API-call verspillen.
   if (!newsItems || newsItems.length === 0) {
@@ -56,49 +56,66 @@ export async function assessGeopolitical(
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
   const newsBlock = newsItems
-    .map((item) => `- ${item.publishedAt.slice(0, 10)} [${item.source}] ${item.title}`)
+    .map((item) => `- ${item.publishedAt.slice(0, 16).replace('T', ' ')} UTC [${item.source}] ${item.title}`)
     .join('\n');
+
+  const eventsNote = events.length
+    ? `\n\nGEPLANDE HIGH-IMPACT EVENTS (komende 48 uur):\n` +
+      events.map((e) => `- ${e.name} om ${e.time}`).join('\n') +
+      `\nBeoordeel of deze aankomende events het signaal kunnen omverwerpen vóórdat TP geraakt wordt.`
+    : '';
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 768,
     tools: [GEOPOLITICAL_TOOL],
     tool_choice: { type: 'tool', name: GEOPOLITICAL_TOOL.name },
     messages: [
       {
         role: 'user',
         content:
-          `Je bent een senior geopolitiek strateeg en nieuwsanalist met 12 jaar ervaring in het ` +
-          `vertalen van macropolitieke events naar edelmetalenmarkten. Je werkt in een team van ` +
-          `specialisten voor ${instrument} (${granularity}-candles).\n\n` +
+          `Je bent een senior geopolitiek strateeg en timing-analist voor ${instrument} ` +
+          `(${granularity}-candles). Jouw exclusieve mandaat: twee dingen beoordelen die ` +
+          `geen andere agent doet — (1) de impact van actuele geopolitieke/nieuws-events op goud, ` +
+          `en (2) de huidige sessie-timing en nabije event-risico's.\n\n` +
 
-          `JOUW EXCLUSIEVE MANDAAT:\n` +
-          `Je beoordeelt uitsluitend de invloed van actuele nieuws- en geopolitieke events op ` +
-          `de goudprijs. Jij leest GEEN candles, kijkt NIET naar indicatoren en weet NIET wat ` +
-          `andere teamleden hebben geconcludeerd — dat is bewust zo, om onafhankelijk te blijven.\n\n` +
+          `Je leest GEEN candles, kijkt NIET naar indicatoren en weet NIET wat andere teamleden ` +
+          `concludeerden. Monetair beleid (Fed/rente) valt onder de macro-analist — jij fokus op ` +
+          `geopolitiek en timing.\n\n` +
 
-          `GOUD-SPECIFIEKE NIEUWS-DRIVERS (rangschikking op historisch markteffect):\n` +
-          `1. CENTRALE BANK AANKOPEN — structurele vraagdriver, bullish goud bij grote aankopen ` +
-          `(China, Rusland, Turkije, India; netto-aankopen steunen de prijs structureel)\n` +
-          `2. FED/ECB-SIGNALEN — renteverwachtingen zijn de sterkste kortetermijn-driver: ` +
-          `hawkish signaal = bearish goud; dovish = bullish\n` +
-          `3. GEOPOLITIEKE CRISES — oorlogen, sancties, staatsgrepen → safe-haven-vraag. ` +
-          `LET OP: crisis veroorzaakt óók dollar-appreciatie (vlucht naar USD). Als de dollar ` +
-          `hard stijgt bij paniek, DRUKKEN die twee krachten elkander. Noem welke dominant is.\n` +
-          `4. INFLATIE/CPI-DATA — hogere inflatie → bullish goud ALS nominale rentes niet ` +
-          `evenredig stijgen (reëel rendement daalt). Bij agressieve renteverhogingen: bearish.\n` +
-          `5. DOLLAR-BELEID — handelsakkoorden, Treasury-interventies, dedollarisering: ` +
-          `zwakke dollar = bullish goud; sterke dollar = bearish\n` +
-          `6. SANCTIES/EMBARGO'S — landen die de dollar mijden kopen goud als reserve-alternatief\n\n` +
+          `GEOPOLITIEKE GOUD-DRIVERS (focus op niet-monetaire events):\n` +
+          `1. CENTRALE BANK GOUD-AANKOPEN — structurele vraagdriver: grote aankopen door China, ` +
+          `Rusland, Turkije, India steunen de goudprijs structureel\n` +
+          `2. GEOPOLITIEKE CRISES — oorlogen, sancties, staatsgrepen, grensconflicten → ` +
+          `safe-haven-vraag voor goud. Let op: crisis → ook dollar-appreciatie. Analyseer ` +
+          `welke kracht wint: als dollar heel hard stijgt, drukken ze elkaar.\n` +
+          `3. SUPPLY DISRUPTIONS — oliecrises, Straat van Hormuz, handelsroute-blokkades → ` +
+          `inflatie-angst → indirect bullish goud\n` +
+          `4. SANCTIES/DEDOLLARISERING — landen die USD-reserves mijden kopen goud als alternatief\n` +
+          `5. SENTIMENT-EVENTS — G7/G20-verklaringen, IMF-rapporten, centrale bank goud-beleid ` +
+          `(niet rente, maar houding t.o.v. goudreserves)\n` +
+          `6. "SELL THE NEWS" RISICO — als een positief event al weken in de markt ingeprijsd is, ` +
+          `kan de bevestiging juist een verkoopgolf triggeren\n\n` +
+
+          `SESSIE & TIMING ANALYSE — leid de huidige tijd af uit het tijdstip van het meest ` +
+          `recente nieuwsbericht (bovenaan de lijst):\n` +
+          `• Asian sessie (00:00-07:00 UTC): lage liquiditeit, accumulatie/range — signalen hier ` +
+          `zijn minder betrouwbaar, geen directioneel momentum\n` +
+          `• London Kill Zone (07:00-10:00 UTC): manipulatiefase — valse breakouts (Judas Swings) ` +
+          `zijn normaal; entry hier zonder bevestiging = hoog risico\n` +
+          `• New York Kill Zone (12:00-15:00 UTC): echte institutionele beweging, hoogste liquiditeit ` +
+          `— meest betrouwbare window voor entries\n` +
+          `• London Close (15:00-17:00 UTC): posities worden gesloten, tijdelijke reversals mogelijk\n` +
+          `Verwerk de sessie in je zekerheid: zelfde nieuws in NY Kill Zone = betrouwbaarder dan ` +
+          `in London Kill Zone zonder verdere bevestiging.\n\n` +
 
           `BEOORDELING:\n` +
-          `- Noem de 1-3 concrete berichten die jouw oordeel het sterkst bepalen\n` +
-          `- Als nieuws gemengd is: richting → neutraal, zekerheid → laag\n` +
-          `- Als nieuws oud is (>48 uur) of al verwerkt in de prijs: verlaag zekerheid\n` +
-          `- Wees eerlijk over onzekerheid — een hoge zekerheid zonder duidelijk nieuws is misleidend\n\n` +
+          `- Noem de 1-3 berichten die je oordeel het sterkst bepalen\n` +
+          `- Benoem expliciet in welke sessie we ons bevinden en wat dat betekent voor betrouwbaarheid\n` +
+          `- Als nieuws gemengd is of >48 uur oud: neutraal, lage zekerheid\n` +
+          `- Hoge zekerheid alleen bij duidelijk, recent, eenduidig geopolitiek nieuws\n\n` +
 
-          `De onderstaande berichten zijn gefilterd op goud-relevantie, gesorteerd van meest ` +
-          `recent naar oudst:\n\n${newsBlock}`,
+          `Nieuws (meest recent eerst):\n${newsBlock}${eventsNote}`,
       },
     ],
   });

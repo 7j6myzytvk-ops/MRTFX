@@ -49,40 +49,38 @@ export async function assessSentiment(
       {
         role: 'user',
         content:
-          `Je bent een macro-econoom en marktsentiment-specialist met diepgaande expertise in ` +
-          `edelmetalen en goudmarkten. Je analyseert ${instrument} (${granularity}-candles). ` +
-          `Je oordeel is volledig onafhankelijk — je weet niet wat andere teamleden concludeerden.\n\n` +
+          `Je bent een macro-econoom en kwantitatief momentum-analist met diepgaande expertise in ` +
+          `edelmetalen. Je analyseert ${instrument} (${granularity}-candles). Jouw exclusieve mandaat: ` +
+          `(1) het macro-regime bepalen (reële rente, dollar, sentiment) en (2) beoordelen of het ` +
+          `technisch momentum dat regime bevestigt of contradicteert. Je weet niet wat de structuur-analist ` +
+          `concludeerde — jij kijkt alleen naar macro én indicators.\n\n` +
 
-          `CRUCIALE GOUD-MACRO KENNIS — goud is GEEN standaard risk-on/off asset:\n` +
-          `Vier onafhankelijke drijfveren, ranggeschikt op historisch belang:\n` +
-          `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud (lagere opportunity ` +
-          `cost van niet-rentedragend bezit). Stijgende reële rentes → bearish.\n` +
-          `2. DOLLAR (directe inverse correlatie): zwakke dollar → bullish goud; sterke dollar → ` +
-          `bearish. Gebruik de dollar- en rentecontext hieronder.\n` +
-          `3. SAFE HAVEN (nuance!): geopolitieke crisis of marktpaniek → bullish, MAAR dit veroorzaakt ` +
-          `óók dollar-appreciatie (vlucht naar veiligheid in USD). De twee krachten werken dan TEGEN ` +
-          `elkaar. Analyseer welke dominant is: als dollar hard stijgt bij paniek, drukt dat goud.\n` +
-          `4. INFLATIE HEDGE: stijgende inflatie → bullish, maar hogere nominale rentes volgen → ` +
-          `netto-effect hangt af van reële rentes. Hogere inflatie met onveranderde nominale rentes ` +
-          `= lagere reële rentes = bullish goud.\n\n` +
+          `GOUD-MACRO REGIME — vier drijfveren, ranggeschikt op historisch belang:\n` +
+          `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud. ` +
+          `Stijgende reële rentes → bearish. Gebruik de rentecontext hieronder.\n` +
+          `2. DOLLAR (directe inverse correlatie): zwakke dollar → bullish; sterke dollar → bearish. ` +
+          `Gebruik de EUR/USD-context hieronder als proxy.\n` +
+          `3. SAFE HAVEN (nuance!): crisis → safe-haven-vraag, MAAR ook dollar-appreciatie. ` +
+          `Analyseer welke kracht dominant is — als dollar hard stijgt bij paniek, neutraliseren ` +
+          `die twee krachten elkaar.\n` +
+          `4. INFLATIE HEDGE: hogere inflatie met ongewijzigde nominale rentes = lagere reële rentes ` +
+          `= bullish. Maar agressieve renteverhogingen na inflatie = bearish.\n\n` +
 
-          `RISK-ON / RISK-OFF DEFINITIE VOOR GOUD:\n` +
-          `• Risk-off bij goud: BEIDE dollar EN reële rentes stijgen → sterkste bearish combinatie\n` +
-          `• Risk-on bij goud: dollar verzwakt EN reële rentes dalen → sterkste bullish combinatie\n` +
-          `• Gemengd: dollar stijgt maar reële rentes dalen (of vice versa) → neutraal of subtiel\n\n` +
+          `REGIME-LABEL:\n` +
+          `• Risk-on voor goud: dollar verzwakt EN reële rentes dalen → sterkste bullish combinatie\n` +
+          `• Risk-off voor goud: BEIDE dollar EN reële rentes stijgen → sterkste bearish combinatie\n` +
+          `• Gemengd: één van beiden tegengesteld → neutraal of lichte bias\n\n` +
 
-          `SESSIE-CONTEXT voor goud:\n` +
-          `• Aziatische sessie (00:00-07:00 UTC): lage liquiditeit, accumula­tie/range — geen ` +
-          `directioneel momentum\n` +
-          `• London Kill Zone (07:00-10:00 UTC): manipulatiefase — valse breakouts (Judas Swings) ` +
-          `zijn normaal; volatiliteit hoog maar richting misleidend\n` +
-          `• New York Kill Zone (12:00-15:00 UTC): echte institutionele beweging, hoogste liquiditeit, ` +
-          `macro-events clusteren hier — het meest betrouwbare window\n` +
-          `• London Close (15:00-17:00 UTC): posities worden gesloten, trends kunnen temporair keren\n\n` +
+          `TECHNISCH MOMENTUM ALS REGIMEBEVESTIGING — jij bent de enige agent die macro én ` +
+          `indicators combineert. Beantwoord expliciet:\n` +
+          `• EMA50: staat de prijs erboven (bullish) of eronder (bearish)?\n` +
+          `• RSI: boven 60 in bullish regime = bevestiging; onder 40 in bullish regime = divergentie\n` +
+          `• MACD: histogram boven nul = bullish momentum; onder nul = bearish; ` +
+          `kruising van signaallijn = vroeg regime-shift signaal\n` +
+          `• Vraag: bevestigt het technisch momentum het macro-regime — of contradicteert het?\n\n` +
 
-          `Baseer je oordeel op (1) het karakter van de candles (momentum, volatiliteit, trendstructuur), ` +
-          `(2) de dollar- en rentecontext hieronder en (3) de sessie-context — een "risk-off" signaal ` +
-          `in de Aziatische sessie is minder betrouwbaar dan hetzelfde signaal tijdens de NY Kill Zone. ` +
+          `Baseer je oordeel op (1) de dollar- en rentecontext hieronder, (2) de indicator-data ` +
+          `(RSI/MACD/EMA50) uit de contextNotes, en (3) het karakter van de candles. ` +
           `Claim geen macro-events die je niet zeker weet.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),

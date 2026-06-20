@@ -44,62 +44,68 @@ export async function decide(
       {
         role: 'user',
         content:
-          `Je bent de CEO en eindbeslisser van een professioneel handelsteam voor ${instrument} ` +
+          `Je bent de CEO en eindbeslisser van een gespecialiseerd handelsteam voor ${instrument} ` +
           `(${granularity}-candles). De huidige prijs is ${lastClose}.\n\n` +
 
-          `Je team leverde de volgende invalshoeken:\n\n` +
-          `[A] Technische analyse (eerste oordeel): signaal "${analysis.signal}" ` +
-          `(zekerheid ${analysis.confidence}%) — ${analysis.reasoning}\n\n` +
-          `[B] Risicobeoordeling (sizing en niveaus — GEEN directioneel oordeel): ` +
+          `Elk teamlid heeft een unieke, niet-overlappende specialiteit. Weeg hun input op basis ` +
+          `van hun mandaat:\n\n` +
+
+          `[A] MARKTSTRUCTUUR-ANALIST (eerste oordeel): signaal "${analysis.signal}" ` +
+          `(zekerheid ${analysis.confidence}%) — ${analysis.reasoning}\n` +
+          `→ Beoordeelt: HTF-bias, BOS/CHoCH, liquiditeitskaart, OBs/FVGs. Geen macro, geen indicatoren.\n\n` +
+
+          `[B] RISICOMANAGER (trade-parameters — GEEN directioneel oordeel): ` +
           `SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}" — ` +
-          `${risk.reasoning}\n\n` +
-          `[C] Bear Researcher / tegenscenario: signaal "${devilsAdvocate.counterSignal}" ` +
-          `(zekerheid ${devilsAdvocate.counterConfidence}%) — ${devilsAdvocate.argument}\n\n` +
-          `[D] Macro/sentiment: "${macro.sentiment}" (zekerheid ${macro.confidence}%) — ` +
-          `${macro.reasoning}\n\n` +
+          `${risk.reasoning}\n` +
+          `→ Beoordeelt: entry-zone, SL/TP structureel verantwoord, R:R en positiegrootte.\n\n` +
+
+          `[C] PRE-MORTEM SPECIALIST (faalscenario-onderzoek): faalrichting "${devilsAdvocate.counterSignal}" ` +
+          `(overtuigingskracht ${devilsAdvocate.counterConfidence}%) — ${devilsAdvocate.argument}\n` +
+          `→ Vraag: "Stel de trade mislukt — wat hadden we gemist?" Hoge overtuigingskracht = ` +
+          `duidelijk faalscenario gevonden. Lage overtuigingskracht = setup houdt stand tegen pre-mortem.\n\n` +
+
+          `[D] MACRO & MOMENTUM ANALIST: regime "${macro.sentiment}" (zekerheid ${macro.confidence}%) — ` +
+          `${macro.reasoning}\n` +
+          `→ Beoordeelt: reële rente, dollar, macro-regime + bevestigt technisch momentum (RSI/MACD/EMA).\n\n` +
           (geopolitical && geopolitical.confidence > 0
-            ? `[E] Geopolitieke/nieuws-analyse: "${geopolitical.assessment}" ` +
+            ? `[E] GEOPOLITIEK & TIMING ANALIST: "${geopolitical.assessment}" ` +
               `(zekerheid ${geopolitical.confidence}%) — ${geopolitical.reasoning}` +
               (geopolitical.keyEvents?.length
-                ? ` | Sleutel-events: ${geopolitical.keyEvents.join('; ')}`
+                ? ` | Key events: ${geopolitical.keyEvents.join('; ')}`
                 : '') +
-              `\n\n`
+              `\n→ Beoordeelt: geopolitieke news-events, sessie-timing (kill zone), nabije event-risico's.\n\n`
             : '') +
-          `[F] Technisch analist na discussie (weerwoord): signaal "${rebuttal.signal}" ` +
-          `(zekerheid ${rebuttal.confidence}%) — ${rebuttal.reasoning}\n\n` +
+          `[F] MARKTSTRUCTUUR-ANALIST (weerwoord na discussie): signaal "${rebuttal.signal}" ` +
+          `(zekerheid ${rebuttal.confidence}%) — ${rebuttal.reasoning}\n` +
+          `→ Reageert specifiek op het pre-mortem faalscenario: zijn de structurele argumenten nog intact?\n\n` +
 
-          `BESLISSINGSGEWICHTEN — pas deze expliciet toe:\n` +
-          `• Technische analyse (A + F gecombineerd): 40% — het weerwoord [F] is het meest relevant; ` +
-          `als het weerwoord omlaag ging t.o.v. [A], weegt dit negatief (twijfeling analist = gevaar)\n` +
-          `• Macro/sentiment + geopolitiek (D${geopolitical && geopolitical.confidence > 0 ? ' + E' : ''}): 30% — ` +
-          `macro-tegenwind bij een bullish signaal of macro-rugwind is cruciaal\n` +
-          `• Tegenscenario Bear Researcher (C): 30% — lage counter-zekerheid bevestigt het signaal; ` +
-          `hoge counter-zekerheid of een concreet sterk argument VERHOOGT je risico-inschatting significant\n\n` +
+          `BESLISSINGSGEWICHTEN:\n` +
+          `• Structuur + Liquiditeit [A + F gecombineerd]: 35% — weerwoord [F] is het meest actueel; ` +
+          `als [F] lager is dan [A], twijfelt de structuur-analist zelf\n` +
+          `• Macro-regime + Momentum [D]: 25% — contradicteert het macro-regime de structuur? ` +
+          `Dan is de kans op false break groter\n` +
+          `• Pre-mortem [C]: 20% — gevonden faalscenario is een stop-signaal; ` +
+          `geen faalscenario gevonden = extra bevestiging\n` +
+          `• Geopolitiek + Timing [E]: 20% — verkeerde sessie of geopolitiek tegenwind relativeren ` +
+          `zelfs een technisch sterk signaal\n\n` +
 
-          `ZEKERHEIDS-KALIBRATIE op basis van consensus (gebruik dit als anker):\n` +
-          `• Alle invalshoeken eensgezind → zekerheid >70%, directioneel signaal\n` +
-          `• Technisch (F) + macro eensgezind, DA-zekerheid laag → zekerheid 60-70%\n` +
-          `• Technisch en macro eensgezind maar DA sterk tegenargument → 55-65%, klein formaat\n` +
-          `• Verdeeld of sterke tegenstemmen → neutraal; forceer geen directioneel signaal\n\n` +
+          `ZEKERHEIDS-KALIBRATIE:\n` +
+          `• Alle vier perspectieven aligned + pre-mortem vindt niets → zekerheid >70%\n` +
+          `• Structuur + macro aligned, pre-mortem zwak, timing ok → zekerheid 60-70%\n` +
+          `• Pre-mortem vindt duidelijk faalscenario (① HTF-structuur of ② institutionele val) → ` +
+          `zekerheid verlagen of neutraal, ook als structuur sterk lijkt\n` +
+          `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
+          `• Verdeeld of meerdere conflicten → neutraal; forceer geen richting\n\n` +
 
-          `SPECIFIEKE DA-WEGING [C] — de Bear Researcher onderzocht vijf categorieën:\n` +
-          `• Als [C] een Judas Swing of liquiditeitsval (categorie ②) signaleert: dit is het ` +
-          `zwaarste single-factor risico in goudhandel. Verlaag zekerheid significant of ` +
-          `kies neutraal, zelfs als [A]/[F] sterk zijn.\n` +
-          `• Als [C] marktstructuur-tegenwind (categorie ①) signaleert: weeg mee of de hogere ` +
-          `timeframe trend het signaal ondersteunt of tegenwerkt.\n` +
-          `• Als [C] lage counter-zekerheid meldt EN geen concreet argument in alle vijf ` +
-          `categorieën: dit is een sterk bevestigingssignaal — verhoog zekerheid.\n\n` +
-
-          `VASTE DREMPELS (niet te omzeilen):\n` +
-          `1) Weerwoord [F] lager dan eerste oordeel [A]: kies neutraal tenzij macro én DA ` +
-          `beide onomwonden jouw richting steunen\n` +
-          `2) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +
-          `3) Gebruik SL/TP van de risicomanager [B] als jouw signaal overeenkomt met [A]; ` +
-          `als je van richting afwijkt, stel eigen SL/TP in die bij jouw richting passen\n` +
-          `4) Sessie-check: als de entry in de London Kill Zone valt (07:00-10:00 UTC) zonder ` +
-          `bewijs dat de Judas Swing al heeft plaatsgevonden, verlaag zekerheid of kies neutraal\n` +
-          `Onderbouw je besluit met concrete verwijzingen naar de letters [A]–[F].` +
+          `VASTE DREMPELS:\n` +
+          `1) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +
+          `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +
+          `onomwonden dezelfde richting steunen\n` +
+          `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht: ` +
+          `zwaarste single-factor risico — verlaag significant of neutraal\n` +
+          `4) Gebruik SL/TP van risicomanager [B]; als je van de analist-richting afwijkt, ` +
+          `stel eigen SL/TP in die bij jouw richting passen\n` +
+          `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
           `${newsContextNote}${contextNotes}`,
       },
     ],
