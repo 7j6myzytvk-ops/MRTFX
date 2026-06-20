@@ -12,10 +12,11 @@ import { computeDailyContext, formatDailyContextNote } from './dailyContext.js';
 import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
+import { assessSession, formatSessionNote } from './sessionContext.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, newsItems = [] } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, newsItems = [], currentTime = null } = {},
 ) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
@@ -31,7 +32,9 @@ export async function runDiscussion(
   // hier en niet in alle agent-bestanden hoeft te worden toegevoegd.
   const briefing = await getBriefing();
   const briefingNote = formatBriefingNote(briefing);
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + briefingNote;
+  const sessionTime = currentTime ? new Date(currentTime) : new Date();
+  const sessionNote = formatSessionNote(assessSession(sessionTime));
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + briefingNote + sessionNote;
   const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);

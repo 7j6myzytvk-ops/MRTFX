@@ -42,7 +42,7 @@ export async function assessSentiment(
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 1024,
     tools: [SENTIMENT_TOOL],
     tool_choice: { type: 'tool', name: SENTIMENT_TOOL.name },
     messages: [
@@ -78,6 +78,16 @@ export async function assessSentiment(
           `• MACD: histogram boven nul = bullish momentum; onder nul = bearish; ` +
           `kruising van signaallijn = vroeg regime-shift signaal\n` +
           `• Vraag: bevestigt het technisch momentum het macro-regime — of contradicteert het?\n\n` +
+
+          `MOMENTUM-CONTRADICTIE REGEL (verplicht toepassen):\n` +
+          `Als het technisch momentum de macro-richting tegenspreekt, VERLAAG je zekerheid naar ` +
+          `maximaal 55% — ongeacht hoe sterk de macro-drivers lijken:\n` +
+          `• Bearish macro-regime MAAR MACD stijgt richting signaallijn (bullish momentum opbouw) → max 55%\n` +
+          `• Bearish macro-regime MAAR RSI boven 50 of stijgend (geen bearish druk) → max 55%\n` +
+          `• Bullish macro-regime MAAR MACD daalt onder signaallijn → max 55%\n` +
+          `• Bullish macro-regime MAAR RSI onder 45 of dalend → max 55%\n` +
+          `Momentum-divergentie in een 'bewezen' macro-regime is historisch een van de sterkste ` +
+          `reversal-signalen. Een hoge confidence bij tegenstrijdig momentum is misleidend.\n\n` +
 
           `Baseer je oordeel op (1) de dollar- en rentecontext hieronder, (2) de indicator-data ` +
           `(RSI/MACD/EMA50) uit de contextNotes, en (3) het karakter van de candles. ` +

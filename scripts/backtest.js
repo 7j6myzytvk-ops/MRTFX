@@ -123,6 +123,7 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
         dollarCandles,
         yieldCandles: yieldCandlesForSample,
         d1Candles: d1CandlesForSample,
+        currentTime: sampleTime,
       });
       break;
     } catch (err) {
