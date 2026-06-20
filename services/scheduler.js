@@ -10,7 +10,7 @@ import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
-import { checkConditions, formatConditionContext } from './conditionChecker.js';
+import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -23,8 +23,9 @@ let lastSignalTime = null;
 
 async function poll(client) {
   try {
-    // Cooldown-check (goedkoopste check — eerst uitvoeren)
+    // Goedkope checks eerst — geen API-calls als ze falen
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
+    if (!isActiveSession()) return;
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
     const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
