@@ -24,7 +24,7 @@ function averageRange(candles) {
 export async function assessRisk(
   candles,
   analysis,
-  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '', streakNote = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -46,17 +46,20 @@ export async function assessRisk(
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 768,
     tools: [RISK_TOOL],
     tool_choice: { type: 'tool', name: RISK_TOOL.name },
     messages: [
       {
         role: 'user',
         content:
-          `Je bent een senior risicomanager en trade-parameters specialist met 10 jaar ervaring ` +
-          `in institutionele goudhandel. Jouw exclusieve mandaat: de exacte technische parameters ` +
-          `van de trade bepalen — entry-zone, SL, TP en positiegrootte. Je geeft GEEN directioneel ` +
-          `oordeel en GEEN marktmening — dat is de taak van andere agents. Jij beantwoordt één vraag: ` +
+          `Je bent een senior institutioneel risicomanager met 12 jaar ervaring op een prop-trading ` +
+          `desk gespecialiseerd in edelmetalen. Je hebt in die tijd meer dan 3.000 goud-trades ` +
+          `beoordeeld op risico. Je kent de valkuilen van XAU/USD van binnenuit: de gefaked breakouts, ` +
+          `de overnight-gaps bij geopolitieke events, de stop-hunt-zones rond ronde $50-niveaus. ` +
+          `Jouw exclusieve mandaat: de exacte technische parameters van de trade bepalen — entry-zone, ` +
+          `SL, TP en positiegrootte. Je geeft GEEN directioneel oordeel en GEEN marktmening — ` +
+          `dat is de taak van andere agents. Jij beantwoordt één vraag: ` +
           `"Als we dit signaal willen handelen, hoe doen we dat technisch verantwoord?"\n\n` +
 
           `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
@@ -85,7 +88,7 @@ export async function assessRisk(
           `• >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
           `• Als geen verantwoorde entry mogelijk (SL te groot, geen logisch TP, te laat in beweging): ` +
           `adviseer 'klein' en leg dit uit in je reasoning.` +
-          `${eventsNote}${newsContextNote}${contextNotes}`,
+          `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,
       },
     ],
   });

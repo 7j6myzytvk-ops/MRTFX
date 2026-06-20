@@ -60,12 +60,15 @@ export async function analyzeCandles(
       {
         role: 'user',
         content:
-          `Je bent een senior marktstructuur- en liquiditeitsanalist met 15 jaar ervaring in de ` +
-          `institutionele goudmarkt. Jouw exclusieve specialiteit: price action structuur en ` +
-          `liquiditeitskaarten voor XAU/USD (${granularity}-candles). Je analyseert GEEN indicatoren ` +
-          `(RSI/MACD), geen macro-context en geen sessie-timing — die vallen buiten jouw mandaat en ` +
-          `worden door gespecialiseerde collega's beoordeeld. Jij beantwoordt één vraag: ` +
-          `"Wat zegt de marktstructuur en waar ligt de liquiditeit?"\n\n` +
+          `Je bent een senior marktstructuur- en liquiditeitsanalist met 15 jaar track record bij ` +
+          `een multi-billion dollar goud hedge fund. Je begon als junior chart analyst in 2009, ` +
+          `middenin de post-crisis goud-bullrun, en hebt sindsdien elke grote marktfase meegemaakt: ` +
+          `de top van 2011 ($1920), het bearmarkt dal van 2015, de rally van 2018-2020 en de ` +
+          `2024-2026 bull run naar $3000+. Je specialiteit is institutionele orderflow lezen via ` +
+          `ICT/SMC — je ziet in de price action waar het grote geld zit en waar het naartoe beweegt. ` +
+          `Je analyseert GEEN indicatoren (RSI/MACD), geen macro-context en geen sessie-timing — ` +
+          `die vallen buiten jouw mandaat en worden door gespecialiseerde collega's beoordeeld. ` +
+          `Jij beantwoordt één vraag: "Wat zegt de marktstructuur en waar ligt de liquiditeit?"\n\n` +
 
           `ICT/SMC KENNIS (jouw gereedschapskist):\n` +
           `• MARKTSTRUCTUUR: onderscheid BOS (Break of Structure = trendbevestiging) van CHoCH ` +
@@ -122,45 +125,39 @@ export async function reviewDiscussion(
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 768,
     tools: [REBUTTAL_TOOL],
     tool_choice: { type: 'tool', name: REBUTTAL_TOOL.name },
     messages: [
       {
         role: 'user',
         content:
-          `Je bent de technisch analist voor ${instrument} (${granularity}-candles). ` +
-          `Je gaf eerder het signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) ` +
-          `met de onderbouwing: "${analysis.reasoning}". ` +
-          `Je collega's reageerden hierop:\n\n` +
-          `Risicomanager (SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}"): ` +
+          `Je bent de senior marktstructuur-analist — dezelfde persoon met 15 jaar ICT/SMC-ervaring ` +
+          `die de initiële analyse deed. Je gaf het signaal "${analysis.signal}" ` +
+          `(zekerheid ${analysis.confidence}%) met onderbouwing: "${analysis.reasoning}".\n\n` +
+          `Je team heeft nu gereageerd. Jouw taak: weerleg of bevestig je analyse als structuur-expert.\n\n` +
+          `REACTIES VAN HET TEAM:\n` +
+          `Risicomanager — SL ${risk.stopLoss}, TP ${risk.takeProfit}, positie "${risk.positionSize}": ` +
           `${risk.reasoning}\n\n` +
-          `Devil's Advocate (tegen-signaal "${devilsAdvocate.counterSignal}", zekerheid ${devilsAdvocate.counterConfidence}%): ` +
-          `${devilsAdvocate.argument}\n\n` +
-          `Marktcontext/Sentiment ("${macro.sentiment}", zekerheid ${macro.confidence}%): ${macro.reasoning}\n\n` +
+          `Bear Researcher (pre-mortem) — faalrichting "${devilsAdvocate.counterSignal}", ` +
+          `overtuigingskracht ${devilsAdvocate.counterConfidence}%: ${devilsAdvocate.argument}\n\n` +
+          `Macro & Momentum — regime "${macro.sentiment}", zekerheid ${macro.confidence}%: ${macro.reasoning}\n\n` +
           (geopolitical && geopolitical.confidence > 0
-            ? `Geopolitieke/nieuws-analist ("${geopolitical.assessment}", zekerheid ${geopolitical.confidence}%): ` +
+            ? `Geopolitiek & Timing — "${geopolitical.assessment}", zekerheid ${geopolitical.confidence}%: ` +
               `${geopolitical.reasoning}\n\n`
             : '') +
-          `Geef je herziene of bevestigde signaal en zekerheid. Reageer als marktstructuur-specialist ` +
-          `op wat het team heeft ingebracht:\n\n` +
-          `PRIMAIRE TAAK — reageer op het pre-mortem scenario van de Bear Researcher:\n` +
-          `• Faalscenario ① (HTF-structuur fout): Is er inderdaad een hogere CHoCH die je hebt ` +
-          `gemist? Of klopt de Daily/Weekly bias nog steeds?\n` +
-          `• Faalscenario ② (Institutionele val): Staan we inderdaad in een stop-cluster of ` +
-          `inducement-zone? Of is de entry structureel verantwoord?\n` +
-          `• Faalscenario ③ (Timing mismatch): Heeft de macro-analist of geo-analist informatie ` +
-          `gegeven die de timing van je entry in twijfel trekt?\n` +
-          `• Faalscenario ④ (Zone al verwerkt): Is het OB of de FVG die je als entry zag al ` +
-          `eerder bezocht en daarmee verbruikt?\n` +
-          `• Faalscenario ⑤ (Genegeerd bewijs): Zijn er structurele signalen die je eerder ` +
-          `wegrationaliseerde maar die nu, na de discussie, zwaarder wegen?\n\n` +
-          `ZEKERHEIDSREGEL:\n` +
-          `• Pre-mortem vindt geen overtuigend faalscenario + macro bevestigt: VERHOOG zekerheid\n` +
-          `• Pre-mortem heeft 1 steekhoudend punt: kleine aanpassing omlaag of behoud\n` +
-          `• Pre-mortem scenario ① of ② bevestigd (HTF-structuur of institutionele val): ` +
-          `VERLAAG significant of switch naar neutraal\n` +
-          `• Meerdere faalscenario's bevestigd: neutraal — de structurele basis is onzeker.` +
+          `VERPLICHTE REACTIE PER PRE-MORTEM SCENARIO (beknopt, max 1 zin per punt):\n` +
+          `① HTF-structuur fout: ${devilsAdvocate.counterConfidence > 50 ? '⚠️ hoge overtuiging — moet je weerleggen of erkennen' : 'beoordeel'} — klopt de Daily/Weekly bias nog steeds?\n` +
+          `② Institutionele val: staan we in een stop-cluster of inducement? Of is de structuur zuiver?\n` +
+          `③ Timing mismatch: geeft macro of geo informatie die de timing in twijfel trekt?\n` +
+          `④ Zone verwerkt: is het OB/FVG al eerder bezocht (mitigation)?\n` +
+          `⑤ Genegeerd bewijs: zijn er structurele signalen die je eerder te snel afdeed?\n\n` +
+          `ZEKERHEIDSREGEL (verplicht toepassen):\n` +
+          `• Alle 5 scenario's weerlegd + macro bevestigt → VERHOOG zekerheid\n` +
+          `• 1 steekhoudend punt → kleine aanpassing omlaag, behoud richting\n` +
+          `• Scenario ① of ② bevestigd → VERLAAG significant of switch naar neutraal\n` +
+          `• Meerdere scenario's bevestigd → neutraal; forceer geen richting als de basis wankelt\n` +
+          `• Een onveranderd percentage is alleen gerechtvaardigd als je elk punt concreet kunt weerleggen.` +
           `${newsContextNote}${contextNotes}`,
       },
     ],

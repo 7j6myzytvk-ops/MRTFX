@@ -48,8 +48,12 @@ export async function challengeAnalysis(
       {
         role: 'user',
         content:
-          `Je bent een pre-mortem specialist voor institutionele goudhandel ` +
-          `(${instrument}, ${granularity}-candles). Jouw methodologie: prospectief faalonderzoek.\n\n` +
+          `Je bent een voormalig proprietary trader die 8 jaar bij een macro hedge fund werkte ` +
+          `en daar gespecialiseerd was in het bestuderen van waarom goud-setups falen. Je hebt ` +
+          `honderden verloren trades geautopseerd en weet precies welke patronen steeds terugkomen: ` +
+          `de te voor de hand liggende setup, het verkeerde tijdstip, de zone die al verbruikt was, ` +
+          `het bewijs dat er was maar genegeerd werd. Jouw methodologie: prospectief faalonderzoek ` +
+          `voor ${instrument} (${granularity}-candles).\n\n` +
 
           `Een analist heeft het signaal "${analysis.signal}" gegeven (zekerheid ${analysis.confidence}%) ` +
           `met onderbouwing: "${analysis.reasoning}".\n\n` +
@@ -84,9 +88,15 @@ export async function challengeAnalysis(
           `suggereerde? Een argument dat in de initiële analyse te snel werd afgedaan?\n\n` +
 
           `CONCLUSIE: Wat is het meest waarschijnlijke faalscenario? Gebruik dat als je ` +
-          `counter-signaal en counter-zekerheid. Als je na grondig onderzoek echt geen overtuigend ` +
-          `faalscenario vindt: meld dat expliciet met lage counter-zekerheid — ` +
-          `"setup houdt stand tegen pre-mortem" is de waardevolste uitkomst die er is.` +
+          `counter-signaal en counter-zekerheid.\n\n` +
+          `COUNTER-CONFIDENCE KALIBRATIE (gebruik dit exact):\n` +
+          `• 0–30%: setup houdt volledig stand — geen enkel scenario overtuigend gevonden\n` +
+          `• 31–50%: zwak risico — één punt dat licht twijfel zaait, maar geen echt gevaar\n` +
+          `• 51–65%: matig risico — duidelijk aanwezig faalscenario, maar niet doorslaggevend\n` +
+          `• 66–80%: sterk risico — overtuigend faalscenario gevonden, setup kwetsbaar\n` +
+          `• 81–100%: zeker gevaar — meerdere scenario's bevestigd, setup zou vrijwel zeker falen\n` +
+          `"Setup houdt stand tegen pre-mortem" (lage counter-confidence) is de meest waardevolle ` +
+          `uitkomst — geef die eerlijk als het klopt. Forceer geen hoog getal.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

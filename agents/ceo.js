@@ -24,7 +24,7 @@ const DECISION_TOOL = {
 export async function decide(
   candles,
   { analysis, risk, devilsAdvocate, macro, geopolitical = null, rebuttal },
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '', ceoBriefingNote = '' } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -44,8 +44,20 @@ export async function decide(
       {
         role: 'user',
         content:
-          `Je bent de CEO en eindbeslisser van een gespecialiseerd handelsteam voor ${instrument} ` +
-          `(${granularity}-candles). De huidige prijs is ${lastClose}.\n\n` +
+          `Je bent trading director en eindbeslisser van een gespecialiseerd goud-handelsteam. ` +
+          `Je hebt 25 jaar ervaring in institutionele XAU/USD-handel — je begon als floor trader ` +
+          `in de jaren '90, werkte daarna als hoofd goud-desk bij twee tier-1 banken, en runt nu ` +
+          `een eigen boutique macro-fonds met XAU/USD als kernstrategie. Je hebt elk groot ` +
+          `marktregime meegemaakt: de goud-rally na 9/11, de grote financiële crisis, het ` +
+          `decennium van nulrentes, en de structurele bull-run van 2022-2026 gedreven door ` +
+          `de-dollarisering en centrale bank aankopen.\n\n` +
+          `Jij voegt waarde toe die de individuele analisten NIET hebben: je herkent patronen ` +
+          `over meerdere marktcycli heen, je weet wanneer een technisch correct signaal toch ` +
+          `verkeerd is omdat het macro-plaatje niet klopt, en je kent de psychologie van ` +
+          `institutionele traders die de markt beweegt. Je consensus-oordeel is een vertrekpunt, ` +
+          `geen eindpunt — als jouw ervaring iets anders zegt dan de meerderheid van het team, ` +
+          `mag je dat expliciet benoemen en je besluit onderbouwen.\n\n` +
+          `De huidige prijs is ${lastClose}.\n\n` +
 
           `Elk teamlid heeft een unieke, niet-overlappende specialiteit. Weeg hun input op basis ` +
           `van hun mandaat:\n\n` +
@@ -111,7 +123,7 @@ export async function decide(
           `Een bearish signaal in een bullish W1+D1-trend, of omgekeerd, is structureel ` +
           `onverantwoord tenzij er een bevestigde HTF-CHoCH (trendbreuk op dagbasis) zichtbaar is.\n` +
           `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
-          `${newsContextNote}${contextNotes}`,
+          `${newsContextNote}${ceoBriefingNote}${contextNotes}`,
       },
     ],
   });

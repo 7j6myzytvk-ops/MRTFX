@@ -14,6 +14,11 @@ import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 import { assessSession, formatSessionNote } from './sessionContext.js';
+import {
+  getCeoPerformanceBriefing,
+  formatCeoPerformanceBriefingNote,
+  formatRiskStreakNote,
+} from '../services/ceoPerformanceBriefing.js';
 
 export async function runDiscussion(
   candles,
@@ -38,12 +43,17 @@ export async function runDiscussion(
   const sessionTime = currentTime ? new Date(currentTime) : new Date();
   const sessionNote = formatSessionNote(assessSession(sessionTime));
   const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote;
+
+  const perfStats = await getCeoPerformanceBriefing();
+  const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats);
+  const streakNote = formatRiskStreakNote(perfStats);
+
   const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);
 
   const [risk, devilsAdvocate, macro, geopolitical] = await Promise.all([
-    assessRisk(candles, analysis, opts),
+    assessRisk(candles, analysis, { ...opts, streakNote }),
     challengeAnalysis(candles, analysis, opts),
     assessSentiment(candles, analysis, opts),
     assessGeopolitical(newsItems, { instrument, granularity, events: opts.events || [] }),
@@ -51,7 +61,7 @@ export async function runDiscussion(
 
   const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro, geopolitical }, opts);
 
-  const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, opts);
+  const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });
 
   const entryPrice = candles[candles.length - 1].close;
   const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, geopolitical, analystRebuttal: rebuttal };

@@ -49,11 +49,17 @@ export async function assessSentiment(
       {
         role: 'user',
         content:
-          `Je bent een macro-econoom en kwantitatief momentum-analist met diepgaande expertise in ` +
-          `edelmetalen. Je analyseert ${instrument} (${granularity}-candles). Jouw exclusieve mandaat: ` +
-          `(1) het macro-regime bepalen (reële rente, dollar, sentiment) en (2) beoordelen of het ` +
-          `technisch momentum dat regime bevestigt of contradicteert. Je weet niet wat de structuur-analist ` +
-          `concludeerde — jij kijkt alleen naar macro én indicators.\n\n` +
+          `Je bent een senior macro-econoom en kwantitatief momentum-analist met een PhD econometrie ` +
+          `en 12 jaar specialisatie in edelmetalen bij een global macro hedge fund. Je hebt de ` +
+          `goud-super-cycle van 2001-2011 uitgebreid geanalyseerd, het bearmarkt-decennium 2011-2018 ` +
+          `gedocumenteerd, en de correlatie-breuk van 2022-2026 (goud omhoog ondanks hoge rentes) ` +
+          `van dichtbij meegemaakt. Je specialiteit: het macro-regime voor goud bepalen en checken ` +
+          `of het technisch momentum dat regime bevestigt of contradicteert. Je analyseert ` +
+          `${instrument} (${granularity}-candles). Je weet niet wat de structuur-analist concludeerde — ` +
+          `jij kijkt alleen naar macro én indicators.\n` +
+          `Als er een macro-briefing beschikbaar is in de contextNotes hieronder (sectie "MACRO-BRIEFING"), ` +
+          `gebruik die dan als startpunt voor het huidige macro-regime — het is een door de gebruiker ` +
+          `opgesteld kader dat specifiek voor deze periode geldt.\n\n` +
 
           `GOUD-MACRO REGIME — vier drijfveren, ranggeschikt op historisch belang:\n` +
           `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud. ` +
