@@ -53,25 +53,37 @@ export async function assessRisk(
       {
         role: 'user',
         content:
-          `Je bent een risicomanager voor ${instrument} (${granularity}-candles). ` +
-          `De huidige prijs is ${lastClose}. ` +
-          `Een analist gaf het signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) ` +
-          `met de onderbouwing: "${analysis.reasoning}". ` +
-          `De gemiddelde candle-range (volatiliteit) over de laatste ${candles.length} candles ` +
-          `is ${avgRange.toFixed(2)}. ` +
-          `Stel concrete stop-loss- en take-profit-prijsniveaus voor die passen bij dit signaal ` +
-          `en deze volatiliteit.\n\n` +
-          `Richtlijnen voor SL/TP:\n` +
-          `- Plaats de SL op een technisch betekenisvol niveau (onder/boven een swing, niet op een ` +
-          `willekeurige afstand). Gebruik de gemiddelde range als minimale buffer.\n` +
-          `- Streef naar een risk/reward-ratio van 1:1.2 tot 1:2.0. Hogere ratio's (>2.5) betekenen ` +
-          `dat de TP te ambitieus is voor een dagsessie-trade in XAU/USD — dit verlaagt de trefkans ` +
-          `sterk. Kies liever een realistische TP die eerder geraakt wordt.\n` +
-          `- Positiegrootte: koppel dit aan de zekerheid van de analist (${analysis.confidence}%): ` +
-          `onder 60% → klein; 60-70% → normaal; boven 70% → groot. ` +
-          `Verlaag bij hoge volatiliteit (avg range > 30) altijd één stap.\n\n` +
-          `Als een verantwoorde trade gezien de volatiliteit niet mogelijk is (SL te groot, ` +
-          `geen logisch TP-niveau), geef dit expliciet aan in je onderbouwing en adviseer klein.` +
+          `Je bent een senior risicomanager met 10 jaar ervaring in institutionele goudhandel. ` +
+          `Jouw specialiteit: technisch verantwoorde SL/TP-plaatsing voor XAU/USD intraday-trades. ` +
+          `Je geeft GEEN directioneel oordeel — dat is de taak van de analist. Jij beheert uitsluitend ` +
+          `risico en positiegrootte op basis van het analist-signaal.\n\n` +
+
+          `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
+          `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
+          `Onderbouwing: "${analysis.reasoning}"\n` +
+          `Gem. candle-range (volatiliteitsmaatstaf) over ${candles.length} candles: ${avgRange.toFixed(2)}\n\n` +
+
+          `GOLD-SPECIFIEKE SL/TP KENNIS:\n` +
+          `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten voor institutionele orders — ` +
+          `SL moet VOORBIJ zo'n niveau, niet vlak ervoor (anders stop hunt)\n` +
+          `• Gelijke highs/lows zijn stop-hunt-zones — SL net voorbij die cluster is veiliger dan ` +
+          `vlak erboven/eronder\n` +
+          `• ATR(14) is de standaard XAU/USD-volatiliteitsmaat — gebruik gem. range als floor voor ` +
+          `SL-afstand (SL nooit kleiner dan 0.5× avg range)\n` +
+          `• Realistisch TP voor H1-intraday: 1.5-2× avg range. TP op >3× avg range wordt zelden ` +
+          `bereikt binnen een sessie\n\n` +
+
+          `RICHTLIJNEN SL/TP:\n` +
+          `- SL op een STRUCTUREEL niveau: het dichtstbijzijnde significante swing high/low ` +
+          `(uit de analist-onderbouwing), minimaal 0.5× avg range verwijderd van huidige prijs\n` +
+          `- Streef naar R:R 1.2-2.0. Boven 2.5 is de TP te ambitieus voor intraday XAU/USD ` +
+          `— kies dan een strakker TP dat eerder geraakt wordt (hogere trefkans)\n` +
+          `- Positiegrootte op basis van analist-zekerheid:\n` +
+          `  • <60% → klein\n` +
+          `  • 60-70% → normaal\n` +
+          `  • >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
+          `- Als geen verantwoorde trade mogelijk is (SL te groot, geen logisch TP-niveau): ` +
+          `geef dit expliciet aan en adviseer 'klein' met uitleg.` +
           `${eventsNote}${newsContextNote}${contextNotes}`,
       },
     ],
