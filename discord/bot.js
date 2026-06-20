@@ -9,6 +9,7 @@ import {
   getRecentXauW1Candles,
 } from '../services/marketData.js';
 import { checkConditions, isActiveSession } from '../services/conditionChecker.js';
+import { getBriefing, setBriefing, clearBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
@@ -42,6 +43,19 @@ const commands = [
   new SlashCommandBuilder()
     .setName('performance')
     .setDescription('Toon performance-statistieken: gelogde signalen vs. werkelijke uitkomst'),
+  new SlashCommandBuilder()
+    .setName('briefing')
+    .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
+    .addStringOption((option) =>
+      option
+        .setName('tekst')
+        .setDescription('De macro-context voor deze week (vervangt vorige briefing, geldig 7 dagen)')
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName('wissen')
+        .setDescription('Wis de huidige briefing')
+    ),
 ].map((c) => c.toJSON());
 
 function formatOutcome(outcome) {
@@ -117,6 +131,11 @@ export function createBot() {
             ? `\nWachten op: ${blockers.join(' | ')}`
             : '\nAlle condities groen';
 
+        const briefing = await getBriefing();
+        const briefingLine = briefing
+          ? `\n\n**Macro-briefing actief** (geldig t/m ${new Date(briefing.expiresAt).toISOString().slice(0, 10)})\n> ${briefing.text.slice(0, 200)}${briefing.text.length > 200 ? '…' : ''}`
+          : `\n\n_Geen macro-briefing actief. Gebruik /briefing om context in te stellen._`;
+
         await interaction.editReply(
           `**XAU/USD Status — ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
           `Koers: $${price.price}\n\n` +
@@ -125,7 +144,8 @@ export function createBot() {
           `${tfIcon} TF-alignment: ${tfLine}\n` +
           `${trendIcon} D1/W1 trend: ${trendLine}\n` +
           `${levelIcon} Sleutelniveau: ${levelLine}\n` +
-          `${statusLine}`
+          `${statusLine}` +
+          briefingLine
         );
       } catch (err) {
         await interaction.editReply(`Status ophalen mislukt: ${err.message}`);
@@ -174,6 +194,45 @@ export function createBot() {
         await interaction.editReply(lines.join('\n'));
       } catch (err) {
         await interaction.editReply(`Kon geschiedenis niet ophalen: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'briefing') {
+      await interaction.deferReply();
+      try {
+        const wissen = interaction.options.getBoolean('wissen');
+        const tekst = interaction.options.getString('tekst');
+
+        if (wissen) {
+          await clearBriefing();
+          await interaction.editReply('Macro-briefing gewist. Agents ontvangen geen extra context meer.');
+          return;
+        }
+
+        if (tekst) {
+          const briefing = await setBriefing(tekst, interaction.user.username);
+          const expires = new Date(briefing.expiresAt).toISOString().slice(0, 10);
+          await interaction.editReply(
+            `**Macro-briefing opgeslagen** (geldig t/m ${expires})\n\n> ${briefing.text}\n\n` +
+            `Alle agents ontvangen deze context bij elke volgende boardroom-sessie.`
+          );
+          return;
+        }
+
+        // Geen tekst, geen wissen → toon huidige briefing
+        const briefing = await getBriefing();
+        if (!briefing) {
+          await interaction.editReply('Geen actieve macro-briefing. Gebruik `/briefing tekst:...` om er een in te stellen.');
+          return;
+        }
+        const expires = new Date(briefing.expiresAt).toISOString().slice(0, 10);
+        const setAt = new Date(briefing.setAt).toISOString().replace('T', ' ').slice(0, 16);
+        await interaction.editReply(
+          `**Actieve macro-briefing** (ingesteld ${setAt} UTC door ${briefing.setBy}, geldig t/m ${expires})\n\n> ${briefing.text}`
+        );
+      } catch (err) {
+        await interaction.editReply(`Briefing-actie mislukt: ${err.message}`);
       }
       return;
     }

@@ -11,6 +11,7 @@ import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
 import { computeDailyContext, formatDailyContextNote } from './dailyContext.js';
 import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
+import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 
 export async function runDiscussion(
   candles,
@@ -28,7 +29,9 @@ export async function runDiscussion(
   // (na newsContextNote, in deze volgorde) aan de prompt toegevoegd - daarom
   // hier samengevoegd tot één string, zodat een nieuwe factor alleen
   // hier en niet in alle agent-bestanden hoeft te worden toegevoegd.
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote;
+  const briefing = await getBriefing();
+  const briefingNote = formatBriefingNote(briefing);
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + briefingNote;
   const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);
