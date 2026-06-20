@@ -6,7 +6,9 @@ import {
   getRecentEurUsdCandles,
   getRecentUsYieldCandles,
   getRecentXauD1Candles,
+  getRecentXauW1Candles,
 } from '../services/marketData.js';
+import { checkConditions, isActiveSession } from '../services/conditionChecker.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
@@ -82,10 +84,51 @@ export function createBot() {
     if (interaction.commandName === 'status') {
       await interaction.deferReply();
       try {
-        const price = await getXauUsdPrice();
-        await interaction.editReply(`Systeem actief.\nXAU/USD: ${price.price}\n(${price.time})`);
+        const [price, m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
+          getXauUsdPrice(),
+          getRecentRealCandles({ granularity: 'M15', count: 100 }),
+          getRecentRealCandles({ granularity: 'M30', count: 100 }),
+          getRecentRealCandles({ granularity: 'H1', count: 50 }),
+          getRecentXauD1Candles({ count: 30 }),
+          getRecentXauW1Candles({ count: 20 }),
+        ]);
+
+        const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
+        const { details, triggered, direction, blockers } = conditions;
+
+        const sessionIcon = details.session ? '✅' : '❌';
+        const tfIcon = details.tfAlignment?.aligned ? '✅' : '❌';
+        const trendIcon = details.trendBias?.aligned ? '✅' : '❌';
+        const levelIcon = details.nearLevel?.near ? '✅' : '❌';
+
+        const tfLine = details.tfAlignment
+          ? `H1 ${details.h1Bias} | M30 ${details.m30Bias ?? '?'} | M15 ${details.m15Bias ?? '?'} → ${details.tfAlignment.aligned ? `aligned (${details.tfAlignment.direction})` : 'niet aligned'}`
+          : '?';
+        const trendLine = details.trendBias
+          ? details.trendBias.aligned ? `${details.trendBias.direction}` : 'conflicterend'
+          : '?';
+        const levelLine = details.nearLevel?.near
+          ? `${details.nearLevel.label} @ ${details.nearLevel.level} (${details.nearLevel.approachDirection})`
+          : `buiten bereik`;
+
+        const statusLine = triggered
+          ? `\n**SETUP-TRIGGER ACTIEF → ${direction?.toUpperCase()}**`
+          : blockers.length > 0
+            ? `\nWachten op: ${blockers.join(' | ')}`
+            : '\nAlle condities groen';
+
+        await interaction.editReply(
+          `**XAU/USD Status — ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
+          `Koers: $${price.price}\n\n` +
+          `**Conditie-check:**\n` +
+          `${sessionIcon} Sessie (08:00-17:00 UTC): ${details.session ? 'actief' : 'inactief'}\n` +
+          `${tfIcon} TF-alignment: ${tfLine}\n` +
+          `${trendIcon} D1/W1 trend: ${trendLine}\n` +
+          `${levelIcon} Sleutelniveau: ${levelLine}\n` +
+          `${statusLine}`
+        );
       } catch (err) {
-        await interaction.editReply(`Kon koers niet ophalen: ${err.message}`);
+        await interaction.editReply(`Status ophalen mislukt: ${err.message}`);
       }
       return;
     }
