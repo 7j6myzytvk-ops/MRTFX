@@ -41,7 +41,7 @@ export async function challengeAnalysis(
 
   const message = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 512,
+    max_tokens: 1024,
     tools: [CHALLENGE_TOOL],
     tool_choice: { type: 'tool', name: CHALLENGE_TOOL.name },
     messages: [
@@ -55,22 +55,39 @@ export async function challengeAnalysis(
           `Een analist gaf het signaal "${analysis.signal}" (zekerheid ${analysis.confidence}%) ` +
           `met onderbouwing: "${analysis.reasoning}".\n\n` +
 
-          `JOUW MANDAAT — eerlijk, niet kunstmatig negatief:\n` +
-          `Zoek het sterkste bewijs dat deze trade fout is of het risico niet waard. Kijk specifiek naar:\n` +
-          `• Tegengestelde marktstructuur: is het signaal een counter-trend trade?\n` +
-          `• Liquiditeitsvallen: staat de entry boven/onder een cluster gelijke highs/lows die ` +
-          `een stop hunt uitlokken?\n` +
-          `• Macro-tegenwind: dollar-trend, renteklimaat of aankomend event dat de richting kan ` +
-          `omgooien?\n` +
-          `• Overbought/oversold extremen die een reversal aannemelijk maken?\n` +
-          `• Zwakke entry: geen duidelijke trigger, te laat in de beweging, slechte R:R-positie?\n\n` +
+          `JOUW MANDAAT: je MOET alle vijf categorieën hieronder doorzoeken en per categorie ` +
+          `rapporteren wat je vindt. Doe dit systematisch — niet oppervlakkig. Je bent de laatste ` +
+          `verdedigingslinie vóórdat het team een besluit neemt.\n\n` +
 
-          `EERLIJKHEID IS WAARDEVOLLER DAN OPPOSITIE:\n` +
-          `Als je na serieus kritisch kijken werkelijk geen sterk bearish argument kunt vinden, ` +
-          `dan is een lage counter-zekerheid met duidelijke toelichting de meest waardevolle ` +
-          `uitkomst. Forceer geen tegenargument — een eerlijk "de setup is sterk, het grootste ` +
-          `restrisico is X" is méér waard dan kunstmatige twijfel. Je counter-zekerheid mag ` +
-          `laag zijn als dat de eerlijke conclusie is.` +
+          `VERPLICHTE ZOEKGEBIEDEN (doorloop elk, sla niets over):\n\n` +
+
+          `① MARKTSTRUCTUUR TEGEN: Is dit signaal counter-trend t.o.v. de hogere timeframe? ` +
+          `Is er een intacte CHoCH (Change of Character) die de andere richting wijst? ` +
+          `Beschrijf wat de hogere structuur zegt.\n\n` +
+
+          `② LIQUIDITEITSVAL / JUDAS SWING: Staat de entry BOVEN gelijke highs of ONDER gelijke lows ` +
+          `(stop-cluster)? Is dit mogelijk een Judas Swing — een London-fake-out die retail ` +
+          `in de verkeerde richting lokt, waarna de echte NY-beweging omgekeerd gaat? ` +
+          `Is de entry in een premium-zone (voor longs: te duur) of discount-zone (voor shorts: ` +
+          `te goedkoop)?\n\n` +
+
+          `③ MACRO-TEGENWIND: Contradicteert het macro-klimaat (dollar-trend, renteklimaat, ` +
+          `aankomend high-impact event) de richting? Kon de markt het nieuws al hebben ` +
+          `ingeprijsd ("sell the news")?\n\n` +
+
+          `④ MOMENTUM-WAARSCHUWING: RSI overbought (>70) voor longs of oversold (<30) voor ` +
+          `shorts? MACD-divergentie die een verzwakking signaleert? Momentum dat de trend ` +
+          `niet bevestigt?\n\n` +
+
+          `⑤ ENTRY-KWALITEIT: Ontbreekt er een concrete entry-trigger (sweep, reversal, ` +
+          `FVG-fill)? Is de entry "te laat" — ver van het sleutelniveau, diep in de beweging? ` +
+          `Zou de SL op een logisch technisch niveau staan of te krap?\n\n` +
+
+          `CONCLUSIE: Noem het STERKSTE van de vijf argumenten als je counter-signaal en ` +
+          `-zekerheid. Als je na grondig onderzoek in alle vijf categorieën werkelijk ` +
+          `niets substantieels vindt, is dat een waardevolle uitkomst: lage counter-zekerheid ` +
+          `met vermelding "setup is sterk op alle vijf assen" is méér waard dan een ` +
+          `gefabriceerd bezwaar.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

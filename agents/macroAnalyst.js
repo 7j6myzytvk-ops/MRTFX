@@ -71,8 +71,19 @@ export async function assessSentiment(
           `• Risk-on bij goud: dollar verzwakt EN reële rentes dalen → sterkste bullish combinatie\n` +
           `• Gemengd: dollar stijgt maar reële rentes dalen (of vice versa) → neutraal of subtiel\n\n` +
 
-          `Baseer je oordeel op (1) het karakter van de candles (momentum, volatiliteit, trendstructuur) ` +
-          `en (2) de dollar- en rentecontext hieronder. Claim geen macro-events die je niet zeker weet.` +
+          `SESSIE-CONTEXT voor goud:\n` +
+          `• Aziatische sessie (00:00-07:00 UTC): lage liquiditeit, accumula­tie/range — geen ` +
+          `directioneel momentum\n` +
+          `• London Kill Zone (07:00-10:00 UTC): manipulatiefase — valse breakouts (Judas Swings) ` +
+          `zijn normaal; volatiliteit hoog maar richting misleidend\n` +
+          `• New York Kill Zone (12:00-15:00 UTC): echte institutionele beweging, hoogste liquiditeit, ` +
+          `macro-events clusteren hier — het meest betrouwbare window\n` +
+          `• London Close (15:00-17:00 UTC): posities worden gesloten, trends kunnen temporair keren\n\n` +
+
+          `Baseer je oordeel op (1) het karakter van de candles (momentum, volatiliteit, trendstructuur), ` +
+          `(2) de dollar- en rentecontext hieronder en (3) de sessie-context — een "risk-off" signaal ` +
+          `in de Aziatische sessie is minder betrouwbaar dan hetzelfde signaal tijdens de NY Kill Zone. ` +
+          `Claim geen macro-events die je niet zeker weet.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
