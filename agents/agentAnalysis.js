@@ -79,6 +79,9 @@ export function assessSignalQuality(sample) {
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>2.5') {
     blockers.push('risico/winst-verhouding te ambitieus (>2.5)');
   }
+  if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
+    blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
+  }
 
   return { passed: blockers.length === 0, blockers };
 }

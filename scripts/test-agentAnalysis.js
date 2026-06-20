@@ -281,6 +281,28 @@ check(
   // Geen entryPrice: R:R-filter mag niet triggeren
   const geenEntry = { ...groen, entryPrice: undefined };
   check('assessSignalQuality - geen entryPrice -> R:R niet geblokkeerd', assessSignalQuality(geenEntry).blockers.includes('risico/winst-verhouding te ambitieus (>2.5)'), false);
+
+  // Pre-mortem: counterConfidence >70 -> blocker
+  const premortemSterk = {
+    ...groen,
+    discussion: { ...groen.discussion, devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 75 } },
+  };
+  check('assessSignalQuality - pre-mortem >70% -> geblokkeerd', assessSignalQuality(premortemSterk).passed, false);
+  check('assessSignalQuality - pre-mortem >70% -> juiste blocker', assessSignalQuality(premortemSterk).blockers.includes('pre-mortem: duidelijk faalscenario gevonden (>70%)'), true);
+
+  // Pre-mortem: counterConfidence <=70 -> niet geblokkeerd
+  const premortemZwak = {
+    ...groen,
+    discussion: { ...groen.discussion, devilsAdvocate: { counterSignal: 'bearish', counterConfidence: 70 } },
+  };
+  check('assessSignalQuality - pre-mortem <=70% -> niet geblokkeerd', assessSignalQuality(premortemZwak).blockers.includes('pre-mortem: duidelijk faalscenario gevonden (>70%)'), false);
+
+  // Pre-mortem ontbreekt in discussion -> geen crash
+  const geenDA = {
+    ...groen,
+    discussion: { ...groen.discussion, devilsAdvocate: undefined },
+  };
+  check('assessSignalQuality - geen devilsAdvocate -> geen crash', assessSignalQuality(geenDA).passed, true);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
