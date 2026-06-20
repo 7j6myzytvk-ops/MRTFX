@@ -9,6 +9,7 @@ import { computeDollarContext, formatDollarContextNote } from './dollarContext.j
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
 import { computeDailyContext, formatDailyContextNote } from './dailyContext.js';
+import { computeWeeklyContext, formatWeeklyContextNote } from './weeklyContext.js';
 import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
@@ -16,7 +17,7 @@ import { assessSession, formatSessionNote } from './sessionContext.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, newsItems = [], currentTime = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null } = {},
 ) {
   const events = upcomingEvents(candles[candles.length - 1].time);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
@@ -24,8 +25,10 @@ export async function runDiscussion(
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
   const yieldContextNote =
     yieldCandles && yieldCandles.length >= 2 ? formatYieldContextNote(computeYieldContext(yieldCandles)) : '';
-  const dailyContextNote =
-    d1Candles && d1Candles.length >= 5 ? formatDailyContextNote(computeDailyContext(d1Candles)) : '';
+  const d1Ctx = d1Candles && d1Candles.length >= 5 ? computeDailyContext(d1Candles) : null;
+  const dailyContextNote = d1Ctx ? formatDailyContextNote(d1Ctx) : '';
+  const w1Ctx = w1Candles && w1Candles.length >= 5 ? computeWeeklyContext(w1Candles) : null;
+  const weeklyContextNote = w1Ctx ? formatWeeklyContextNote(w1Ctx) : '';
   // Alle context-notes worden door elke agent op exact dezelfde plek
   // (na newsContextNote, in deze volgorde) aan de prompt toegevoegd - daarom
   // hier samengevoegd tot één string, zodat een nieuwe factor alleen
@@ -34,7 +37,7 @@ export async function runDiscussion(
   const briefingNote = formatBriefingNote(briefing);
   const sessionTime = currentTime ? new Date(currentTime) : new Date();
   const sessionNote = formatSessionNote(assessSession(sessionTime));
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + briefingNote + sessionNote;
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote;
   const opts = { instrument, granularity, events, newsContext, contextNotes };
 
   const analysis = await analyzeCandles(candles, opts);
@@ -52,7 +55,13 @@ export async function runDiscussion(
 
   const entryPrice = candles[candles.length - 1].close;
   const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, geopolitical, analystRebuttal: rebuttal };
-  const sample = { discussion, decision, entryPrice };
+  const sample = {
+    discussion,
+    decision,
+    entryPrice,
+    dailyTrend: d1Ctx?.trend ?? null,
+    weeklyTrend: w1Ctx?.trend ?? null,
+  };
   const comboSignal = isComboSignal(sample);
   const qualityResult = assessSignalQuality(sample);
 

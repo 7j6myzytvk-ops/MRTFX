@@ -1,4 +1,5 @@
 import { sma, atr } from './indicators.js';
+import { computeTimeframeBias } from './multiTimeframeAlignment.js';
 
 export function computeDailyContext(candles) {
   if (!candles || candles.length < 5) return null;
@@ -12,6 +13,7 @@ export function computeDailyContext(candles) {
   const fiveDayChangePct = ((currentClose - fiveDayAgoClose) / fiveDayAgoClose) * 100;
 
   const recent5 = candles.slice(-5);
+  const bias = computeTimeframeBias(candles);
 
   return {
     currentClose,
@@ -21,6 +23,7 @@ export function computeDailyContext(candles) {
     fiveDayChangePct,
     recentHigh: Math.max(...recent5.map((c) => c.high)),
     recentLow: Math.min(...recent5.map((c) => c.low)),
+    trend: bias === 'mixed' ? 'neutraal' : bias,
   };
 }
 

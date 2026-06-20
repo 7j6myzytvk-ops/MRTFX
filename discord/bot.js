@@ -161,8 +161,9 @@ export function createBot() {
         const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
         const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
         const d1Candles = await getRecentXauD1Candles({ count: 30 });
+        const w1Candles = await getRecentXauW1Candles({ count: 20 });
         const newsItems = await fetchGoldNews({ maxItems: 12 });
-        const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles, newsItems });
+        const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles, w1Candles, newsItems });
         await reportToDiscord(interaction.client, result);
 
         const { decision, comboSignal } = result;

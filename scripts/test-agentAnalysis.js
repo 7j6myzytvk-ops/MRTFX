@@ -303,6 +303,66 @@ check(
     discussion: { ...groen.discussion, devilsAdvocate: undefined },
   };
   check('assessSignalQuality - geen devilsAdvocate -> geen crash', assessSignalQuality(geenDA).passed, true);
+
+  // --- Counter-trend filter ---
+
+  // Bearish signaal, D1+W1 beide bullish → geblokkeerd
+  const ctBearishVsBull = {
+    ...groen,
+    decision: { signal: 'bearish', confidence: 67, stopLoss: 3050, takeProfit: 2950 },
+    dailyTrend: 'bullish',
+    weeklyTrend: 'bullish',
+  };
+  check('assessSignalQuality - bearish vs D1+W1 bullish -> geblokkeerd', assessSignalQuality(ctBearishVsBull).passed, false);
+  check('assessSignalQuality - bearish vs D1+W1 bullish -> juiste blocker',
+    assessSignalQuality(ctBearishVsBull).blockers.some(b => b.includes('counter-trend')), true);
+
+  // Bullish signaal, D1+W1 beide bearish → geblokkeerd
+  const ctBullishVsBear = {
+    ...groen,
+    decision: { signal: 'bullish', confidence: 67, stopLoss: 2950, takeProfit: 3050 },
+    dailyTrend: 'bearish',
+    weeklyTrend: 'bearish',
+  };
+  check('assessSignalQuality - bullish vs D1+W1 bearish -> geblokkeerd', assessSignalQuality(ctBullishVsBear).passed, false);
+
+  // Bearish signaal, D1+W1 beide bearish → NIET geblokkeerd (met-trend)
+  const metTrend = {
+    ...groen,
+    decision: { signal: 'bearish', confidence: 67, stopLoss: 3050, takeProfit: 2950 },
+    dailyTrend: 'bearish',
+    weeklyTrend: 'bearish',
+  };
+  check('assessSignalQuality - bearish met D1+W1 bearish -> niet geblokkeerd',
+    assessSignalQuality(metTrend).blockers.some(b => b.includes('counter-trend')), false);
+
+  // D1 en W1 wijken af → geen blocker (tegenstrijdige trends)
+  const mixedTrend = {
+    ...groen,
+    decision: { signal: 'bearish', confidence: 67, stopLoss: 3050, takeProfit: 2950 },
+    dailyTrend: 'bullish',
+    weeklyTrend: 'bearish',
+  };
+  check('assessSignalQuality - D1 bullish / W1 bearish -> niet geblokkeerd',
+    assessSignalQuality(mixedTrend).blockers.some(b => b.includes('counter-trend')), false);
+
+  // D1 neutraal → geen blocker
+  const d1Neutraal = {
+    ...groen,
+    decision: { signal: 'bearish', confidence: 67, stopLoss: 3050, takeProfit: 2950 },
+    dailyTrend: 'neutraal',
+    weeklyTrend: 'bullish',
+  };
+  check('assessSignalQuality - D1 neutraal -> geen counter-trend blocker',
+    assessSignalQuality(d1Neutraal).blockers.some(b => b.includes('counter-trend')), false);
+
+  // Geen trenddata → geen blocker (geen false positive)
+  const geenTrend = {
+    ...groen,
+    decision: { signal: 'bearish', confidence: 67, stopLoss: 3050, takeProfit: 2950 },
+  };
+  check('assessSignalQuality - geen trenddata -> geen counter-trend blocker',
+    assessSignalQuality(geenTrend).blockers.some(b => b.includes('counter-trend')), false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

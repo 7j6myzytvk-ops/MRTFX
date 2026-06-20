@@ -1,6 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import { config } from '../config/index.js';
-import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles, getRecentXauD1Candles } from '../services/marketData.js';
+import { getRecentRealCandles, getRecentEurUsdCandles, getRecentUsYieldCandles, getRecentXauD1Candles, getRecentXauW1Candles } from '../services/marketData.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { formatTraceMessages, formatCeoMessage } from '../services/boardroomReporter.js';
@@ -14,13 +14,14 @@ const candles = await getRecentRealCandles({ granularity: 'H1', count: 50 });
 const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
 const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
 const d1Candles = await getRecentXauD1Candles({ count: 30 });
+const w1Candles = await getRecentXauW1Candles({ count: 20 });
 
 if (newsContext) {
   console.log(`Marktcontext meegegeven aan het team: "${newsContext}"`);
 }
 
 const newsItems = await fetchGoldNews({ maxItems: 12 });
-const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles, newsItems });
+const result = await runBoardroom(candles, { newsContext, dollarCandles, yieldCandles, d1Candles, w1Candles, newsItems });
 console.log('\nResultaat:', JSON.stringify(result, null, 2));
 
 const { ceoChannelId, traceChannelId } = config.boardroom;

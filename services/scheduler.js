@@ -67,6 +67,7 @@ async function poll(client) {
       dollarCandles,
       yieldCandles,
       d1Candles,
+      w1Candles,
       newsItems,
       newsContext: conditionContext,
     });

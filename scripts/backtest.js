@@ -81,6 +81,21 @@ function d1WindowFor(sampleTime) {
   return d1AllCandles.filter((c) => c.time <= sampleTime).slice(-30);
 }
 
+// XAU/USD weekcandles voor W1-weektrend-context (zie agents/weeklyContext.js).
+// 25 weken extra historie zodat ook de vroegste samples genoeg weekcandles hebben.
+const w1From = new Date(from.getTime() - 25 * 7 * 24 * 60 * 60 * 1000);
+const rawW1Candles = await getXauUsdCandles({
+  granularity: 'W',
+  from: w1From.toISOString(),
+  to: to.toISOString(),
+});
+const w1AllCandles = rawW1Candles.filter((c) => c.high !== c.low);
+console.log(`${w1AllCandles.length} W1-candles (XAU/USD, week) voor weektrend-context.`);
+
+function w1WindowFor(sampleTime) {
+  return w1AllCandles.filter((c) => c.time <= sampleTime).slice(-20);
+}
+
 // Schrijf na elke sample weg, zodat een trage/vastlopende Claude-call (de
 // boardroom-loop kan lang duren) niet betekent dat reeds voltooide samples
 // verloren gaan als het script crasht of wordt afgebroken.
@@ -113,6 +128,7 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
   const dollarCandles = eurWindowFor(window);
   const yieldCandlesForSample = yieldWindowFor(sampleTime);
   const d1CandlesForSample = d1WindowFor(sampleTime);
+  const w1CandlesForSample = w1WindowFor(sampleTime);
 
   let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -123,6 +139,7 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
         dollarCandles,
         yieldCandles: yieldCandlesForSample,
         d1Candles: d1CandlesForSample,
+        w1Candles: w1CandlesForSample,
         currentTime: sampleTime,
       });
       break;

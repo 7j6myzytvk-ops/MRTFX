@@ -79,6 +79,19 @@ export async function assessSentiment(
           `kruising van signaallijn = vroeg regime-shift signaal\n` +
           `• Vraag: bevestigt het technisch momentum het macro-regime — of contradicteert het?\n\n` +
 
+          `STRUCTURELE GOUDVRAAG — CORRELATIE-BREUK HERKENNEN:\n` +
+          `De traditionele correlaties (dollar ↑ → goud ↓, rente ↑ → goud ↓) kunnen breken ` +
+          `wanneer structurele vraagdrivers dominant worden. Signalen van correlatie-breuk:\n` +
+          `• Centrale bank aankopen: niet-Westerse centrale banken (China, India, Rusland, BRICS+) ` +
+          `die dollarreserves diversificeren → structurele vraag onafhankelijk van dollar/rente\n` +
+          `• De-dollarisering: bilaterale niet-dollarhandel, sanctie-ontwijking → vermindert ` +
+          `het vertrouwen in de dollar als reservevaluta → langdurige goudvraag\n` +
+          `• Detectiecriterium: goud stijgt TERWIJL de dollar ook stijgt (positieve correlatie ` +
+          `in plaats van de gebruikelijke negatieve). Dit is het sterkste signaal van correlatie-breuk.\n` +
+          `Vermeld EXPLICIET in je reasoning of het huidige regime tekenen van correlatie-breuk ` +
+          `vertoont. Als correlatie-breuk aanwezig is, verlaag dan NIET je zekerheid enkel op ` +
+          `basis van dollarkracht — analyseer welke kracht dominant is.\n\n` +
+
           `MOMENTUM-CONTRADICTIE REGEL (verplicht toepassen):\n` +
           `Als het technisch momentum de macro-richting tegenspreekt, VERLAAG je zekerheid naar ` +
           `maximaal 55% — ongeacht hoe sterk de macro-drivers lijken:\n` +

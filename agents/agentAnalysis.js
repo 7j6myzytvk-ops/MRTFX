@@ -83,6 +83,22 @@ export function assessSignalQuality(sample) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
   }
 
+  // Counter-trend blocker: als D1 én W1 beide dezelfde richting wijzen én het signaal
+  // is tegengesteld, is de kans op succes historisch laag — de hogere trend wint vrijwel altijd.
+  const { dailyTrend, weeklyTrend } = sample;
+  if (
+    dailyTrend && weeklyTrend &&
+    dailyTrend !== 'neutraal' && weeklyTrend !== 'neutraal' &&
+    dailyTrend === weeklyTrend
+  ) {
+    const isContrarian =
+      (sample.decision.signal === 'bullish' && dailyTrend === 'bearish') ||
+      (sample.decision.signal === 'bearish' && dailyTrend === 'bullish');
+    if (isContrarian) {
+      blockers.push(`counter-trend: signaal ${sample.decision.signal} tegen D1+W1 ${dailyTrend} trend`);
+    }
+  }
+
   return { passed: blockers.length === 0, blockers };
 }
 
