@@ -69,11 +69,17 @@ export async function decide(
           `tegenscenario, macro/sentiment${geopolitical && geopolitical.confidence > 0 ? ' en geopolitiek/nieuws' : ''}) ` +
           `wegen elk even zwaar — er is geen standaard-standpunt. ` +
           `Kalibreer je zekerheid op basis van consensus: alle drie (of vier) stemmen eensgezind → boven 70%; ` +
-          `meerderheid eensgezind → 55-70%; verdeeld of sterke twijfel → overweeg neutraal. ` +
+          `meerderheid eensgezind → 60-70%; verdeeld of sterke twijfel → neutraal. ` +
           `De risicobeoordeling (invalshoek 2) informeert je SL/TP en positiegrootte, niet de richting. ` +
           `Als jouw signaal afwijkt van de technisch analist, stel dan ook nieuwe SL/TP-niveaus in ` +
           `die bij jouw richting passen — de risicomanager's niveaus zijn berekend voor het analist-signaal. ` +
-          `Onderbouw je besluit met concrete verwijzingen naar de directionele invalshoeken.` +
+          `Onderbouw je besluit met concrete verwijzingen naar de directionele invalshoeken.\n\n` +
+          `Twee extra regels op basis van bewezen patroonherkenning:\n` +
+          `1) Als de technisch analist MINDER zeker werd na de discussie (weerwoord lager dan eerste ` +
+          `analyse), kies dan neutraal tenzij alle overige signalen onmiskenbaar één richting aanwijzen. ` +
+          `Een analist die twijfelt na kritiek is een sterk waarschuwingssignaal.\n` +
+          `2) Streef naar minimaal 65% zekerheid voor een directioneel signaal. Onder 65% is neutraal ` +
+          `bijna altijd het juistere besluit — een matige overtuiging levert slechte trades op.` +
           `${newsContextNote}${contextNotes}`,
       },
     ],

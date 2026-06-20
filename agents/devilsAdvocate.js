@@ -53,8 +53,14 @@ export async function challengeAnalysis(
           `met de onderbouwing: "${analysis.reasoning}". ` +
           `Bekijk de candles opnieuw en zoek actief het sterkste tegenargument: welk scenario zou ` +
           `dit signaal onderuit kunnen halen? Geef een tegen-signaal met je eigen zekerheid en ` +
-          `je argumentatie. Als je na kritisch kijken geen sterk tegenargument vindt, mag je dat ` +
-          `aangeven en het grootste restrisico benoemen.${eventsNote}${newsContextNote}${contextNotes}\n\n` +
+          `je argumentatie.\n\n` +
+          `Wees eerlijk over de kracht van het signaal: als je na serieus kritisch kijken ` +
+          `werkelijk geen sterk tegenargument kunt vinden voor een technisch overtuigende setup, ` +
+          `dan is een lage counter-zekerheid (of zelfs instemming met een hogere zekerheid voor ` +
+          `de analist-richting) de meest waardevolle uitkomst. Forceer geen tegenargument alleen ` +
+          `om te challengen — een eerlijk "ik vind geen sterk argument ertegen" is méér waard ` +
+          `dan een geforceerde twijfel. Benoem in dat geval wel het grootste restrisico.` +
+          `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },
     ],

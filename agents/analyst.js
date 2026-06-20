@@ -107,11 +107,18 @@ export async function reviewDiscussion(
               `${geopolitical.reasoning}\n\n`
             : '') +
           `Geef je herziene of bevestigde signaal en zekerheid, met een korte reactie op de discussie. ` +
-          `Weeg elk argument inhoudelijk: als het macro-oordeel, het tegenscenario of de geopolitieke ` +
-          `analyse steekhoudende punten maakt, pas dan je zekerheidspercentage aan — ook als je bij ` +
-          `je richting blijft. ` +
-          `Een onveranderd percentage is alleen gerechtvaardigd als je elk argument ` +
-          `concreet kunt weerleggen.${newsContextNote}${contextNotes}`,
+          `Weeg elk argument inhoudelijk en pas je zekerheidspercentage ALTIJD aan — ook als je bij ` +
+          `je richting blijft. Een onveranderd percentage is alleen gerechtvaardigd als je elk argument ` +
+          `concreet kunt weerleggen.\n\n` +
+          `Cruciale vuistregel op basis van teamconsensus:\n` +
+          `- Als de Devil's Advocate géén sterk tegenargument vond EN het macro-oordeel jouw richting ` +
+          `bevestigt: VERHOOG je zekerheid duidelijk (dit is een sterk confluentsignaal).\n` +
+          `- Als het macro-oordeel jouw richting bevestigt maar de DA een steekhoudend punt maakt: ` +
+          `kleine aanpassing omhoog of behoud.\n` +
+          `- Als het macro contraireert OF de DA een sterk tegenargument geeft: VERLAAG je zekerheid ` +
+          `of switch naar neutraal.\n` +
+          `- Als zowel DA als macro tegen jou zijn: overweeg serieus om naar neutraal te gaan.` +
+          `${newsContextNote}${contextNotes}`,
       },
     ],
   });
