@@ -11,6 +11,7 @@ import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
 import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
+import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -20,12 +21,21 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000;
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 let lastSignalTime = null;
+let lastHeartbeatDate = null;
 
 async function poll(client) {
   try {
     // Goedkope checks eerst — geen API-calls als ze falen
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
     if (!isActiveSession()) return;
+
+    // Dagelijkse heartbeat bij het begin van de sessie (08:xx UTC, 1x per dag)
+    const utcHour = new Date().getUTCHours();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (utcHour === 8 && lastHeartbeatDate !== todayStr) {
+      lastHeartbeatDate = todayStr;
+      await sendHeartbeat(client, lastSignalTime);
+    }
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
     const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
@@ -65,6 +75,7 @@ async function poll(client) {
     await evaluateOpenSignals(client);
   } catch (err) {
     console.error('Setup-detector mislukt:', err.message);
+    await sendDedupedAlert(client, err.message, formatErrorAlert(err));
   }
 }
 
@@ -75,6 +86,7 @@ export function startSignalScheduler(client) {
     return;
   }
   console.log(`Setup-detector actief — controleert elke ${POLL_INTERVAL_MS / 60000} minuten op setups.`);
+  sendStartupAlert(client);
   poll(client);
   setInterval(() => poll(client), POLL_INTERVAL_MS);
 }
