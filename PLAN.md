@@ -1117,8 +1117,126 @@ zodat historische samples de correcte sessie-timing gebruiken (niet "nu").
   grenscondities (06:59/07:00, 09:59/10:00 etc.) en `formatSessionNote`.
 - Totaal: 221 tests, 0 mislukt.
 
-### Out-of-sample backtest gestart
-Ter validatie van of de 80.0% WinRate standhoudt op een volledig andere
-marktperiode: 150-dagenrun op jan–jun 2026 (backtest record #25, PID 30827,
-log `/tmp/backtest-oos.log`). Deze periode was niet gebruikt bij de ontwikkeling
-van Fase 29-33 en dient als echte out-of-sample test.
+### Out-of-sample backtest resultaat (record #25)
+150-dagenrun jan–jun 2026 voltooid: **N=24, WinRate 37.5%** (9 TP / 15 SL).
+Teleurstellend — verklaring: 22/24 signalen bearish in een structurele bull-markt.
+Root-cause: geen W1-weektrend-context, systematische bearish bias ICT/SMC-setup
+detection tijdens een uptrend, regime-mismatch.
+
+## Fase 34 - Weektrend-context + counter-trend kwaliteitsfilter (klaar)
+
+### Root-cause analyse OOS 37.5%
+- **Primaire oorzaak**: systeem miste W1-weektrend. D1+W1 beiden bullish, maar
+  22/24 signalen waren bearish → counter-trend entry in een bull-markt.
+- **Structurele gap**: backtest gebruikte geen W1-data; live condition checker had
+  het al (Fase 24), backtest niet.
+- **Consequentie**: agent-structuur was gecalibreerd op 2025-historische data met
+  andere marktregimes; OOS-periode (2026 bull run) maakte dit zichtbaar.
+
+### W1 weektrend-context (`agents/weeklyContext.js`, nieuw)
+Zelfde patroon als `dailyContext.js` (Fase 21), maar voor W1-timeframe:
+```javascript
+export function computeWeeklyContext(candles) {
+  // bias via computeTimeframeBias: price vs SMA20 + RSI vs 50 + 3-candle closes
+  return { currentClose, sma20, priceVsSma, fiveWeekChangePct, trend };
+}
+export function formatWeeklyContextNote(ctx) { ... }
+```
+`scripts/backtest.js`: haalt 25 extra weken W1-candles op (vóór de testperiode),
+geeft `w1Candles` mee aan `runDiscussion` via `w1WindowFor(sampleTime)`.
+
+### Zesde kwaliteitsfilter: counter-trend blocker (`agents/agentAnalysis.js`)
+Als D1 én W1 beide zelfde richting én het signaal is tegengesteld → geblokkeerd:
+```javascript
+if (dailyTrend && weeklyTrend && dailyTrend !== 'neutraal' && weeklyTrend !== 'neutraal'
+    && dailyTrend === weeklyTrend) {
+  const isContrarian = (signal === 'bullish' && dailyTrend === 'bearish')
+                    || (signal === 'bearish' && dailyTrend === 'bullish');
+  if (isContrarian) blockers.push(`counter-trend: signaal ${signal} tegen D1+W1 ${dailyTrend} trend`);
+}
+```
+
+### CEO vaste drempel 5 (`agents/ceo.js`)
+"Als W1+D1 beide zelfde richting → tegengesteld signaal max 55% zekerheid,
+ongeacht hoe sterk de H1-structuur eruitziet."
+
+### Structurele goudvraag in MacroAnalyst (Fase 34 aanvulling)
+Nieuwe sectie in macroAnalyst.js-prompt: CB-aankopen, de-dollarisering,
+correlatie-breuk detectie (als goud stijgt terwijl dollar ook stijgt → breuk
+van historische correlatie, extra bullish signal).
+
+### Validatie
+- `scripts/test-weeklyContext.js` (nieuw): 23 tests
+- `scripts/test-agentAnalysis.js`: +7 counter-trend tests (totaal 50)
+- Totaal: 298 tests, 0 mislukt.
+
+## Fase 35 - Volledige agent-audit: persona's, expertise en Chief of Staff (klaar)
+
+### Aanleiding
+OOS 37.5% + diepere analyse toonde aan dat agent-persona's te generiek waren.
+CEO had geen onafhankelijk oordeel, geen historische marktkennis. RiskManager
+miste portfolio-context bij verliesreeksen. DevilsAdvocate-kalibratie was impliciet.
+
+### Per-agent audit en correcties
+
+**CEO (`agents/ceo.js`)**
+- **Persona**: 25 jaar trading director — floor trader jaren '90 → hoofd goud-desk
+  twee tier-1 banken → eigen boutique macro-fonds XAU/USD kernstrategie.
+- **Kennis**: 9/11-rally, GFC, decennium nulrentes, structurele bull-run 2022-2026.
+- **Toevoeging**: CEO voegt eigen oordeel toe dat NIET louter aggregatie is.
+  "Als jouw ervaring iets anders zegt dan de meerderheid — benoem dat expliciet."
+- **Sub-agent**: Chief of Staff briefing (zie hieronder).
+
+**Chief of Staff (`services/ceoPerformanceBriefing.js`, nieuw)**
+CEO ontvangt vóór elke vergadering een performance-briefing:
+- Laatste 10 afgeronde signalen: N TP / N SL, recente WinRate
+- REEKS-ALERT bij ≥3 SL achtereen → verhoog drempel
+- TP-reeks alert → behoud discipline
+- RiskManager ontvangt aparte streakNote (≥3 SL → standaard 'klein')
+
+**MarktstructuurAnalist (`agents/analyst.js`)**
+- **Persona**: begon 2009, specifieke marktcycli (top 2011, beer 2015, rally
+  2018-2020, 2024-2026 bull run). Multi-billion dollar goud hedge fund.
+- `reviewDiscussion` max_tokens 512→768
+- Rebuttal verplicht per-scenario reactie met severity-indicator (⚠️ bij >50%)
+- ZEKERHEIDSREGEL: "Ongewijzigd percentage alleen gerechtvaardigd als je elk
+  punt concreet kunt weerleggen."
+
+**RiskManager (`agents/riskManager.js`)**
+- **Persona**: 12j prop-trading desk, 3.000+ goud-trades beoordeeld.
+- max_tokens 512→768
+- `streakNote`-parameter: als ≥3 SL-reeks → standaard 'klein' positiegrootte.
+
+**DevilsAdvocate (`agents/devilsAdvocate.js`)**
+- **Persona**: voormalig prop trader, 8j macro hedge fund, gespecialiseerd in
+  trade-autopsies.
+- Expliciete counterConfidence-kalibratieschaal:
+  - 0-30%: setup houdt volledig stand
+  - 31-50%: zwak risico, aanwezig maar matig
+  - 51-65%: matig risico, overweeg positieverkleining
+  - 66-80%: sterk risico, team moet bezwaar expliciet weerleggen
+  - 81-100%: zeker gevaar, neutraal tenzij weerlegging ijzersterk is
+
+**MacroAnalyst (`agents/macroAnalyst.js`)**
+- **Persona**: PhD econometrie, 12j global macro hedge fund; correlatie-breuk
+  2022-2026 zelf geanalyseerd.
+- Expliciete instructie: gebruik macro-briefing uit contextNotes als startpunt.
+
+**GeopolitiekAnalist (`agents/geopoliticalAnalyst.js`)**
+- **Persona**: voormalig sovereign wealth fund adviseur, 15j event-impact.
+  Arabische Lente/Oekraïne/COVID/Rusland/BRICS+ direct geanalyseerd.
+- Sessie-timing sectie verwijderd (overlap met sessionContext.js, Fase 33).
+- Eigen EVENT-RISICO ANALYSE sectie: signaleer events die trade omverwerpen
+  vóórdat TP geraakt wordt.
+
+### Kwaliteitsfilters totaaloverzicht (na Fase 35)
+1. CEO confidence <65%
+2. Macro contradicteert richting
+3. Weerwoord [F] significant lager dan [A]
+4. R:R >2.5 niet gehaald
+5. DevilsAdvocate counterConfidence >70% (pre-mortem blocker, Fase 32)
+6. Counter-trend: signaal vs D1+W1 aligned trend (Fase 34)
+
+### Validatie
+Alle bestaande tests heruitgevoerd na audit:
+- 50 + 23 + 42 + 46 + 7 + 19 + 15 + 27 + 13 + 7 + 22 + 23 + 27 = **298 tests, 0 mislukt**
