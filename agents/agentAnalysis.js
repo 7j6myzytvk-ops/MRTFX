@@ -83,6 +83,13 @@ export function assessSignalQuality(sample) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
   }
 
+  // Setup-kwaliteitsscore: als de analist minder dan 3 van de 6 ICT/SMC-criteria
+  // aanwezig vindt, is er geen handelbare setup — altijd blokkeren ongeacht de rest.
+  const setupScore = sample.discussion.analyst?.setupQualityScore;
+  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
+    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 criteria aanwezig)`);
+  }
+
   // Counter-trend blocker: als D1 én W1 beide dezelfde richting wijzen én het signaal
   // is tegengesteld, is de kans op succes historisch laag — de hogere trend wint vrijwel altijd.
   const { dailyTrend, weeklyTrend } = sample;

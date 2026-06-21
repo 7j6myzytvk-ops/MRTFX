@@ -64,6 +64,7 @@ export async function assessRisk(
 
           `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
           `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
+          `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/6 criteria aanwezig\n` +
           `Onderbouwing: "${analysis.reasoning}"\n` +
           `Gem. candle-range (ATR-proxy) over ${candles.length} candles: ${avgRange.toFixed(2)}\n\n` +
 
@@ -86,8 +87,7 @@ export async function assessRisk(
           `• <60% zekerheid → klein\n` +
           `• 60-70% → normaal\n` +
           `• >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
-          `• Als de analist in zijn onderbouwing meldt dat minder dan 3 setup-kwaliteitscriteria ` +
-          `aanwezig zijn (geen handelbare setup) → altijd 'klein', ongeacht het zekerheidspercentage\n` +
+          `• Setup-kwaliteitsscore <3 (zie hierboven) → altijd 'klein', ongeacht het zekerheidspercentage\n` +
           `• Als geen verantwoorde entry mogelijk (SL te groot, geen logisch TP, te laat in beweging): ` +
           `adviseer 'klein' en leg dit uit in je reasoning.` +
           `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,

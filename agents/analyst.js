@@ -10,9 +10,15 @@ const ANALYSIS_TOOL = {
     properties: {
       signal: { type: 'string', enum: ['bullish', 'bearish', 'neutral'] },
       confidence: { type: 'integer', minimum: 0, maximum: 100 },
-      reasoning: { type: 'string', description: 'Korte onderbouwing in het Nederlands (2-3 zinnen).' },
+      setupQualityScore: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 6,
+        description: 'Aantal aanwezige setup-kwaliteitscriteria (① t/m ⑥). Bepaalt maximale zekerheid en of de setup handelbaar is.',
+      },
+      reasoning: { type: 'string', description: 'Korte onderbouwing in het Nederlands (2-3 zinnen). Noem welke criteria aanwezig/afwezig zijn.' },
     },
-    required: ['signal', 'confidence', 'reasoning'],
+    required: ['signal', 'confidence', 'setupQualityScore', 'reasoning'],
   },
 };
 

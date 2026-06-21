@@ -363,6 +363,40 @@ check(
   };
   check('assessSignalQuality - geen trenddata -> geen counter-trend blocker',
     assessSignalQuality(geenTrend).blockers.some(b => b.includes('counter-trend')), false);
+
+  // --- Setup-kwaliteitsscore filter ---
+
+  // Score 2 → geblokkeerd
+  const laagScore = {
+    ...groen,
+    discussion: { ...groen.discussion, analyst: { confidence: 60, setupQualityScore: 2 } },
+  };
+  check('assessSignalQuality - setupQualityScore 2 -> geblokkeerd', assessSignalQuality(laagScore).passed, false);
+  check('assessSignalQuality - setupQualityScore 2 -> juiste blocker',
+    assessSignalQuality(laagScore).blockers.some(b => b.includes('setup-kwaliteit te laag')), true);
+
+  // Score 3 → NIET geblokkeerd (grenswaarde)
+  const grensScore = {
+    ...groen,
+    discussion: { ...groen.discussion, analyst: { confidence: 60, setupQualityScore: 3 } },
+  };
+  check('assessSignalQuality - setupQualityScore 3 -> niet geblokkeerd',
+    assessSignalQuality(grensScore).blockers.some(b => b.includes('setup-kwaliteit')), false);
+
+  // Score ontbreekt (oude samples) → geen blocker
+  const geenScore = {
+    ...groen,
+    discussion: { ...groen.discussion, analyst: { confidence: 60 } },
+  };
+  check('assessSignalQuality - geen setupQualityScore -> geen blocker',
+    assessSignalQuality(geenScore).blockers.some(b => b.includes('setup-kwaliteit')), false);
+
+  // Score 0 → geblokkeerd (zekerste geval)
+  const nulScore = {
+    ...groen,
+    discussion: { ...groen.discussion, analyst: { confidence: 60, setupQualityScore: 0 } },
+  };
+  check('assessSignalQuality - setupQualityScore 0 -> geblokkeerd', assessSignalQuality(nulScore).passed, false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

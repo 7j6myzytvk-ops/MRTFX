@@ -63,7 +63,7 @@ export async function decide(
           `van hun mandaat:\n\n` +
 
           `[A] MARKTSTRUCTUUR-ANALIST (eerste oordeel): signaal "${analysis.signal}" ` +
-          `(zekerheid ${analysis.confidence}%) — ${analysis.reasoning}\n` +
+          `(zekerheid ${analysis.confidence}%) | setup-kwaliteit: ${analysis.setupQualityScore ?? '?'}/6 criteria — ${analysis.reasoning}\n` +
           `→ Beoordeelt: HTF-bias, BOS/CHoCH, liquiditeitskaart, OBs/FVGs. Geen macro, geen indicatoren.\n\n` +
 
           `[B] RISICOMANAGER (trade-parameters — GEEN directioneel oordeel): ` +
@@ -92,12 +92,12 @@ export async function decide(
           `→ Reageert specifiek op het pre-mortem faalscenario: zijn de structurele argumenten nog intact?\n\n` +
 
           `SETUP KWALITEIT — beoordeel dit EERST, vóór je de gewichten toepast:\n` +
-          `De analist beoordeelt zes ICT/SMC-kwaliteitscriteria (① t/m ⑥). Gebruik dat oordeel ` +
-          `als vertrekpunt — niet als detail:\n` +
-          `• <3 criteria aanwezig → altijd neutraal, ongeacht hoe sterk de structuur of ` +
-          `het sentiment lijkt. Een richting zien is niet hetzelfde als een setup hebben.\n` +
-          `• 3–4 criteria → maximaal 65% zekerheid; wees selectief\n` +
-          `• 5–6 criteria → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
+          `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 6 ICT/SMC-kwaliteitscriteria aanwezig gevonden. ` +
+          `Gebruik dat getal als harde grens:\n` +
+          `• Score <3 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
+          `Een richting zien is niet hetzelfde als een setup hebben.\n` +
+          `• Score 3–4 → maximaal 65% zekerheid; wees selectief\n` +
+          `• Score 5–6 → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
 
           `BESLISSINGSGEWICHTEN:\n` +
           `• Structuur + Liquiditeit [A + F gecombineerd]: 35% — weerwoord [F] is het meest actueel; ` +
