@@ -1240,3 +1240,96 @@ CEO ontvangt vóór elke vergadering een performance-briefing:
 ### Validatie
 Alle bestaande tests heruitgevoerd na audit:
 - 50 + 23 + 42 + 46 + 7 + 19 + 15 + 27 + 13 + 7 + 22 + 23 + 27 = **298 tests, 0 mislukt**
+
+## Fase 36 - ICT/SMC setup-kwaliteitscriteria: van vrije tekst naar gestructureerd veld (klaar)
+
+### Aanleiding
+Prompt-audit (Fase 35) toonde een gap: agents beoordeelden "setup-kwaliteit" impliciet
+via vrije tekst in `reasoning`. Er was geen gedeeld, meetbaar kader voor wat een
+goede ICT/SMC-setup definieert. CEO kon kwaliteitsoordeel niet objectief wegen.
+
+### 6 ICT/SMC Setup-kwaliteitscriteria (Fase 36a)
+Geïmplementeerd in `agents/analyst.js` als SETUP KWALITEITSOORDEEL-sectie (vóór structuuranalyse):
+1. ① HTF-bias helder (D1/W1 richting eenduidig)
+2. ② Correcte premium/discount zone (entry in discount bij bullish, premium bij bearish)
+3. ③ Verse zone (OB of FVG nog niet retested)
+4. ④ Liquiditeitssweep bevestigd (BSL/SSL geraakt vóór de move)
+5. ⑤ LTF CHoCH trigger aanwezig (M15/M5 structuurbreuk als entrybevestiging)
+6. ⑥ Kill Zone timing (entry valt in London 07:00–10:00 of NY 12:00–15:00 UTC)
+
+`setupQualityScore` toegevoegd als verplicht integer-veld (0–6) aan ANALYSIS_TOOL schema.
+
+### Prompt-consistentie fixes (Fase 36b)
+- `analyst.js`: mandate-contradictie opgelost — "geen sessie-timing" conflicteerde met
+  criterium ⑥; fixed: sessie-info komt uit contextNotes, uitsluitend voor criterium ⑥
+- `ceo.js`: SETUP KWALITEIT-sectie verplaatst vóór BESLISSINGSGEWICHTEN (prerequisite)
+- `ceo.js`: geo-analist-beschrijving gecorrigeerd (sessie-timing was in Fase 35 verwijderd)
+- `riskManager.js`: expliciete koppeling `setupQualityScore <3 → altijd 'klein'`
+
+### Algorithmische handhaving (Fase 36c)
+7e kwaliteitsfilter toegevoegd in `agents/agentAnalysis.js`:
+```
+setupQualityScore < 3 → geblokkeerd ("setup-kwaliteit te laag (N/6 criteria aanwezig)")
+```
+Kwaliteitsfilters totaal na Fase 36:
+1. CEO confidence <65%
+2. Macro contradicteert richting
+3. Weerwoord [F] significant lager dan [A]
+4. R:R >2.5 niet gehaald
+5. DevilsAdvocate counterConfidence >70%
+6. Counter-trend: signaal vs D1+W1 aligned trend
+7. setupQualityScore <3 (nieuw)
+
+### CEO-drempelregels voor setupQualityScore
+- Score <3 → altijd neutraal (algoritmisch geblokkeerd + CEO-instructie)
+- Score 3–4 → maximaal 65% zekerheid
+- Score 5–6 → high-quality setup; hogere zekerheid gerechtvaardigd
+
+### Validatie
+- `scripts/test-agentAnalysis.js`: +5 setupQualityScore-tests (totaal 55)
+- Alle 22 testsuites: **378 tests, 0 mislukt**
+
+## Fase 37 - Langetermijn-filosofie CEO + structurele gezondheidscheck (klaar)
+
+### Aanleiding
+Bot draait live; borgen dat het systeem niet naar hogere handelsfrequentie drijft
+en dat structuurfouten in agent-outputs vroeg gesignaleerd worden.
+
+### CEO langetermijn-filosofie
+KERNPRINCIPE toegevoegd aan CEO-prompt (`agents/ceo.js`):
+> "Dit systeem is gebouwd voor kwaliteit, niet voor handelsfrequentie. Één goede
+> setup per week is waardevoller dan tien twijfelachtige. Selectief zijn is geen
+> tekortkoming, het is de kern van het systeem. Forceer geen richting als de
+> condities er niet zijn — neutraal is een besluit, geen mislukking."
+
+### Structurele validator (`services/signalValidator.js`, nieuw)
+Pure functies, geen I/O, volledig unit-testbaar:
+- `validateSignalStructure(result)`: schema-checks (signal enum, confidence 0–100,
+  positionSize enum, setupQualityScore 0–6, macro.sentiment enum,
+  devilsAdvocate.counterConfidence 0–100) + logische consistentiechecks
+  (score<3+passed=true → INCONSISTENTIE, conf<60+passed=true → INCONSISTENTIE,
+  SL/TP richting vs signaal)
+- `formatHealthReport(validation, context)`: leesbaar rapport per validatie-run
+- `summarizeSignalHealth(signals)`: geaggregeerde gezondheid over N signalen
+  incl. setupQualityScore-verdeling
+
+Validator aangekoppeld in `agents/boardroom.js`: na elke run wordt het volledige
+resultaat gevalideerd; fouten/waarschuwingen naar `console.warn`.
+
+### Discord `/health` commando (`discord/bot.js`)
+Nieuwe slash-command die de laatste 20 signalen valideert en toont:
+- Structurele status (0 fouten of N fouten)
+- Signaalverdeling (passed / geblokkeerd / neutraal)
+- setupQualityScore-verdeling (0 t/m 6 + ontbrekend)
+- Meest actieve kwaliteitsfilters (welke blockers het vaakst vuren)
+- Gevonden structuurfouten indien aanwezig
+
+### Winrate-filosofie (gecorrigeerd)
+Gebruiker heeft expliciet aangegeven: winrate is een UITKOMST, geen DOEL.
+De juiste vraag bij elke backtest: "Doen de agents precies wat ze zouden moeten doen?"
+Een hoge winrate die voortkomt uit correct gedrag is waardevol; een hoge winrate
+als target leidt tot overfitting en ondermijnt de systeemintegriteit.
+
+### Validatie
+- `scripts/test-signalValidator.js` (nieuw): 25 tests
+- Alle 22 testsuites: **378 tests, 0 mislukt**
