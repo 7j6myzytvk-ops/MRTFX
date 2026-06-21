@@ -109,6 +109,14 @@ export async function decide(
           `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
           `• Verdeeld of meerdere conflicten → neutraal; forceer geen richting\n\n` +
 
+          `SETUP KWALITEIT — de fundamentele vraag vóór alles:\n` +
+          `De analist beoordeelt zes ICT/SMC-kwaliteitscriteria (① t/m ⑥). Gebruik dat oordeel ` +
+          `als vertrekpunt — niet als detail:\n` +
+          `• <3 criteria aanwezig → altijd neutraal, ongeacht hoe sterk de structuur of ` +
+          `het sentiment lijkt. Een richting zien is niet hetzelfde als een setup hebben.\n` +
+          `• 3–4 criteria → maximaal 65% zekerheid; wees selectief\n` +
+          `• 5–6 criteria → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
+
           `VASTE DREMPELS:\n` +
           `1) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +
           `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +

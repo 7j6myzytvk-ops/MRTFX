@@ -88,7 +88,33 @@ export async function analyzeCandles(
           `• FAIR VALUE GAPS (FVG): drie-candle imbalances. Optimale entry: 50%-punt van de FVG.\n` +
           `• RONDE NIVEAUS ($50-intervallen): harde institutionele zones.\n\n` +
 
-          `ANALYSE — doorloop élke stap expliciet:\n` +
+          `SETUP KWALITEITSOORDEEL — doe dit EERST, vóór je de structuur analyseert:\n` +
+          `Een setup is pas handelbaar als de meeste van deze zes criteria aanwezig zijn. ` +
+          `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
+          `① HTF-BIAS HELDER: W1 én D1 wijzen beiden duidelijk dezelfde richting ` +
+          `(niet zijwaarts, niet tegenstrijdig)\n` +
+          `② CORRECTE PREMIUM/DISCOUNT: voor longs bevindt de prijs zich in de discount-zone ` +
+          `(onder 50%-punt van de recente HTF-range); voor shorts in de premium-zone (erboven). ` +
+          `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
+          `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast — prijs is er nog nooit ` +
+          `eerder op teruggekomen (geen mitigation). Een zone die al bezocht is, heeft z'n werk ` +
+          `gedaan en is geen betrouwbare entry meer.\n` +
+          `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft vóór de setup een BSL- of SSL-cluster ` +
+          `gecleard (stop hunt). Zonder voorafgaande sweep is de beweging verdacht — ` +
+          `institutions bewegen pas ná het claimen van liquiditeit.\n` +
+          `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
+          `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
+          `richting op hogere timeframe.\n` +
+          `⑥ KILL ZONE TIMING: we bevinden ons in London Kill Zone (07:00–10:00 UTC) of ` +
+          `NY Kill Zone (12:00–15:00 UTC). Buiten deze zones is institutionele deelname laag ` +
+          `en zijn bewegingen minder betrouwbaar.\n\n` +
+          `TELLING → MAXIMALE ZEKERHEID:\n` +
+          `• 5–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
+          `• 3–4 criteria aanwezig → marginale setup → max 65% zekerheid, ook bij sterke structuur\n` +
+          `• <3 criteria aanwezig → geen handelbare setup → neutraal. ` +
+          `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
+
+          `STRUCTUURANALYSE — doorloop élke stap expliciet:\n` +
           `1. HTF BIAS: Wat is de Weekly/Daily trend? Is er een dominante richting of ` +
           `is de hogere structuur onduidelijk/zijwaarts?\n` +
           `2. MARKTSTRUCTUUR (H1): BOS of CHoCH? Noem de laatste 2-3 swings met exacte ` +
@@ -97,8 +123,9 @@ export async function analyzeCandles(
           `Welk liquiditeitspool is het meest logische volgende institutionele doel?\n` +
           `4. IMBALANCE ZONES: Welke OBs, FVGs en Breaker Blocks zijn nog onaangetast en ` +
           `dichtbij genoeg om als entry-niveau te dienen?\n` +
-          `5. CONCLUSIE: Signaal + zekerheid + het concrete prijs-invalidatieniveau (bij welk ` +
-          `niveau bewijst de markt dat deze analyse fout is?).\n\n` +
+          `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑥)? ` +
+          `Signaal + zekerheid (gecapped op de telling hierboven) + het concrete ` +
+          `prijs-invalidatieniveau (bij welk niveau bewijst de markt dat deze analyse fout is?).\n\n` +
 
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           `Candles (oudste eerst):\n${formatCandles(candles)}`,
