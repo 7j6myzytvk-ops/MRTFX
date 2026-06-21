@@ -85,11 +85,19 @@ export async function decide(
               (geopolitical.keyEvents?.length
                 ? ` | Key events: ${geopolitical.keyEvents.join('; ')}`
                 : '') +
-              `\n→ Beoordeelt: geopolitieke news-events, sessie-timing (kill zone), nabije event-risico's.\n\n`
+              `\n→ Beoordeelt: geopolitieke news-events en nabije event-risico's die de setup kunnen omverwerpen.\n\n`
             : '') +
           `[F] MARKTSTRUCTUUR-ANALIST (weerwoord na discussie): signaal "${rebuttal.signal}" ` +
           `(zekerheid ${rebuttal.confidence}%) — ${rebuttal.reasoning}\n` +
           `→ Reageert specifiek op het pre-mortem faalscenario: zijn de structurele argumenten nog intact?\n\n` +
+
+          `SETUP KWALITEIT — beoordeel dit EERST, vóór je de gewichten toepast:\n` +
+          `De analist beoordeelt zes ICT/SMC-kwaliteitscriteria (① t/m ⑥). Gebruik dat oordeel ` +
+          `als vertrekpunt — niet als detail:\n` +
+          `• <3 criteria aanwezig → altijd neutraal, ongeacht hoe sterk de structuur of ` +
+          `het sentiment lijkt. Een richting zien is niet hetzelfde als een setup hebben.\n` +
+          `• 3–4 criteria → maximaal 65% zekerheid; wees selectief\n` +
+          `• 5–6 criteria → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
 
           `BESLISSINGSGEWICHTEN:\n` +
           `• Structuur + Liquiditeit [A + F gecombineerd]: 35% — weerwoord [F] is het meest actueel; ` +
@@ -108,14 +116,6 @@ export async function decide(
           `zekerheid verlagen of neutraal, ook als structuur sterk lijkt\n` +
           `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
           `• Verdeeld of meerdere conflicten → neutraal; forceer geen richting\n\n` +
-
-          `SETUP KWALITEIT — de fundamentele vraag vóór alles:\n` +
-          `De analist beoordeelt zes ICT/SMC-kwaliteitscriteria (① t/m ⑥). Gebruik dat oordeel ` +
-          `als vertrekpunt — niet als detail:\n` +
-          `• <3 criteria aanwezig → altijd neutraal, ongeacht hoe sterk de structuur of ` +
-          `het sentiment lijkt. Een richting zien is niet hetzelfde als een setup hebben.\n` +
-          `• 3–4 criteria → maximaal 65% zekerheid; wees selectief\n` +
-          `• 5–6 criteria → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
 
           `VASTE DREMPELS:\n` +
           `1) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +

@@ -66,9 +66,11 @@ export async function analyzeCandles(
           `de top van 2011 ($1920), het bearmarkt dal van 2015, de rally van 2018-2020 en de ` +
           `2024-2026 bull run naar $3000+. Je specialiteit is institutionele orderflow lezen via ` +
           `ICT/SMC — je ziet in de price action waar het grote geld zit en waar het naartoe beweegt. ` +
-          `Je analyseert GEEN indicatoren (RSI/MACD), geen macro-context en geen sessie-timing — ` +
-          `die vallen buiten jouw mandaat en worden door gespecialiseerde collega's beoordeeld. ` +
-          `Jij beantwoordt één vraag: "Wat zegt de marktstructuur en waar ligt de liquiditeit?"\n\n` +
+          `Je analyseert GEEN indicatoren (RSI/MACD) en geen macro-context — die vallen buiten ` +
+          `jouw mandaat en worden door gespecialiseerde collega's beoordeeld. Sessie-informatie ` +
+          `(welke kill zone we zitten) vind je in de contextNotes — je gebruikt die uitsluitend ` +
+          `voor criterium ⑥ van het setup-kwaliteitsoordeel hieronder. ` +
+          `Jij beantwoordt één vraag: "Wat zegt de marktstructuur, en is dit een handelbare setup?"\n\n` +
 
           `ICT/SMC KENNIS (jouw gereedschapskist):\n` +
           `• MARKTSTRUCTUUR: onderscheid BOS (Break of Structure = trendbevestiging) van CHoCH ` +
@@ -179,6 +181,14 @@ export async function reviewDiscussion(
           `③ Timing mismatch: geeft macro of geo informatie die de timing in twijfel trekt?\n` +
           `④ Zone verwerkt: is het OB/FVG al eerder bezocht (mitigation)?\n` +
           `⑤ Genegeerd bewijs: zijn er structurele signalen die je eerder te snel afdeed?\n\n` +
+          `SETUP KWALITEIT HEROVERWEGING (verplicht):\n` +
+          `Heeft de discussie één van de zes kwaliteitscriteria in twijfel getrokken?\n` +
+          `• Risicomanager meldt dat de entry te laat is of geen logisch OB/FVG beschikbaar → ③ of ④ valt weg\n` +
+          `• Pre-mortem vindt dat de zone al bezocht was → ③ valt weg\n` +
+          `• Pre-mortem vindt dat de sweep ontbrak of een institutionele val is → ④ valt weg\n` +
+          `• Macro of geo contradicteert de HTF-bias → ① staat ter discussie\n` +
+          `Als de telling daalt, verlaag dan ook je zekerheid dienovereenkomstig.\n\n` +
+
           `ZEKERHEIDSREGEL (verplicht toepassen):\n` +
           `• Alle 5 scenario's weerlegd + macro bevestigt → VERHOOG zekerheid\n` +
           `• 1 steekhoudend punt → kleine aanpassing omlaag, behoud richting\n` +
