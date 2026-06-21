@@ -19,6 +19,7 @@ import {
   formatCeoPerformanceBriefingNote,
   formatRiskStreakNote,
 } from '../services/ceoPerformanceBriefing.js';
+import { validateSignalStructure, formatHealthReport } from '../services/signalValidator.js';
 
 export async function runDiscussion(
   candles,
@@ -75,15 +76,13 @@ export async function runDiscussion(
   const comboSignal = isComboSignal(sample);
   const qualityResult = assessSignalQuality(sample);
 
-  return {
-    instrument,
-    granularity,
-    entryPrice,
-    discussion,
-    decision,
-    comboSignal,
-    qualityResult,
-  };
+  const fullResult = { instrument, granularity, entryPrice, discussion, decision, comboSignal, qualityResult };
+  const validation = validateSignalStructure(fullResult);
+  if (!validation.valid || validation.warnings.length > 0) {
+    console.warn('[boardroom] ' + formatHealthReport(validation, `${instrument} ${new Date().toISOString()}`));
+  }
+
+  return fullResult;
 }
 
 export async function runBoardroom(candles, opts = {}) {

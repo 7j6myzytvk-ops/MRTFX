@@ -17,6 +17,7 @@ import { getRecentSignals, getAllSignals } from '../data/store.js';
 import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
+import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
 
 const commands = [
   new SlashCommandBuilder()
@@ -43,6 +44,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('performance')
     .setDescription('Toon performance-statistieken: gelogde signalen vs. werkelijke uitkomst'),
+  new SlashCommandBuilder()
+    .setName('health')
+    .setDescription('Structuurcheck: valideert de laatste signalen op schema-integriteit en logische consistentie'),
   new SlashCommandBuilder()
     .setName('briefing')
     .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
@@ -234,6 +238,58 @@ export function createBot() {
         );
       } catch (err) {
         await interaction.editReply(`Briefing-actie mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'health') {
+      await interaction.deferReply();
+      try {
+        const all = await getAllSignals();
+        const recente = all.slice(-20);
+        const health = summarizeSignalHealth(recente);
+
+        const scoreLines = Object.entries(health.scoreDist)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `  ${k === 'ontbreekt' ? 'ontbreekt' : `${k}/6`}: ${v}×`)
+          .join('\n');
+
+        const filterDist = {};
+        for (const s of recente) {
+          for (const b of (s.qualityResult?.blockers ?? [])) {
+            filterDist[b] = (filterDist[b] ?? 0) + 1;
+          }
+        }
+        const filterLines = Object.entries(filterDist).length > 0
+          ? Object.entries(filterDist)
+              .sort(([, a], [, b]) => b - a)
+              .map(([k, v]) => `  • ${k}: ${v}×`)
+              .join('\n')
+          : '  geen blockers geregistreerd';
+
+        const passed = recente.filter(s => s.qualityResult?.passed === true && s.decision?.signal !== 'neutral').length;
+        const blocked = recente.filter(s => s.qualityResult?.passed === false).length;
+        const neutraal = recente.filter(s => s.decision?.signal === 'neutral').length;
+
+        const overallStatus = health.invalid === 0
+          ? `✅ Alle ${health.n} signalen structureel valide`
+          : `🚨 ${health.invalid}/${health.n} signalen hebben structuurfouten`;
+
+        const issueBlock = health.issues.length > 0
+          ? `\n\n**Gevonden problemen:**\n${health.issues.map(i => `• ${i}`).join('\n')}`
+          : '';
+
+        await interaction.editReply(
+          `**🏥 Systeem-gezondheidscheck** (laatste ${health.n} signalen)\n\n` +
+          `${overallStatus}\n\n` +
+          `**Signaalverdeling:**\n` +
+          `  🚨 Setup (passed): ${passed} | 🔶 Geblokkeerd: ${blocked} | 💤 Neutraal: ${neutraal}\n\n` +
+          `**Setup-kwaliteitsscore verdeling:**\n${scoreLines || '  geen data'}\n\n` +
+          `**Meest actieve kwaliteitsfilters:**\n${filterLines}` +
+          issueBlock
+        );
+      } catch (err) {
+        await interaction.editReply(`Health check mislukt: ${err.message}`);
       }
       return;
     }

@@ -57,6 +57,14 @@ export async function decide(
           `institutionele traders die de markt beweegt. Je consensus-oordeel is een vertrekpunt, ` +
           `geen eindpunt — als jouw ervaring iets anders zegt dan de meerderheid van het team, ` +
           `mag je dat expliciet benoemen en je besluit onderbouwen.\n\n` +
+
+          `KERNPRINCIPE — langetermijn betrouwbaarheid:\n` +
+          `Dit systeem is gebouwd voor kwaliteit, niet voor handelsfrequentie. Jij beslist wanneer ` +
+          `er wél gehandeld wordt — en dat zijn de momenten waarop alles klopt: de structuur, het ` +
+          `macro-regime, de timing, de zone, het team. Één goede setup per week is waardevoller ` +
+          `dan tien twijfelachtige. Selectief zijn is geen tekortkoming, het is de kern van het ` +
+          `systeem. Forceer geen richting als de condities er niet zijn — neutraal is een besluit, ` +
+          `geen mislukking.\n\n` +
           `De huidige prijs is ${lastClose}.\n\n` +
 
           `Elk teamlid heeft een unieke, niet-overlappende specialiteit. Weeg hun input op basis ` +
