@@ -99,7 +99,15 @@ export function formatHealthReport(validation, context = '') {
 
 // Samenvatting van meerdere signalen — voor /health rapport
 export function summarizeSignalHealth(signals) {
-  if (!signals || signals.length === 0) return { n: 0, valid: 0, issues: [] };
+  if (!signals || signals.length === 0) {
+    return {
+      n: 0,
+      valid: 0,
+      invalid: 0,
+      issues: [],
+      scoreDist: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, ontbreekt: 0 },
+    };
+  }
   const results = signals.map(s => validateSignalStructure(s));
   const valid = results.filter(r => r.valid).length;
   const allIssues = results.flatMap(r => r.errors);

@@ -137,5 +137,15 @@ const withIssue = { ...valid, decision: { ...valid.decision, signal: 'sideways' 
 const sum2 = summarizeSignalHealth([valid, withIssue]);
 check('summarize: invalid=1', sum2.invalid, 1);
 
+// --- summarizeSignalHealth: leeg signalen-array (nog geen live setups) ---
+const sumEmpty = summarizeSignalHealth([]);
+check('summarize empty: n=0', sumEmpty.n, 0);
+check('summarize empty: invalid=0', sumEmpty.invalid, 0);
+check('summarize empty: heeft scoreDist', typeof sumEmpty.scoreDist, 'object');
+check('summarize empty: scoreDist[0]=0', sumEmpty.scoreDist[0], 0);
+
+const sumNull = summarizeSignalHealth(null);
+check('summarize null: heeft scoreDist', typeof sumNull.scoreDist, 'object');
+
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
 if (fail > 0) process.exit(1);
