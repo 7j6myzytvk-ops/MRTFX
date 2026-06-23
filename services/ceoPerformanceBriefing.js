@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-const SIGNALS_FILE = path.join(process.cwd(), 'data', 'signals.json');
+const SIGNALS_FILE = path.join(process.cwd(), 'data', 'live', 'signals.json');
 const MAX_RECENT = 10;
 
 async function readRecentSignals() {

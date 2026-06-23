@@ -1,7 +1,9 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-const FILE = path.join(process.cwd(), 'data', 'signals.json');
+// 'live' is een Railway-volume mount point - data hier overleeft redeploys
+// en container-restarts, in tegenstelling tot de rest van data/.
+const FILE = path.join(process.cwd(), 'data', 'live', 'signals.json');
 
 async function readAll() {
   try {

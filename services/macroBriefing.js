@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-const FILE = path.join(process.cwd(), 'data', 'macroBriefing.json');
+const FILE = path.join(process.cwd(), 'data', 'live', 'macroBriefing.json');
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dagen
 
 export function isBriefingValid(briefing, now = Date.now()) {

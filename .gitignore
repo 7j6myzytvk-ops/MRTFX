@@ -3,3 +3,4 @@ node_modules/
 *.log
 data/*.db
 data/*.json
+data/live/
