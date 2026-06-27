@@ -3,6 +3,7 @@ import {
   computeRoundLevels,
   isNearKeyLevel,
   getAllKeyLevels,
+  checkKeyLevelProximity,
 } from '../agents/keyLevels.js';
 
 let pass = 0;
@@ -119,6 +120,48 @@ check('computeWeeklyLevels - 1 candle', computeWeeklyLevels([{ high: 3200, low: 
   const levels = getAllKeyLevels(3175, weeklyCandles);
   checkTrue('getAllKeyLevels - heeft weekly_pivot', levels.some(l => l.type === 'weekly_pivot'));
   checkTrue('getAllKeyLevels - heeft round_number', levels.some(l => l.type === 'round_number'));
+}
+
+// --- checkKeyLevelProximity ---
+// Regressietest voor de bug waarbij `indicators.atr` (bestaat niet, retourneert
+// undefined) i.p.v. `indicators.atr14` werd gelezen - hierdoor gaf
+// isNearKeyLevel's guard (`if (!atr ...)`) altijd `near: false` terug, los van
+// de daadwerkelijke afstand tot een sleutelniveau.
+
+function buildH1Candles(closes) {
+  // Lage, voorspelbare volatiliteit (range 2 per candle) zodat ATR(14) ≈ 2.
+  return closes.map((close) => ({ high: close + 1, low: close - 1, close }));
+}
+
+{
+  // 20 candles, laatste candle exact op $4100.5 - 0.5 punt van het ronde niveau
+  // $4100. Met ATR≈2 is de drempel (0.5×ATR=1) ruim genoeg: hoort near:true te zijn.
+  const closes = Array.from({ length: 19 }, () => 4100).concat([4100.5]);
+  const h1 = buildH1Candles(closes);
+  const weeklyCandles = [
+    { high: 4150, low: 4050, close: 4090 },
+    { high: 4140, low: 4060, close: 4100 },
+  ];
+  const result = checkKeyLevelProximity(h1, weeklyCandles);
+  checkTrue('checkKeyLevelProximity - dichtbij rond niveau -> near:true', result.near === true);
+  check('checkKeyLevelProximity - juiste niveau gevonden', result.level, 4100);
+}
+
+{
+  // Laatste candle ver (30 punten) van elk sleutelniveau - hoort near:false te zijn.
+  const closes = Array.from({ length: 19 }, () => 4100).concat([4130]);
+  const h1 = buildH1Candles(closes);
+  const weeklyCandles = [
+    { high: 4150, low: 4050, close: 4090 },
+    { high: 4140, low: 4060, close: 4100 },
+  ];
+  const result = checkKeyLevelProximity(h1, weeklyCandles);
+  checkTrue('checkKeyLevelProximity - ver van elk niveau -> near:false', result.near === false);
+}
+
+{
+  // Geen candles -> near:false, geen crash
+  check('checkKeyLevelProximity - geen candles -> near:false', checkKeyLevelProximity([], []).near, false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

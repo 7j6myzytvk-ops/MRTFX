@@ -67,7 +67,7 @@ export function checkKeyLevelProximity(h1Candles, weeklyCandles) {
   if (!h1Candles || h1Candles.length === 0) return { near: false };
   const currentPrice = h1Candles[h1Candles.length - 1].close;
   const indicators = computeIndicators(h1Candles);
-  const atr = indicators.atr;
+  const atr = indicators.atr14;
   const levels = getAllKeyLevels(currentPrice, weeklyCandles);
   return isNearKeyLevel(currentPrice, levels, atr);
 }
