@@ -1332,4 +1332,61 @@ als target leidt tot overfitting en ondermijnt de systeemintegriteit.
 
 ### Validatie
 - `scripts/test-signalValidator.js` (nieuw): 25 tests
+
+## Fase 38 - Live testfase + conditie-diagnostiek + kritieke ATR-bugfix (klaar)
+
+### Aanleiding
+Live testfase gestart 2026-06-22 op Railway. Na 5 dagen: 0 getriggerde
+signalen. Vraag: is dit terechte selectiviteit, of een verborgen probleem?
+
+### Twee productie-bugs gevonden tijdens live testen
+1. **`/health` crashte zonder live signalen** - `summarizeSignalHealth([])`
+   miste `scoreDist`/`invalid` in de return-waarde. Fix in
+   `services/signalValidator.js`.
+2. **Geen persistent Railway-volume** - `data/signals.json` stond op
+   tijdelijke container-filesystem; elke redeploy/restart wiste de live
+   signaalhistorie. Fix: volume gemount op `/app/data/live` (niet `/app/data`
+   zelf, dat zou `data/store.js` overschrijven). `data/store.js`,
+   `services/macroBriefing.js`, `services/ceoPerformanceBriefing.js`
+   verwijzen nu naar `data/live/`.
+
+### Conditie-diagnostiek (`services/conditionDiagnostics.js`, nieuw)
+Passieve logging per poll-cyclus van welke van de vier condities (sessie,
+TF-alignment, D1/W1-trend, sleutelniveau) wel/niet klopten - beinvloedt de
+triggerbeslissing niet. `/diagnose` Discord-commando toont de geaggregeerde
+samenvatting (blocker-frequentie, slagingspercentage per conditie).
+
+### Kritieke bug: sleutelniveau-conditie blokkeerde altijd
+`agents/keyLevels.js`'s `checkKeyLevelProximity()` las `indicators.atr`
+(bestaat niet) i.p.v. `indicators.atr14` (zie `agents/indicators.js`).
+`isNearKeyLevel()`'s guard (`if (!atr ...)`) gaf hierdoor **altijd**
+`near: false` terug, onafhankelijk van de daadwerkelijke prijsafstand tot een
+sleutelniveau. Deze conditie was sinds de introductie (Fase 24, 20 juni)
+structureel onmogelijk te halen - de 5 dagen zonder live signaal hadden dus
+primair deze oorzaak, niet (alleen) marktomstandigheden of terechte
+selectiviteit.
+
+**Gevonden via `scripts/backfillConditions.js` (nieuw)**: simuleert de
+conditie-checker met terugwerkende kracht op echte historische candles
+(zelfde methodologie als de bestaande backtests, maar dan specifiek tegen de
+conditie-checker i.p.v. de boardroom). Resultaat vóór de fix: sleutelniveau-
+conditie 0% geslaagd over 45 gesimuleerde polls (22-27 juni). Na de fix:
+64.4% geslaagd, met 8 momenten die de boardroom daadwerkelijk getriggerd
+zouden hebben.
+
+**Why dit relevant is**: `checkKeyLevelProximity()` had geen enkele unit-test
+vóór deze fase - exact de reden dat de bug onopgemerkt bleef. 3 nieuwe
+regressietests toegevoegd in `scripts/test-keyLevels.js`.
+
+### Beslissing: 3 juli 2026 als ijkpunt
+Gebruiker kiest 3 juli (in plaats van de eerder besproken twee-weken-
+richtlijn) als laatste testdag met de huidige conditie-checker/filters.
+Belangrijke kanttekening: omdat de ATR-bug tot 27 juni actief was, is de
+periode 22-27 juni **geen valide test van het bedoelde systeem** geweest -
+de eerste echte test loopt dus pas vanaf de fix (27 juni) tot 3 juli.
+
+### Validatie
+- 21 nieuwe tests (`scripts/test-conditionDiagnostics.js`)
+- 3 nieuwe regressietests (`scripts/test-keyLevels.js`)
+- Alle testsuites blijven groen na elke wijziging
 - Alle 22 testsuites: **378 tests, 0 mislukt**
