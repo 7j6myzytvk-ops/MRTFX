@@ -18,6 +18,7 @@ import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
 import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
+import { getConditionLog, summarizeConditionLog, formatDiagnosticsReport } from '../services/conditionDiagnostics.js';
 
 const commands = [
   new SlashCommandBuilder()
@@ -47,6 +48,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('health')
     .setDescription('Structuurcheck: valideert de laatste signalen op schema-integriteit en logische consistentie'),
+  new SlashCommandBuilder()
+    .setName('diagnose')
+    .setDescription('Toont welke conditie het vaakst blokkeert sinds het begin van de testfase'),
   new SlashCommandBuilder()
     .setName('briefing')
     .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
@@ -290,6 +294,18 @@ export function createBot() {
         );
       } catch (err) {
         await interaction.editReply(`Health check mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'diagnose') {
+      await interaction.deferReply();
+      try {
+        const entries = await getConditionLog();
+        const summary = summarizeConditionLog(entries);
+        await interaction.editReply(formatDiagnosticsReport(summary));
+      } catch (err) {
+        await interaction.editReply(`Diagnose mislukt: ${err.message}`);
       }
       return;
     }

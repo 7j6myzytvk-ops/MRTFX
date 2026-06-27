@@ -12,6 +12,7 @@ import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
 import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
+import { recordConditionCheck } from './conditionDiagnostics.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -48,6 +49,13 @@ async function poll(client) {
 
     // Alle vier voorwaarden controleren
     const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
+
+    // Puur diagnostisch - beinvloedt de trigger-beslissing niet, legt alleen vast
+    // welke voorwaarden wel/niet klopten zodat we later kunnen zien welke conditie
+    // het vaakst blokkeert.
+    await recordConditionCheck(conditions).catch((err) => {
+      console.error('[conditionDiagnostics] Kon conditie-log niet schrijven:', err.message);
+    });
 
     if (!conditions.triggered) return;
 
