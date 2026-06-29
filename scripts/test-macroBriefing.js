@@ -49,11 +49,14 @@ check('formatBriefingNote - null: lege string', formatBriefingNote(null), '');
 }
 
 // Vervaldatum correct geformatteerd (YYYY-MM-DD)
+// Relatief t.o.v. nu (i.p.v. hardgecodeerde datum) - anders wordt deze test
+// een tijdbom die faalt zodra de hardgecodeerde datum in het verleden ligt.
 {
-  const expiresAt = '2026-06-27T17:00:00.000Z';
+  const expiresAt = FUTURE;
+  const expectedDate = expiresAt.slice(0, 10);
   const b = { text: 'test', expiresAt };
   const note = formatBriefingNote(b);
-  checkTrue('formatBriefingNote - datum formaat YYYY-MM-DD', note.includes('2026-06-27'));
+  checkTrue('formatBriefingNote - datum formaat YYYY-MM-DD', note.includes(expectedDate));
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

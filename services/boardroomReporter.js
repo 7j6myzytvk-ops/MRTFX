@@ -1,5 +1,18 @@
 import { config } from '../config/index.js';
 
+// Discord staat maximaal 2000 tekens per berichtinhoud toe. CEO-reasoning kan
+// dat overschrijden (gezien tijdens live gebruik) - zonder deze guard crasht
+// de hele poll-cyclus op een 'Invalid Form Body'-fout en wordt het signaal
+// niet eens naar Discord gemeld (al staat het al wel opgeslagen, zie
+// agents/boardroom.js's appendSignal-volgorde).
+const DISCORD_MAX_LENGTH = 2000;
+const TRUNCATE_SUFFIX = '\n… (afgekapt, bericht was te lang voor Discord)';
+
+function truncateForDiscord(text) {
+  if (text.length <= DISCORD_MAX_LENGTH) return text;
+  return text.slice(0, DISCORD_MAX_LENGTH - TRUNCATE_SUFFIX.length) + TRUNCATE_SUFFIX;
+}
+
 // Visuele markering op basis van signaalrichting en kwaliteitsfilter:
 // - 🚨 Setup gevonden   → setup die alle kwaliteitsfilters passeert
 // - 🔶 Setup (gefilterd) → setup die minstens één kwaliteitsfilter niet haalt
@@ -82,13 +95,13 @@ export async function reportToDiscord(client, result, { ceoChannelId, traceChann
   if (effectiveTraceChannelId) {
     const channel = await client.channels.fetch(effectiveTraceChannelId);
     for (const msg of formatTraceMessages({ ...result, qualityResult })) {
-      await channel.send(msg);
+      await channel.send(truncateForDiscord(msg));
     }
   }
 
   if (effectiveCeoChannelId) {
     const channel = await client.channels.fetch(effectiveCeoChannelId);
-    await channel.send(formatCeoMessage(result.decision, result.comboSignal, qualityResult));
+    await channel.send(truncateForDiscord(formatCeoMessage(result.decision, result.comboSignal, qualityResult)));
 
     const alert = formatComboAlert(
       result.decision.signal,
@@ -96,7 +109,7 @@ export async function reportToDiscord(client, result, { ceoChannelId, traceChann
       config.boardroom.alertUserId,
       qualityResult,
     );
-    if (alert) await channel.send(alert);
+    if (alert) await channel.send(truncateForDiscord(alert));
   }
 }
 
@@ -125,6 +138,8 @@ export async function reportOutcomes(client, resolved) {
 
   const channel = await client.channels.fetch(ceoChannelId);
   for (const signal of resolved) {
-    await channel.send(formatOutcomeMessage(signal));
+    await channel.send(truncateForDiscord(formatOutcomeMessage(signal)));
   }
 }
+
+export { truncateForDiscord };

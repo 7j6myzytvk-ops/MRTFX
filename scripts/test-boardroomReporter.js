@@ -6,6 +6,7 @@ import {
   formatCeoMessage,
   formatComboAlert,
   formatTraceMessages,
+  truncateForDiscord,
 } from '../services/boardroomReporter.js';
 import { config } from '../config/index.js';
 
@@ -278,6 +279,28 @@ function check(name, actual, expected) {
   const msgs = formatTraceMessages({ discussion, decision });
   check('formatTraceMessages - geo zonder keyEvents: 7 berichten', msgs.length, 7);
   check('formatTraceMessages - geo zonder keyEvents: geen keyEvents-regel', !msgs[4].includes('Sleutel-events:'), true);
+}
+
+// 18. truncateForDiscord - regressietest voor de live crash (29 juni): CEO-
+// reasoning kan Discord's 2000-tekenlimiet overschrijden, dat mag de hele
+// poll-cyclus niet meer laten crashen.
+{
+  const kort = 'Een kort bericht.';
+  check('truncateForDiscord - kort bericht ongewijzigd', truncateForDiscord(kort), kort);
+}
+{
+  const lang = 'x'.repeat(2500);
+  const result = truncateForDiscord(lang);
+  check('truncateForDiscord - lang bericht binnen limiet', result.length <= 2000, true);
+  check('truncateForDiscord - lang bericht heeft afkap-notitie', result.includes('afgekapt'), true);
+}
+{
+  const exact = 'x'.repeat(2000);
+  check('truncateForDiscord - exact 2000 tekens ongewijzigd', truncateForDiscord(exact), exact);
+}
+{
+  const overGrens = 'x'.repeat(2001);
+  check('truncateForDiscord - 2001 tekens wordt afgekapt', truncateForDiscord(overGrens).length <= 2000, true);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
