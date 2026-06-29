@@ -1390,3 +1390,55 @@ de eerste echte test loopt dus pas vanaf de fix (27 juni) tot 3 juli.
 - 3 nieuwe regressietests (`scripts/test-keyLevels.js`)
 - Alle testsuites blijven groen na elke wijziging
 - Alle 22 testsuites: **378 tests, 0 mislukt**
+
+## Fase 39 - Eerste live triggers + Discord-berichtlengte-bugfix (klaar)
+
+### Aanleiding
+29 juni, 08:46 UTC: eerste live trigger sinds de Fase 38-fix. Crashte direct
+met "Invalid Form Body / content[BASE_TYPE_MAX_LENGTH]: Must be 2000 or fewer
+in length." CEO-reasoning kan makkelijk 1500-2500+ tekens zijn (gezien in
+eerdere replay-analyses) en overschreed Discord's berichtlimiet.
+
+### Root cause en fix
+`services/boardroomReporter.js`'s `reportToDiscord`/`reportOutcomes` deden
+`channel.send(msg)` zonder lengtecontrole. Nieuwe `truncateForDiscord(text)`
+helper (max 2000 tekens, met afkap-notitie) toegepast op alle send-aanroepen.
+5 nieuwe regressietests.
+
+**Belangrijk**: het signaal zelf was al correct opgeslagen vóór de crash
+(`appendSignal` loopt vóór `reportToDiscord` in `agents/boardroom.js`) - alleen
+de Discord-melding ging verloren. Geen dataverlies, wel een gemiste melding.
+
+### Proactieve uitbreiding naar alle Discord-commando's
+Dezelfde kwetsbaarheid bestond in `discord/bot.js`'s eigen `editReply`-opbouw,
+buiten `boardroomReporter.js` om:
+- `/analyse`: embedde `decision.reasoning` rechtstreeks (zelfde veld als de
+  crash)
+- `/health`, `/diagnose`: kunnen theoretisch lang worden (tot ~27 TF-
+  alignment-varianten bij `/diagnose`)
+- `/briefing`: toont gebruikersinvoer die Discord's eigen 6000-tekenlimiet
+  voor string-opties mag gebruiken, ruim boven de 2000-berichtlimiet
+
+Alle vier nu gewrapt met `truncateForDiscord`. `/geschiedenis` en `/status`
+ongewijzigd gelaten - al van nature bounded (max 10 korte regels resp.
+briefing-tekst al afgekapt op 200 tekens).
+
+### Live verificatie (29 juni)
+Na de fix: tweede trigger (09:00-09:01 UTC) sloeg succesvol op **en** postte
+succesvol naar Discord - BEARISH 62%, geblokkeerd door kwaliteitsfilter
+(rebuttal-shift + pre-mortem >70%). Bevestigd via `/geschiedenis` in Discord
+(niet via `railway run` - zie kanttekening hieronder).
+
+**Kanttekening over verificatiemethode**: `railway run`-CLI-queries tegen
+`data/store.js` lieten beide live signalen van 29 juni niet zien, ondanks dat
+ze wel degelijk bestonden (bevestigd via het Discord-commando `/geschiedenis`,
+dat rechtstreeks in de daadwerkelijk draaiende container leeft). Voor
+toekomstige live-verificatie: vertrouw op Discord slash-commands of
+`railway logs`, niet op `railway run`-introspectie van de volume-state.
+
+### Validatie
+- 5 nieuwe tests (`scripts/test-boardroomReporter.js`)
+- Onafhankelijke bugfix: `scripts/test-macroBriefing.js` had een
+  hardgecodeerde datum (2026-06-27) die inmiddels in het verleden lag -
+  gefixt naar een relatieve datum t.o.v. nu
+- Alle testsuites blijven groen
