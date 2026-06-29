@@ -12,7 +12,7 @@ import { checkConditions, isActiveSession } from '../services/conditionChecker.j
 import { getBriefing, setBriefing, clearBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
-import { reportToDiscord, formatSetupMarker } from '../services/boardroomReporter.js';
+import { reportToDiscord, formatSetupMarker, truncateForDiscord } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
 import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
@@ -176,9 +176,11 @@ export function createBot() {
 
         const { decision, comboSignal } = result;
         await interaction.editReply(
-          `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%) - ${formatSetupMarker(decision.signal, comboSignal)}\n${decision.reasoning}\n\n` +
-            `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n\n` +
-            `_Volledige teamdiscussie: zie het #trace-kanaal._`,
+          truncateForDiscord(
+            `**CEO-besluit: ${decision.signal.toUpperCase()}** (zekerheid: ${decision.confidence}%) - ${formatSetupMarker(decision.signal, comboSignal)}\n${decision.reasoning}\n\n` +
+              `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n\n` +
+              `_Volledige teamdiscussie: zie het #trace-kanaal._`,
+          ),
         );
       } catch (err) {
         await interaction.editReply(`Analyse mislukt: ${err.message}`);
@@ -223,8 +225,10 @@ export function createBot() {
           const briefing = await setBriefing(tekst, interaction.user.username);
           const expires = new Date(briefing.expiresAt).toISOString().slice(0, 10);
           await interaction.editReply(
-            `**Macro-briefing opgeslagen** (geldig t/m ${expires})\n\n> ${briefing.text}\n\n` +
-            `Alle agents ontvangen deze context bij elke volgende boardroom-sessie.`
+            truncateForDiscord(
+              `**Macro-briefing opgeslagen** (geldig t/m ${expires})\n\n> ${briefing.text}\n\n` +
+              `Alle agents ontvangen deze context bij elke volgende boardroom-sessie.`,
+            ),
           );
           return;
         }
@@ -238,7 +242,9 @@ export function createBot() {
         const expires = new Date(briefing.expiresAt).toISOString().slice(0, 10);
         const setAt = new Date(briefing.setAt).toISOString().replace('T', ' ').slice(0, 16);
         await interaction.editReply(
-          `**Actieve macro-briefing** (ingesteld ${setAt} UTC door ${briefing.setBy}, geldig t/m ${expires})\n\n> ${briefing.text}`
+          truncateForDiscord(
+            `**Actieve macro-briefing** (ingesteld ${setAt} UTC door ${briefing.setBy}, geldig t/m ${expires})\n\n> ${briefing.text}`,
+          ),
         );
       } catch (err) {
         await interaction.editReply(`Briefing-actie mislukt: ${err.message}`);
@@ -284,13 +290,15 @@ export function createBot() {
           : '';
 
         await interaction.editReply(
-          `**🏥 Systeem-gezondheidscheck** (laatste ${health.n} signalen)\n\n` +
-          `${overallStatus}\n\n` +
-          `**Signaalverdeling:**\n` +
-          `  🚨 Setup (passed): ${passed} | 🔶 Geblokkeerd: ${blocked} | 💤 Neutraal: ${neutraal}\n\n` +
-          `**Setup-kwaliteitsscore verdeling:**\n${scoreLines || '  geen data'}\n\n` +
-          `**Meest actieve kwaliteitsfilters:**\n${filterLines}` +
-          issueBlock
+          truncateForDiscord(
+            `**🏥 Systeem-gezondheidscheck** (laatste ${health.n} signalen)\n\n` +
+            `${overallStatus}\n\n` +
+            `**Signaalverdeling:**\n` +
+            `  🚨 Setup (passed): ${passed} | 🔶 Geblokkeerd: ${blocked} | 💤 Neutraal: ${neutraal}\n\n` +
+            `**Setup-kwaliteitsscore verdeling:**\n${scoreLines || '  geen data'}\n\n` +
+            `**Meest actieve kwaliteitsfilters:**\n${filterLines}` +
+            issueBlock,
+          ),
         );
       } catch (err) {
         await interaction.editReply(`Health check mislukt: ${err.message}`);
@@ -303,7 +311,7 @@ export function createBot() {
       try {
         const entries = await getConditionLog();
         const summary = summarizeConditionLog(entries);
-        await interaction.editReply(formatDiagnosticsReport(summary));
+        await interaction.editReply(truncateForDiscord(formatDiagnosticsReport(summary)));
       } catch (err) {
         await interaction.editReply(`Diagnose mislukt: ${err.message}`);
       }
