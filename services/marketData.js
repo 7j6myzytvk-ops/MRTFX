@@ -23,7 +23,7 @@ function client() {
 // status: 'error', soms gecombineerd met een niet-2xx HTTP-status. In beide
 // gevallen geven we hier het eigen bericht van Twelve Data door, in plaats van
 // axios' generieke "Request failed with status code ...".
-async function request(endpoint, params) {
+async function request(endpoint, params, retriesLeft = 2) {
   try {
     const { data } = await client().get(endpoint, {
       params: { ...params, apikey: config.marketData.apiKey },
@@ -35,6 +35,13 @@ async function request(endpoint, params) {
 
     return data;
   } catch (err) {
+    const status = err.response?.status;
+    // Retry bij tijdelijke server-side fouten (5xx, bv. Cloudflare 520).
+    // Wacht 5 seconden tussen pogingen — geeft de externe server de kans te herstellen.
+    if (status >= 500 && retriesLeft > 0) {
+      await new Promise((r) => setTimeout(r, 5000));
+      return request(endpoint, params, retriesLeft - 1);
+    }
     const message = err.response?.data?.message;
     if (message) throw new Error(message);
     throw err;
