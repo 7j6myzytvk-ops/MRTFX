@@ -13,11 +13,22 @@ const CACHE_TTL_MS = 15 * 60 * 1000;
 let _cache = null; // { data, fetchedAt }
 
 /**
- * Zet een ET-tijdstring ("8:30am", "3:45pm") + datumstring ("2026-07-01")
- * om naar een UTC ISO-string. Gebruikt DST-benadering: maart-november = EDT (UTC-4),
- * rest = EST (UTC-5).
+ * Zet het date-veld van de FF-feed om naar UTC ISO-string.
+ * De feed geeft datums als ISO-timestamp met timezone-offset, bv.:
+ *   "2026-07-02T08:30:00-04:00"  → "2026-07-02T12:30:00.000Z"
+ * Ondersteunt ook de oudere "am/pm"-notatie als fallback.
  */
 export function etToUtc(dateStr, timeStr) {
+  // Nieuw formaat: dateStr bevat al een volledige ISO-timestamp met offset
+  if (dateStr && /T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/.test(dateStr)) {
+    try {
+      return new Date(dateStr).toISOString();
+    } catch {
+      return null;
+    }
+  }
+
+  // Oud formaat: aparte date ("2026-07-01") + time ("8:30am") velden
   if (!timeStr || !dateStr) return null;
   const clean = timeStr.trim().toLowerCase();
   if (clean === 'all day' || clean === 'tentative' || clean === '') return null;
@@ -35,11 +46,8 @@ export function etToUtc(dateStr, timeStr) {
   // DST-benadering: maand 2 (maart) t/m maand 10 (november) = EDT = UTC-4
   const month = new Date(dateStr + 'T00:00:00Z').getUTCMonth();
   const offsetHours = month >= 2 && month <= 10 ? 4 : 5;
-  const utcHours = hours + offsetHours;
-
-  // Kan over middernacht gaan (bv. 11pm ET + 4 = 03:00 UTC volgende dag)
   const base = new Date(`${dateStr}T00:00:00Z`);
-  base.setUTCHours(utcHours, minutes, 0, 0);
+  base.setUTCHours(hours + offsetHours, minutes, 0, 0);
   return base.toISOString();
 }
 

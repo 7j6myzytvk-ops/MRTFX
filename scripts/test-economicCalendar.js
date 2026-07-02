@@ -20,7 +20,12 @@ function check(label, actual, expected) {
   }
 }
 
-// --- etToUtc ---
+// --- etToUtc: nieuw ISO-formaat (huidige FF-feed) ---
+check('ISO met -04:00 offset -> UTC', etToUtc('2026-07-02T08:30:00-04:00', undefined), '2026-07-02T12:30:00.000Z');
+check('ISO met -05:00 offset -> UTC', etToUtc('2026-01-09T08:30:00-05:00', undefined), '2026-01-09T13:30:00.000Z');
+check('ISO 15:15 ET -> 19:15 UTC', etToUtc('2026-07-01T15:15:00-04:00', undefined), '2026-07-01T19:15:00.000Z');
+
+// --- etToUtc: oud am/pm-formaat (fallback) ---
 // Juli = maand 6 (0-indexed) → EDT = UTC-4
 check('8:30am ET juli -> 12:30 UTC', etToUtc('2026-07-03', '8:30am'), '2026-07-03T12:30:00.000Z');
 check('3:45pm ET juli -> 19:45 UTC', etToUtc('2026-07-01', '3:45pm'), '2026-07-01T19:45:00.000Z');
