@@ -89,6 +89,66 @@ export function summarizeConditionLog(entries) {
   return { n: entries.length, triggered, blockerCounts, conditionPassRate };
 }
 
+// Filtert entries op een ISO-tijdstempelbereik (van/tot als ISO-strings).
+export function filterConditionLog(entries, { from, to } = {}) {
+  return entries.filter((e) => {
+    if (from && e.timestamp < from) return false;
+    if (to && e.timestamp > to) return false;
+    return true;
+  });
+}
+
+// Per-uur overzicht voor één dag — compact genoeg voor Discord (max ~700 tekens).
+export function formatDayReport(entries, dateStr) {
+  const byHour = {};
+  for (const e of entries) {
+    const h = new Date(e.timestamp).getUTCHours();
+    if (!byHour[h]) byHour[h] = [];
+    byHour[h].push(e);
+  }
+
+  const lines = [];
+  for (let h = 0; h < 24; h++) {
+    const group = byHour[h];
+    if (!group || group.length === 0) continue;
+    const sub = summarizeConditionLog(group);
+    const pr = sub.conditionPassRate;
+    const triggerPart = sub.triggered > 0 ? `**${sub.triggered}× TRIGGER** ✓` : '—';
+    lines.push(
+      `\`${String(h).padStart(2, '0')}:00\` ${String(group.length).padStart(2)}p | ` +
+        `${triggerPart} | TF:${pr.tfAligned ?? '?'}% Trend:${pr.trendAligned ?? '?'}% Niv:${pr.nearLevel ?? '?'}%`,
+    );
+  }
+
+  const totalTriggered = entries.filter((e) => e.triggered).length;
+  const header = `**Tijdlijn ${dateStr}** (${entries.length} polls, ${totalTriggered} getriggerd)\n\n`;
+  return header + (lines.length > 0 ? lines.join('\n') : 'Geen data voor deze dag.');
+}
+
+// Per-poll detail voor één uur — laat exact zien welke condities op elk moment klopten.
+export function formatHourReport(entries, dateStr, hour) {
+  const lines = entries.map((e) => {
+    const t = new Date(e.timestamp);
+    const mm = String(t.getUTCMinutes()).padStart(2, '0');
+    const time = `${String(hour).padStart(2, '0')}:${mm}`;
+    if (e.triggered) return `\`${time}\` ✓ **TRIGGER** ${e.direction}`;
+    const d = e.details ?? {};
+    const flags = [
+      d.session ? 'Ses✓' : 'Ses✗',
+      d.tfAligned ? 'TF✓' : 'TF✗',
+      d.trendAligned ? 'Trend✓' : 'Trend✗',
+      d.nearLevel ? 'Niv✓' : 'Niv✗',
+    ].join(' ');
+    return `\`${time}\` ✗ [${flags}]`;
+  });
+
+  const triggered = entries.filter((e) => e.triggered).length;
+  const hStr = String(hour).padStart(2, '0');
+  const hNext = String(hour + 1).padStart(2, '0');
+  const header = `**${hStr}:00–${hNext}:00 UTC — ${dateStr}** (${entries.length} polls, ${triggered} getriggerd)\n\n`;
+  return header + (lines.length > 0 ? lines.join('\n') : 'Geen data voor dit uur.');
+}
+
 export function formatDiagnosticsReport(summary) {
   if (summary.n === 0) return 'Nog geen diagnostiek-data verzameld.';
 

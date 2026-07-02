@@ -18,7 +18,14 @@ import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
 import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
-import { getConditionLog, summarizeConditionLog, formatDiagnosticsReport } from '../services/conditionDiagnostics.js';
+import {
+  getConditionLog,
+  summarizeConditionLog,
+  formatDiagnosticsReport,
+  filterConditionLog,
+  formatDayReport,
+  formatHourReport,
+} from '../services/conditionDiagnostics.js';
 
 const commands = [
   new SlashCommandBuilder()
@@ -50,7 +57,19 @@ const commands = [
     .setDescription('Structuurcheck: valideert de laatste signalen op schema-integriteit en logische consistentie'),
   new SlashCommandBuilder()
     .setName('diagnose')
-    .setDescription('Toont welke conditie het vaakst blokkeert sinds het begin van de testfase'),
+    .setDescription('Toont welke conditie het vaakst blokkeert, of een tijdlijn per dag/uur')
+    .addStringOption((option) =>
+      option
+        .setName('datum')
+        .setDescription('Dag om te inspecteren: "vandaag", "gisteren", of YYYY-MM-DD'),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('uur')
+        .setDescription('Specifiek uur (UTC, 0-23) — vereist ook datum')
+        .setMinValue(0)
+        .setMaxValue(23),
+    ),
   new SlashCommandBuilder()
     .setName('briefing')
     .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
@@ -65,6 +84,18 @@ const commands = [
         .setDescription('Wis de huidige briefing')
     ),
 ].map((c) => c.toJSON());
+
+function resolveDatum(datumStr) {
+  const now = new Date();
+  if (datumStr === 'vandaag') return now.toISOString().slice(0, 10);
+  if (datumStr === 'gisteren') {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datumStr)) return datumStr;
+  return null;
+}
 
 function formatOutcome(outcome) {
   if (!outcome || outcome.result === 'open') return '⏳ open';
@@ -309,9 +340,35 @@ export function createBot() {
     if (interaction.commandName === 'diagnose') {
       await interaction.deferReply();
       try {
+        const datumParam = interaction.options.getString('datum');
+        const uurParam = interaction.options.getInteger('uur');
         const entries = await getConditionLog();
-        const summary = summarizeConditionLog(entries);
-        await interaction.editReply(truncateForDiscord(formatDiagnosticsReport(summary)));
+
+        if (datumParam) {
+          const dateStr = resolveDatum(datumParam);
+          if (!dateStr) {
+            await interaction.editReply('Ongeldig datumformaat. Gebruik YYYY-MM-DD, "vandaag" of "gisteren".');
+            return;
+          }
+          const dayEntries = filterConditionLog(entries, {
+            from: `${dateStr}T00:00:00.000Z`,
+            to: `${dateStr}T23:59:59.999Z`,
+          });
+
+          if (uurParam !== null && uurParam !== undefined) {
+            const hStr = String(uurParam).padStart(2, '0');
+            const hourEntries = filterConditionLog(dayEntries, {
+              from: `${dateStr}T${hStr}:00:00.000Z`,
+              to: `${dateStr}T${hStr}:59:59.999Z`,
+            });
+            await interaction.editReply(truncateForDiscord(formatHourReport(hourEntries, dateStr, uurParam)));
+          } else {
+            await interaction.editReply(truncateForDiscord(formatDayReport(dayEntries, dateStr)));
+          }
+        } else {
+          const summary = summarizeConditionLog(entries);
+          await interaction.editReply(truncateForDiscord(formatDiagnosticsReport(summary)));
+        }
       } catch (err) {
         await interaction.editReply(`Diagnose mislukt: ${err.message}`);
       }
