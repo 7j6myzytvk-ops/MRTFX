@@ -15,6 +15,7 @@ import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } f
 import { recordConditionCheck } from './conditionDiagnostics.js';
 import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './eventMonitor.js';
 import { computeIndicators } from '../agents/indicators.js';
+import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -96,12 +97,14 @@ async function poll(client) {
     console.log(`[Event-trigger] Spike ${spikeInfo.spikeMultiple}× ATR | ${spikeInfo.candleTime} | ${spikeInfo.direction}`);
     lastSpikeTime = Date.now();
 
-    const [dollarCandles, yieldCandles, newsItems] = await Promise.all([
+    const [dollarCandles, yieldCandles, newsItems, ffEvents] = await Promise.all([
       getRecentEurUsdCandles({ granularity: 'H1', count: 50 }),
       getRecentUsYieldCandles({ count: 25 }),
       fetchGoldNews({ maxItems: 12 }),
+      fetchForexFactoryEvents(),
     ]);
-    const spikeContext = formatSpikeContext(spikeInfo, newsItems);
+    const recentFfEvents = getRecentlyReleasedEvents(ffEvents, 30);
+    const spikeContext = formatSpikeContext(spikeInfo, newsItems, recentFfEvents);
 
     const spikeResult = await runBoardroom(h1Candles, {
       granularity: 'H1',

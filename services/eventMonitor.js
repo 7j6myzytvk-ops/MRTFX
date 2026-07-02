@@ -50,14 +50,31 @@ export function detectPriceSpike(candles, atr14, multiplier = SPIKE_ATR_MULTIPLI
  * samengesteld. De macro- en geopolitiek-analist krijgen een expliciete opdracht
  * om de aanleiding te identificeren en de impact te wegen.
  */
-export function formatSpikeContext(spikeInfo, newsItems = []) {
+export function formatSpikeContext(spikeInfo, newsItems = [], ffEvents = []) {
+  const ffNote =
+    ffEvents.length > 0
+      ? `\n\nHigh-impact events (Forex Factory, zojuist vrijgegeven):\n${ffEvents
+          .map((e) => {
+            const comparison =
+              e.forecast && e.actual
+                ? ` → ${e.actual} (Verwacht: ${e.forecast})`
+                : e.actual
+                  ? ` → ${e.actual}`
+                  : '';
+            return `- ${e.utcTime?.slice(11, 16) ?? '?'} UTC: ${e.title}${comparison}`;
+          })
+          .join('\n')}`
+      : '';
+
   const newsNote =
     newsItems.length > 0
       ? `\n\nActueel nieuws op het moment van de uitschietende beweging:\n${newsItems
           .slice(0, 6)
           .map((n) => `- [${n.publishedAt?.slice(0, 16) ?? '?'}] ${n.title}`)
           .join('\n')}`
-      : '\n\nGeen recent nieuws gevonden via geautomatiseerde bronnen — onderzoek zelf de aanleiding.';
+      : ffEvents.length === 0
+        ? '\n\nGeen recent nieuws gevonden via geautomatiseerde bronnen — onderzoek zelf de aanleiding.'
+        : '';
 
   return (
     `\n\nEVENT-ALERT — UITSCHIETENDE PRIJSBEWEGING GEDETECTEERD\n` +
@@ -68,6 +85,7 @@ export function formatSpikeContext(spikeInfo, newsItems = []) {
     `aanleiding van deze beweging en het wegen van de impact op XAU/USD op korte termijn.\n` +
     `Koppel uw bevindingen expliciet terug in uw analyse — de CEO en de overige agents\n` +
     `bouwen hierop voort bij hun besluitvorming.` +
+    ffNote +
     newsNote
   );
 }

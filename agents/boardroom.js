@@ -3,7 +3,7 @@ import { assessRisk } from './riskManager.js';
 import { challengeAnalysis } from './devilsAdvocate.js';
 import { assessSentiment } from './macroAnalyst.js';
 import { decide } from './ceo.js';
-import { upcomingEvents } from './economicCalendar.js';
+import { fetchForexFactoryEvents, getUpcomingEvents, getRecentlyReleasedEvents, formatEventsNote } from './economicCalendar.js';
 import { computeIndicators, formatIndicatorsNote } from './indicators.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
@@ -25,7 +25,12 @@ export async function runDiscussion(
   candles,
   { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null } = {},
 ) {
-  const events = upcomingEvents(candles[candles.length - 1].time);
+  const now = currentTime ? new Date(currentTime) : new Date();
+  const ffEvents = await fetchForexFactoryEvents();
+  const upcomingEvts = getUpcomingEvents(ffEvents, 48, now);
+  const recentEvts = getRecentlyReleasedEvents(ffEvents, 60, now);
+  const events = upcomingEvts; // backward compat: agents ontvangen aankomende events via opts.events
+  const eventsNote = formatEventsNote(upcomingEvts, recentEvts);
   const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
   const dollarContextNote =
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
@@ -43,7 +48,7 @@ export async function runDiscussion(
   const briefingNote = formatBriefingNote(briefing);
   const sessionTime = currentTime ? new Date(currentTime) : new Date();
   const sessionNote = formatSessionNote(assessSession(sessionTime));
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote;
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats);
