@@ -13,6 +13,8 @@ import { evaluateOpenSignals } from './performanceTracker.js';
 import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
 import { recordConditionCheck } from './conditionDiagnostics.js';
+import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './eventMonitor.js';
+import { computeIndicators } from '../agents/indicators.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -22,6 +24,7 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000;
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 let lastSignalTime = null;
+let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 
 async function poll(client) {
@@ -57,30 +60,60 @@ async function poll(client) {
       console.error('[conditionDiagnostics] Kon conditie-log niet schrijven:', err.message);
     });
 
-    if (!conditions.triggered) return;
+    // --- Pad 1: condition-based setup ---
+    if (conditions.triggered) {
+      console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
+      lastSignalTime = Date.now();
 
-    // Alle voorwaarden voldaan → boardroom samenstellen
-    console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
-    lastSignalTime = Date.now();
+      const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
+      const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
+      const newsItems = await fetchGoldNews({ maxItems: 12 });
+      const conditionContext = formatConditionContext(conditions);
 
-    const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
-    const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
-    const newsItems = await fetchGoldNews({ maxItems: 12 });
-    const conditionContext = formatConditionContext(conditions);
+      const result = await runBoardroom(h1Candles, {
+        granularity: 'H1',
+        dollarCandles,
+        yieldCandles,
+        d1Candles,
+        w1Candles,
+        newsItems,
+        newsContext: conditionContext,
+      });
 
-    // Boardroom gebruikt H1-candles als basis; de condition-context wordt
-    // als aanvullende noot meegegeven aan alle agents via contextNotes.
-    const result = await runBoardroom(h1Candles, {
+      await reportToDiscord(client, result);
+      await evaluateOpenSignals(client);
+      return;
+    }
+
+    // --- Pad 2: event/spike-trigger (onafhankelijk van conditions) ---
+    if (lastSpikeTime && Date.now() - lastSpikeTime < SPIKE_COOLDOWN_MS) return;
+
+    const indicators = computeIndicators(m15Candles);
+    const spikeInfo = detectPriceSpike(m15Candles, indicators.atr14);
+
+    if (!spikeInfo.spike) return;
+
+    console.log(`[Event-trigger] Spike ${spikeInfo.spikeMultiple}× ATR | ${spikeInfo.candleTime} | ${spikeInfo.direction}`);
+    lastSpikeTime = Date.now();
+
+    const [dollarCandles, yieldCandles, newsItems] = await Promise.all([
+      getRecentEurUsdCandles({ granularity: 'H1', count: 50 }),
+      getRecentUsYieldCandles({ count: 25 }),
+      fetchGoldNews({ maxItems: 12 }),
+    ]);
+    const spikeContext = formatSpikeContext(spikeInfo, newsItems);
+
+    const spikeResult = await runBoardroom(h1Candles, {
       granularity: 'H1',
       dollarCandles,
       yieldCandles,
       d1Candles,
       w1Candles,
       newsItems,
-      newsContext: conditionContext,
+      newsContext: spikeContext,
     });
 
-    await reportToDiscord(client, result);
+    await reportToDiscord(client, spikeResult);
     await evaluateOpenSignals(client);
   } catch (err) {
     console.error('Setup-detector mislukt:', err.message);
