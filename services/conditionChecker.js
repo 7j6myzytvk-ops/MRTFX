@@ -9,9 +9,10 @@ export function isActiveSession(now = new Date()) {
   return hour >= 8 && hour < 17;
 }
 
-// Controleert alle vier voorwaarden voor een hoogwaardig setup-signaal.
+// Controleert drie harde voorwaarden voor een setup-signaal.
+// nearLevel is een zachte voorkeur: wordt meegegeven als context aan agents,
+// maar blokkeert de trigger niet (diagnose toonde 93.4% blokkade door nearLevel).
 // Geeft { triggered, direction, blockers, details } terug.
-// Alleen als triggered=true is de boardroom het waard om samen te roepen.
 export function checkConditions({
   h1Candles,
   m30Candles,
@@ -49,11 +50,9 @@ export function checkConditions({
     );
   }
 
-  // 5. Sleutelniveau-proximity (prijs moet nabij een wekelijks pivot of rond getal liggen)
+  // 5. Sleutelniveau-proximity — zachte voorkeur, geen harde blokkade.
+  // Agents ontvangen dit als context en wegen het mee in hun setupQualityScore.
   const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles);
-  if (!nearLevel.near) {
-    blockers.push('prijs niet nabij een sleutelniveau');
-  }
 
   const triggered = blockers.length === 0;
   const direction = tfAlignment.direction;
@@ -81,13 +80,13 @@ export function formatConditionContext(conditions) {
   if (!conditions || !conditions.triggered) return '';
   const { direction, details } = conditions;
   const levelNote = details.nearLevel?.near
-    ? ` nabij ${details.nearLevel.label} ($${details.nearLevel.level.toFixed(2)}, ${details.nearLevel.approachDirection})`
-    : '';
+    ? `Prijs bevindt zich nabij ${details.nearLevel.label} ($${details.nearLevel.level.toFixed(2)}, ${details.nearLevel.approachDirection}) — verhoogt setup-kwaliteit.`
+    : `Prijs bevindt zich NIET nabij een gekend sleutelniveau — weeg dit mee in je setupQualityScore (verlaagt kwaliteit).`;
   return (
-    `\n\nAlgoritmische trigger: alle vier voorwaarden zijn voldaan. ` +
+    `\n\nAlgoritmische trigger: drie harde voorwaarden zijn voldaan. ` +
     `H1/M30/M15 zijn allen ${direction === 'bullish' ? 'bullish' : 'bearish'} aligned. ` +
     `D1- en W1-trendrichting: ${details.trendBias.direction}. ` +
-    `Prijs bevindt zich${levelNote}. ` +
+    `${levelNote} ` +
     `Dit is een condition-based setup-signaal, niet een tijdgebonden analyse — ` +
     `weeg dit mee bij je zekerheidspercentage.`
   );
