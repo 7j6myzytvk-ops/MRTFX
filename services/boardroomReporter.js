@@ -25,8 +25,10 @@ export function formatSetupMarker(signal, comboSignal = false, qualityResult = {
 }
 
 function formatDecisionBody(decision) {
+  const entryLine = decision.entryZone ? `Entry: ${decision.entryZone}\n` : '';
   return (
     `Signaal: ${decision.signal.toUpperCase()} (zekerheid: ${decision.confidence}%)\n` +
+    `${entryLine}` +
     `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n` +
     `${decision.reasoning}`
   );

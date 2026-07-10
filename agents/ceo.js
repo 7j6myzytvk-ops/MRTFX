@@ -9,6 +9,7 @@ const DECISION_TOOL = {
     properties: {
       signal: { type: 'string', enum: ['bullish', 'bearish', 'neutral'] },
       confidence: { type: 'integer', minimum: 0, maximum: 100 },
+      entryZone: { type: 'string', description: 'Entry-zone van de risicomanager, ongewijzigd overnemen.' },
       stopLoss: { type: 'number', description: 'Definitieve stop-loss prijs.' },
       takeProfit: { type: 'number', description: 'Definitieve take-profit prijs.' },
       positionSize: { type: 'string', enum: ['klein', 'normaal', 'groot'] },
@@ -17,7 +18,7 @@ const DECISION_TOOL = {
         description: 'Eindoordeel met verwijzing naar de discussie, in het Nederlands (3-5 zinnen).',
       },
     },
-    required: ['signal', 'confidence', 'stopLoss', 'takeProfit', 'positionSize', 'reasoning'],
+    required: ['signal', 'confidence', 'entryZone', 'stopLoss', 'takeProfit', 'positionSize', 'reasoning'],
   },
 };
 
@@ -75,9 +76,9 @@ export async function decide(
           `→ Beoordeelt: HTF-bias, BOS/CHoCH, liquiditeitskaart, OBs/FVGs. Geen macro, geen indicatoren.\n\n` +
 
           `[B] RISICOMANAGER (trade-parameters — GEEN directioneel oordeel): ` +
-          `SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}" — ` +
+          `Entry-zone: ${risk.entryZone ?? 'niet opgegeven'} | SL ${risk.stopLoss}, TP ${risk.takeProfit}, positiegrootte "${risk.positionSize}" — ` +
           `${risk.reasoning}\n` +
-          `→ Beoordeelt: entry-zone, SL/TP structureel verantwoord, R:R en positiegrootte.\n\n` +
+          `→ Neem de entry-zone ongewijzigd over in je besluit. Beoordeelt: SL/TP structureel verantwoord, R:R en positiegrootte.\n\n` +
 
           `[C] PRE-MORTEM SPECIALIST (faalscenario-onderzoek): faalrichting "${devilsAdvocate.counterSignal}" ` +
           `(overtuigingskracht ${devilsAdvocate.counterConfidence}%) — ${devilsAdvocate.argument}\n` +

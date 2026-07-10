@@ -7,12 +7,13 @@ const RISK_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
+      entryZone: { type: 'string', description: 'Concrete entry-zone als prijsrange, bv. "$4100–$4108". Bij te late entry: "Wacht op pullback naar $4100–$4108".' },
       stopLoss: { type: 'number', description: 'Voorgestelde stop-loss prijs.' },
       takeProfit: { type: 'number', description: 'Voorgestelde take-profit prijs.' },
       positionSize: { type: 'string', enum: ['klein', 'normaal', 'groot'] },
       reasoning: { type: 'string', description: 'Korte onderbouwing in het Nederlands (2-3 zinnen).' },
     },
-    required: ['stopLoss', 'takeProfit', 'positionSize', 'reasoning'],
+    required: ['entryZone', 'stopLoss', 'takeProfit', 'positionSize', 'reasoning'],
   },
 };
 
