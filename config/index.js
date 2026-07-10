@@ -11,7 +11,7 @@ export const config = {
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
-    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-8',
   },
   scheduler: {
     intervalMinutes: Number(process.env.SIGNAL_INTERVAL_MINUTES) || 60,
