@@ -48,13 +48,24 @@ export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
   return { aligned: false, direction: null };
 }
 
-// Trendfilter: D1 en W1 moeten dezelfde richting laten zien.
-// Zorgt ervoor dat we alleen meehandelen met de hogere timeframe trend.
+// Trendfilter: W1 is leidend; D1 moet dezelfde richting hebben of mixed zijn.
+// D1 mag in correctie/consolidatie zitten (mixed) zolang W1 een heldere trend heeft —
+// dit zijn precies de ICT-pullback-entries binnen de weektrend.
+// Blokkeert alleen als D1 tegengesteld is aan W1 (echte reversal-zone).
 export function computeTrendBias(d1Candles, w1Candles) {
   const d1Bias = computeTimeframeBias(d1Candles);
   const w1Bias = computeTimeframeBias(w1Candles);
+
+  // Beide wijzen dezelfde duidelijke richting → sterkste setup
   if (d1Bias !== 'mixed' && d1Bias === w1Bias) {
     return { aligned: true, direction: d1Bias };
   }
+
+  // W1 is helder trending, D1 is in correctie/consolidatie (mixed) → volg W1
+  if (w1Bias !== 'mixed' && d1Bias === 'mixed') {
+    return { aligned: true, direction: w1Bias };
+  }
+
+  // W1 mixed of D1 tegengesteld aan W1 → blokkeer
   return { aligned: false, direction: null };
 }

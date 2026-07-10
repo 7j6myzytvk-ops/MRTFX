@@ -101,12 +101,20 @@ check('computeTimeframeBias - 19 candles', computeTimeframeBias(makeCandles(Arra
   check('computeTrendBias - d1 bullish w1 bearish: niet aligned', result.aligned, false);
 }
 
-// 11. D1 mixed → niet aligned
+// 11. D1 mixed, W1 bearish → aligned bearish (W1 leidend; D1 in correctie)
 {
   const flat = makeCandles(Array(25).fill(3200));
   const bearish = makeCandles(Array.from({ length: 25 }, (_, i) => 3300 - i * 5));
   const result = computeTrendBias(flat, bearish);
-  check('computeTrendBias - d1 mixed: niet aligned', result.aligned, false);
+  check('computeTrendBias - d1 mixed w1 bearish: aligned', result.aligned, true);
+  check('computeTrendBias - d1 mixed w1 bearish: direction bearish', result.direction, 'bearish');
+}
+
+// 12. D1 mixed, W1 mixed → niet aligned (beide onduidelijk)
+{
+  const flat = makeCandles(Array(25).fill(3200));
+  const result = computeTrendBias(flat, flat);
+  check('computeTrendBias - beide mixed: niet aligned', result.aligned, false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);
