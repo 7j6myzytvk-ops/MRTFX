@@ -95,37 +95,38 @@ check('computeTimeframeBias - 19 candles', computeTimeframeBias(makeCandles(Arra
 
 // --- computeTrendBias ---
 
-// 9. D1 en W1 beide bullish → aligned bullish
+// 9. W1 bullish → aligned bullish (ongeacht D1)
 {
-  const closes = Array.from({ length: 25 }, (_, i) => 3100 + i * 5);
-  const bullishCandles = makeCandles(closes);
-  const result = computeTrendBias(bullishCandles, bullishCandles);
-  check('computeTrendBias - beide bullish: aligned', result.aligned, true);
-  check('computeTrendBias - beide bullish: direction', result.direction, 'bullish');
+  const bullish = makeCandles(Array.from({ length: 25 }, (_, i) => 3100 + i * 5));
+  const r1 = computeTrendBias(bullish, bullish);
+  check('computeTrendBias - w1 bullish d1 bullish: aligned', r1.aligned, true);
+  check('computeTrendBias - w1 bullish: direction bullish', r1.direction, 'bullish');
+
+  const flat = makeCandles(Array(25).fill(3200));
+  const r2 = computeTrendBias(flat, bullish);
+  check('computeTrendBias - w1 bullish d1 mixed: aligned', r2.aligned, true);
+  check('computeTrendBias - w1 bullish d1 mixed: direction bullish', r2.direction, 'bullish');
 }
 
-// 10. D1 bullish, W1 bearish → niet aligned
+// 10. W1 bearish → aligned bearish (ook als D1 bullish retracement is)
 {
   const bullish = makeCandles(Array.from({ length: 25 }, (_, i) => 3100 + i * 5));
   const bearish = makeCandles(Array.from({ length: 25 }, (_, i) => 3300 - i * 5));
-  const result = computeTrendBias(bullish, bearish);
-  check('computeTrendBias - d1 bullish w1 bearish: niet aligned', result.aligned, false);
+  const r1 = computeTrendBias(bullish, bearish);
+  check('computeTrendBias - w1 bearish d1 bullish: aligned', r1.aligned, true);
+  check('computeTrendBias - w1 bearish d1 bullish: direction bearish', r1.direction, 'bearish');
+
+  const flat = makeCandles(Array(25).fill(3200));
+  const r2 = computeTrendBias(flat, bearish);
+  check('computeTrendBias - w1 bearish d1 mixed: aligned', r2.aligned, true);
+  check('computeTrendBias - w1 bearish d1 mixed: direction bearish', r2.direction, 'bearish');
 }
 
-// 11. D1 mixed, W1 bearish → aligned bearish (W1 leidend; D1 in correctie)
+// 11. W1 mixed → niet aligned (geen heldere weektrend)
 {
   const flat = makeCandles(Array(25).fill(3200));
-  const bearish = makeCandles(Array.from({ length: 25 }, (_, i) => 3300 - i * 5));
-  const result = computeTrendBias(flat, bearish);
-  check('computeTrendBias - d1 mixed w1 bearish: aligned', result.aligned, true);
-  check('computeTrendBias - d1 mixed w1 bearish: direction bearish', result.direction, 'bearish');
-}
-
-// 12. D1 mixed, W1 mixed → niet aligned (beide onduidelijk)
-{
-  const flat = makeCandles(Array(25).fill(3200));
-  const result = computeTrendBias(flat, flat);
-  check('computeTrendBias - beide mixed: niet aligned', result.aligned, false);
+  const r = computeTrendBias(flat, flat);
+  check('computeTrendBias - w1 mixed: niet aligned', r.aligned, false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

@@ -51,24 +51,14 @@ export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
   return { aligned: false, direction: null };
 }
 
-// Trendfilter: W1 is leidend; D1 moet dezelfde richting hebben of mixed zijn.
-// D1 mag in correctie/consolidatie zitten (mixed) zolang W1 een heldere trend heeft —
-// dit zijn precies de ICT-pullback-entries binnen de weektrend.
-// Blokkeert alleen als D1 tegengesteld is aan W1 (echte reversal-zone).
+// Trendfilter: W1 is de enige richtingsbepaler.
+// D1 mag in retracement/correctie zitten (bullish D1 binnen bearish W1 is een
+// klassieke ICT-setup — dat is het moment waarop je shorts zoekt op H1+M30).
+// Blokkeert alleen als W1 zelf 'mixed' is (geen heldere weektrend).
+// De richtingsconsistentie-check in conditionChecker.js (stap 4) voorkomt
+// vervolgens dat H1+M30 tegen de W1-richting in triggeren.
 export function computeTrendBias(d1Candles, w1Candles) {
-  const d1Bias = computeTimeframeBias(d1Candles);
   const w1Bias = computeTimeframeBias(w1Candles);
-
-  // Beide wijzen dezelfde duidelijke richting → sterkste setup
-  if (d1Bias !== 'mixed' && d1Bias === w1Bias) {
-    return { aligned: true, direction: d1Bias };
-  }
-
-  // W1 is helder trending, D1 is in correctie/consolidatie (mixed) → volg W1
-  if (w1Bias !== 'mixed' && d1Bias === 'mixed') {
-    return { aligned: true, direction: w1Bias };
-  }
-
-  // W1 mixed of D1 tegengesteld aan W1 → blokkeer
-  return { aligned: false, direction: null };
+  if (w1Bias === 'mixed') return { aligned: false, direction: null };
+  return { aligned: true, direction: w1Bias };
 }
