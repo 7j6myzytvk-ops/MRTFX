@@ -106,6 +106,30 @@ export function assessSignalQuality(sample) {
     }
   }
 
+  // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
+  // Backtest (22 jun–10 jul 2026): ATR < $13 correleerde met 4 extra SL-trades.
+  // Reden: SL/TP-niveaus worden zo krap dat normaal marktgeluid de SL raakt
+  // voordat de koers richting TP beweegt. Geen edge in een slapende markt.
+  const ATR_MIN = 13;
+  if (sample.atr14 != null && sample.atr14 < ATR_MIN) {
+    blockers.push(`ATR te laag ($${sample.atr14.toFixed(1)} < $${ATR_MIN}) — markt te kalm voor betrouwbare uitvoering`);
+  }
+
+  // Filter 9: Overextended move — koers te ver verwijderd van H1 SMA20.
+  // Backtest: gap < -$50 (bearish) gaf 3 SL-trades met RSI 11–30 (extreme oversold).
+  // ICT-logica: als de koers al $50+ van SMA20 afzit, is de distributie-fase
+  // grotendeels voorbij. Grote spelers nemen winst → reversal-risico neemt sterk toe.
+  const SMA_GAP_MAX = 50;
+  if (sample.sma20H1 != null && sample.entryPrice != null) {
+    const gap = sample.entryPrice - sample.sma20H1;
+    if (sample.decision.signal === 'bearish' && gap < -SMA_GAP_MAX) {
+      blockers.push(`move overextended: koers $${Math.abs(gap).toFixed(0)} onder H1 SMA20 — reversal-risico`);
+    }
+    if (sample.decision.signal === 'bullish' && gap > SMA_GAP_MAX) {
+      blockers.push(`move overextended: koers $${gap.toFixed(0)} boven H1 SMA20 — reversal-risico`);
+    }
+  }
+
   return { passed: blockers.length === 0, blockers };
 }
 

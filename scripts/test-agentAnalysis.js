@@ -397,6 +397,67 @@ check(
     discussion: { ...groen.discussion, analyst: { confidence: 60, setupQualityScore: 0 } },
   };
   check('assessSignalQuality - setupQualityScore 0 -> geblokkeerd', assessSignalQuality(nulScore).passed, false);
+
+  // --- Filter 8: ATR te laag ---
+
+  const atrTeKort = { ...groen, atr14: 10 };
+  check('assessSignalQuality - ATR $10 (< $13) -> geblokkeerd', assessSignalQuality(atrTeKort).passed, false);
+  check('assessSignalQuality - ATR $10 -> juiste blocker',
+    assessSignalQuality(atrTeKort).blockers.some((b) => b.includes('ATR te laag')), true);
+
+  const atrGrens = { ...groen, atr14: 13 };
+  check('assessSignalQuality - ATR $13 (grenswaarde, niet < 13) -> niet geblokkeerd',
+    assessSignalQuality(atrGrens).blockers.some((b) => b.includes('ATR te laag')), false);
+
+  const atrVoldoende = { ...groen, atr14: 20 };
+  check('assessSignalQuality - ATR $20 -> niet geblokkeerd',
+    assessSignalQuality(atrVoldoende).blockers.some((b) => b.includes('ATR te laag')), false);
+
+  check('assessSignalQuality - ATR ontbreekt -> geen blocker',
+    assessSignalQuality(groen).blockers.some((b) => b.includes('ATR te laag')), false);
+
+  // --- Filter 9: Overextended move (SMA-gap > $50) ---
+
+  // Bearish base: risk-off + geen trenddata, zodat alleen SMA-filter triggert
+  const groenBearish = {
+    ...groen,
+    entryPrice: 3000,
+    decision: { signal: 'bearish', confidence: 65, stopLoss: 3050, takeProfit: 2950 },
+    discussion: { ...groen.discussion, macro: { sentiment: 'risk-off' } },
+    dailyTrend: undefined,
+    weeklyTrend: undefined,
+  };
+
+  // Bearish: gap = 3000 - 3060 = -60 < -50 → geblokkeerd
+  const bearishOverextended = { ...groenBearish, sma20H1: 3060 };
+  check('assessSignalQuality - bearish $60 onder SMA20 -> geblokkeerd', assessSignalQuality(bearishOverextended).passed, false);
+  check('assessSignalQuality - bearish overextended -> juiste blocker',
+    assessSignalQuality(bearishOverextended).blockers.some((b) => b.includes('overextended')), true);
+
+  // Bearish: gap = -50 (exacte grens, strict < -50 nodig) → NIET geblokkeerd
+  const bearishGrens = { ...groenBearish, sma20H1: 3050 };
+  check('assessSignalQuality - bearish $50 onder SMA20 (grens, niet < -50) -> niet geblokkeerd',
+    assessSignalQuality(bearishGrens).blockers.some((b) => b.includes('overextended')), false);
+
+  // Bearish: gap = -20 → niet geblokkeerd
+  const bearishDichtbij = { ...groenBearish, sma20H1: 3020 };
+  check('assessSignalQuality - bearish $20 onder SMA20 -> niet geblokkeerd',
+    assessSignalQuality(bearishDichtbij).blockers.some((b) => b.includes('overextended')), false);
+
+  // Bullish: gap = 3060 - 3000 = +60 > 50 → geblokkeerd
+  const bullishOverextended = { ...groen, entryPrice: 3060, sma20H1: 3000 };
+  check('assessSignalQuality - bullish $60 boven SMA20 -> geblokkeerd', assessSignalQuality(bullishOverextended).passed, false);
+  check('assessSignalQuality - bullish overextended -> juiste blocker',
+    assessSignalQuality(bullishOverextended).blockers.some((b) => b.includes('overextended')), true);
+
+  // Bullish: gap = +40 → niet geblokkeerd
+  const bullishDichtbij = { ...groen, entryPrice: 3040, sma20H1: 3000 };
+  check('assessSignalQuality - bullish $40 boven SMA20 -> niet geblokkeerd',
+    assessSignalQuality(bullishDichtbij).blockers.some((b) => b.includes('overextended')), false);
+
+  // Geen sma20H1 → geen blocker (geen false positive)
+  check('assessSignalQuality - geen sma20H1 -> geen overextended blocker',
+    assessSignalQuality(groen).blockers.some((b) => b.includes('overextended')), false);
 }
 
 console.log(`\n${pass} geslaagd, ${fail} mislukt.`);

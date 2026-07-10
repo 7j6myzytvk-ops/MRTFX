@@ -31,7 +31,8 @@ export async function runDiscussion(
   const recentEvts = getRecentlyReleasedEvents(ffEvents, 60, now);
   const events = upcomingEvts; // backward compat: agents ontvangen aankomende events via opts.events
   const eventsNote = formatEventsNote(upcomingEvts, recentEvts);
-  const indicatorsNote = formatIndicatorsNote(computeIndicators(candles));
+  const indicators = computeIndicators(candles);
+  const indicatorsNote = formatIndicatorsNote(indicators);
   const dollarContextNote =
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
   const yieldContextNote =
@@ -85,6 +86,8 @@ export async function runDiscussion(
     entryPrice,
     dailyTrend: d1Ctx?.trend ?? null,
     weeklyTrend: w1Ctx?.trend ?? null,
+    atr14: indicators.atr14,
+    sma20H1: indicators.sma20,
   };
   const comboSignal = isComboSignal(sample);
   const qualityResult = assessSignalQuality(sample);
