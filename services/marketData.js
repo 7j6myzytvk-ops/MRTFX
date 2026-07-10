@@ -38,7 +38,7 @@ async function request(endpoint, params, retriesLeft = 2) {
     const status = err.response?.status;
     // Retry bij tijdelijke server-side fouten (5xx, bv. Cloudflare 520).
     // Wacht 5 seconden tussen pogingen — geeft de externe server de kans te herstellen.
-    if (status >= 500 && retriesLeft > 0) {
+    if ((!err.response || status >= 500) && retriesLeft > 0) {
       await new Promise((r) => setTimeout(r, 5000));
       return request(endpoint, params, retriesLeft - 1);
     }
