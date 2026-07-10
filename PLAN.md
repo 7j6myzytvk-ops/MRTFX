@@ -1442,3 +1442,156 @@ toekomstige live-verificatie: vertrouw op Discord slash-commands of
   hardgecodeerde datum (2026-06-27) die inmiddels in het verleden lag -
   gefixt naar een relatieve datum t.o.v. nu
 - Alle testsuites blijven groen
+
+## Fase 39b - Retry-logica voor tijdelijke 5xx-fouten in marketData (klaar)
+
+Twelve Data stuurt bij tijdelijke storingen soms een Cloudflare 520 terug.
+Zonder retry werd dit direct als Discord-alert doorgestuurd (valse alarmen).
+`services/marketData.js` probeert nu bij elke 5xx-fout nog 2× opnieuw (5s
+tussenpoos) vóór de fout naar de scheduler en Discord wordt doorgestuurd.
+
+## Fase 39c - `/diagnose` tijdlijn-modus (dag + uur) (klaar)
+
+Dag- en uur-opties toegevoegd aan `/diagnose`:
+- `/diagnose datum:gisteren` → per-uur overzicht van de dag
+- `/diagnose datum:2026-07-01 uur:15` → per-poll detail voor dat uur
+
+Nieuwe pure functies in `services/conditionDiagnostics.js`:
+`filterConditionLog`, `formatDayReport`, `formatHourReport`. 33 tests groen.
+
+## Fase 40 - Event/spike-trigger naast condition-based boardroom (klaar)
+
+### Aanleiding
+De condition-checker werkt op basis van structurele marktcondities (sessie,
+alignment, trend). Maar grote macro-events (NFP, PMI, Fed-speeches) veroorzaken
+plotse prijsbewegingen die de normale condities omzeilen terwijl de boardroom
+wél bijeen geroepen zou moeten worden.
+
+### Implementatie
+- Nieuw `services/eventMonitor.js`: `detectPriceSpike(m15Candles)` signaleert
+  M15-candles met `high - low >= 2 × ATR14` als event-indicator. Retourneert
+  spike-data (candle, grootte, richting) of `null`. `formatSpikeContext` bouwt
+  een EVENT-ALERT-string die de macro- en geopolitiek-analist opdraagt de aanleiding
+  te identificeren.
+- `services/scheduler.js`: aparte spike-cooldown van 2 uur, parallel aan de
+  bestaande condition-cooldown van 4 uur. Spike-trigger en condition-trigger zijn
+  onafhankelijk van elkaar.
+- 21 tests (`scripts/test-eventMonitor.js`).
+
+## Fase 41 - Live Forex Factory-koppeling vervangt statische kalender (klaar)
+
+### Aanleiding
+De economische kalender was een hardgecodeerde lijst van events t/m december 2026
+(`agents/economicCalendar.js`). Deze had geen actuele waarden (werkelijk vs.
+verwacht) en miste events die na de codering gepland werden.
+
+### Implementatie
+`agents/economicCalendar.js` volledig herschreven: haalt automatisch
+High-impact USD-events op via de Forex Factory community JSON-feed
+(`https://nfs.faireconomy.media/ff_calendar_thisweek.json`, 15 min gecached).
+
+Agents ontvangen voortaan:
+- Recent vrijgekomen events met werkelijke + verwachte waarden en een
+  "beter/slechter dan verwacht"-label voor directe marktcontext
+- Aankomende events (komende 48 uur) met verwachting en vorige waarde
+
+De spike-trigger (Fase 40) combineert dit nu met FF-events om de aanleiding
+van een beweging direct te identificeren (getest op de PMI van 1 juli 2026).
+
+Gewijzigde bestanden: `agents/economicCalendar.js`, `agents/boardroom.js`,
+`services/eventMonitor.js`, `services/scheduler.js`. 24 tests groen.
+
+## Fase 41b - FF date-formaat fix + boardroom eventsNote (klaar)
+
+De FF-feed geeft datums als ISO-timestamp met timezone-offset
+(`2026-07-02T08:30:00-04:00`), niet als aparte `date`+`time`-velden.
+`etToUtc()` detecteert nu beide formaten automatisch. 27 tests groen.
+
+## Fase 42 - nearLevel optioneel: van harde gate naar zachte context (klaar)
+
+### Aanleiding
+`/diagnose` over 920 polls toonde: nearLevel-conditie blokkeerde **859× (93.4%)**
+van alle polls. De sleutelniveau-proximity was daarmee de dominante reden waarom
+de boardroom nooit bijeen werd geroepen — ook bij structureel sterke marktcondities.
+
+### Implementatie (`services/conditionChecker.js`)
+nearLevel verwijderd uit de `blockers`-array. De drie harde gates blijven:
+1. Sessiefilter (08:00–17:00 UTC)
+2. Multi-timeframe alignment (H1 + M30 + M15)
+3. D1/W1 trendfilter (counter-trend geblokkeerd)
+
+nearLevel wordt nog steeds berekend en als contextuele informatie aan de agents
+meegegeven (onderdeel van setupQualityScore-criterium ④ — liquiditeitssweep
+nabij sleutelniveau). Agents wegen het mee, maar het blokkeert de trigger niet meer.
+
+### Resultaat
+Boardroom-triggers begonnen direct na de deployment (29 juni was al gefixt, 5 juli
+nearLevel-fix bevestigd actief via /diagnose dalende percentages).
+
+## Fase 43 - Entry-zone als gestructureerd veld + model-upgrade (klaar)
+
+### Entry-zone (`agents/riskManager.js`, `agents/ceo.js`, `services/boardroomReporter.js`)
+De risicomanager had al een ENTRY-ZONE sectie in zijn prompt (Fase 31), maar gaf
+de zone terug als vrije tekst in `reasoning`. De zone verdween zo in een lange
+alinea en bereikte de CEO en het #ceo-kanaal niet consistent.
+
+- `riskManager.js`: `entryZone` als verplicht string-veld in het schema
+  (`"$4100–$4108"` of `"Wacht op pullback naar $4100–$4108"` bij late entry).
+- `ceo.js`: `entryZone` verplicht overgenomen uit risicomanager-output, ongewijzigd.
+  CEO-prompt: "Neem de entry-zone ongewijzigd over in je besluit."
+- `boardroomReporter.js`: `formatDecisionBody` toont `Entry: ...` als eerste regel
+  na Signaal in het #ceo-kanaal.
+
+### Model-upgrade naar Opus 4.8
+`config/index.js`: `ANTHROPIC_MODEL` default gewijzigd van `claude-sonnet-4-6`
+naar `claude-opus-4-8`. Alle boardroom-agents (analyst, riskManager, devilsAdvocate,
+macroAnalyst, geopoliticalAnalyst, ceo) draaien nu op Opus 4.8 voor diepere
+redenering en betere ICT/SMC-interpretatie.
+
+### Bugfix: retry bij netwerk-fouten (aborted/ECONNRESET)
+`services/marketData.js` retried alleen bij `status >= 500`, maar netwerk-niveau
+fouten (`aborted`, `ECONNRESET`) hebben `err.response === undefined` — `status`
+was undefined, conditie was false, geen retry. Fix:
+```javascript
+if ((!err.response || status >= 500) && retriesLeft > 0) {
+```
+Fout verscheen in Discord als "Fout in setup-detector / aborted".
+
+## Fase 44 - AMD-fase, sell-the-news decay, weekend-risico (klaar)
+
+Drie aanvullingen op de agent-analyse, elk gericht op een specifieke categorie
+van foute-timing-risico's die de bestaande agents nog niet expliciet noemden.
+
+### AMD-fase (`agents/analyst.js`)
+Power of Three (Accumulation → Manipulation → Distribution) als verplicht
+gestructureerd veld in het ANALYSIS_TOOL schema:
+```javascript
+amdPhase: { type: 'string', enum: ['accumulation', 'manipulation', 'distribution', 'onduidelijk'] }
+```
+Stap 4b toegevoegd aan de STRUCTUURANALYSE-prompt:
+- `distribution` is alleen handelbaar ná aantoonbaar afgeronde M-fase
+  (sweep bevestigd + CHoCH). Als M niet afgerond is: zekerheid omlaag of neutraal.
+- AMD-fase verschijnt in het #trace-kanaal naast het signaal van de analist.
+
+### Sell-the-news risico (`agents/geopoliticalAnalyst.js`)
+`sellTheNewsRisk` als verplicht enum-veld (laag/matig/hoog/n.v.t.) in het
+GEOPOLITICAL_TOOL schema. Kalibratie:
+- `laag`: event < 4 uur oud, prijs nog niet volledig gereageerd
+- `matig`: event 4–24 uur oud of prijs al partieel bewogen
+- `hoog`: event > 24 uur oud of grote move al achter de rug → reversal-risico
+- `n.v.t.`: geen duidelijk marktbewegend event aanwijsbaar
+
+Weergave in #trace alleen als het nìet `n.v.t.` is (ruisfilter).
+
+### Weekend-risico (`agents/boardroom.js`)
+Inline `weekendNote` die op vrijdag ≥ 12:00 UTC wordt toegevoegd aan `contextNotes`:
+> "⚠️ WEEKEND-RISICO: XAU/USD gapt over het weekend — risicomanager: verlaag
+> positiegrootte met één stap t.o.v. de normale berekening."
+
+XAU/USD-gaps kunnen een technisch correcte SL raken zonder dat de structuur breekt.
+De note zorgt dat de risicomanager dit meeweegt in de positiegrootte.
+
+### Weergave in trace-kanaal
+`services/boardroomReporter.js` bijgewerkt voor beide nieuwe velden:
+- Analist: `AMD-fase: distribution` (of accumulation/manipulation/onduidelijk)
+- Geopolitiek: `"Sell the news"-risico: hoog` (verborgen bij n.v.t.)
