@@ -16,9 +16,14 @@ const ANALYSIS_TOOL = {
         maximum: 6,
         description: 'Aantal aanwezige setup-kwaliteitscriteria (① t/m ⑥). Bepaalt maximale zekerheid en of de setup handelbaar is.',
       },
+      amdPhase: {
+        type: 'string',
+        enum: ['accumulation', 'manipulation', 'distribution', 'onduidelijk'],
+        description: 'AMD-fase van de huidige sessie: accumulation (range/consolidatie), manipulation (Judas Swing bezig of onduidelijk), distribution (echte institutionele move — manipulatie aantoonbaar afgerond), onduidelijk.',
+      },
       reasoning: { type: 'string', description: 'Korte onderbouwing in het Nederlands (2-3 zinnen). Noem welke criteria aanwezig/afwezig zijn.' },
     },
-    required: ['signal', 'confidence', 'setupQualityScore', 'reasoning'],
+    required: ['signal', 'confidence', 'setupQualityScore', 'amdPhase', 'reasoning'],
   },
 };
 
@@ -131,6 +136,12 @@ export async function analyzeCandles(
           `Welk liquiditeitspool is het meest logische volgende institutionele doel?\n` +
           `4. IMBALANCE ZONES: Welke OBs, FVGs en Breaker Blocks zijn nog onaangetast en ` +
           `dichtbij genoeg om als entry-niveau te dienen?\n` +
+          `4b. AMD-FASE (Power of Three): In welke fase zit de huidige sessie?\n` +
+          `• Accumulation (A): range-vorming, liquiditeit wordt verzameld aan beide kanten\n` +
+          `• Manipulation (M): Judas Swing — valse breakout om stops te triggeren. ` +
+          `IS DEZE FASE AANTOONBAAR AFGEROND (sweep bevestigd + CHoCH)?\n` +
+          `• Distribution (D): echte institutionele move — alleen handelbaar ná afgeronde M-fase\n` +
+          `Als M niet aantoonbaar afgerond is: verlaag je zekerheid of ga naar neutraal.\n` +
           `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑥)? ` +
           `Signaal + zekerheid (gecapped op de telling hierboven) + het concrete ` +
           `prijs-invalidatieniveau (bij welk niveau bewijst de markt dat deze analyse fout is?).\n\n` +

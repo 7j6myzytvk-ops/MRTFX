@@ -48,7 +48,15 @@ export async function runDiscussion(
   const briefingNote = formatBriefingNote(briefing);
   const sessionTime = currentTime ? new Date(currentTime) : new Date();
   const sessionNote = formatSessionNote(assessSession(sessionTime));
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote;
+  const weekendNote = (() => {
+    const day = sessionTime.getUTCDay(); // 5 = vrijdag
+    const hour = sessionTime.getUTCHours();
+    if (day === 5 && hour >= 12) {
+      return '\n\n⚠️ WEEKEND-RISICO: het is vrijdag na 12:00 UTC. XAU/USD gapt over het weekend — een SL die technisch correct is kan door een gap geraakt worden zonder dat de structuur breekt. Risicomanager: verlaag de positiegrootte met één stap t.o.v. de normale berekening.';
+    }
+    return '';
+  })();
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats);

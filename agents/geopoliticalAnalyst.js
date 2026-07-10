@@ -30,8 +30,13 @@ const GEOPOLITICAL_TOOL = {
         items: { type: 'string' },
         description: 'De 1-3 nieuwsberichten die je oordeel het sterkst bepalen (letterlijke koppen of samenvattingen).',
       },
+      sellTheNewsRisk: {
+        type: 'string',
+        enum: ['laag', 'matig', 'hoog', 'n.v.t.'],
+        description: 'Mate waarin het marktbewegende event al is ingeprijsd: laag=vers (<4u, markt reageerde nog niet volledig), matig=deels ingeprijsd (4-24u of prijs al partieel bewogen), hoog=grotendeels ingeprijsd (>24u of grote prijsmove al achter de rug — reversal-risico), n.v.t.=geen duidelijk event.',
+      },
     },
-    required: ['assessment', 'confidence', 'reasoning', 'keyEvents'],
+    required: ['assessment', 'confidence', 'reasoning', 'keyEvents', 'sellTheNewsRisk'],
   },
 };
 
@@ -110,6 +115,13 @@ export async function assessGeopolitical(
           `- Benoem of er nabije event-risico's zijn die de setup kwetsbaar maken\n` +
           `- Als nieuws gemengd is of >48 uur oud: neutraal, lage zekerheid\n` +
           `- Hoge zekerheid alleen bij duidelijk, recent, eenduidig geopolitiek nieuws\n\n` +
+
+          `"SELL THE NEWS" KALIBRATIE (verplicht invullen als sellTheNewsRisk):\n` +
+          `Beoordeel hoe ver het marktbewegende event al ingeprijsd is:\n` +
+          `• laag: event < 4 uur oud, prijs nog niet volledig gereageerd → impact nog lopend\n` +
+          `• matig: event 4–24 uur oud of prijs al partieel bewogen → gedeeltelijk verwerkt\n` +
+          `• hoog: event > 24 uur oud of grote prijsmove al achter de rug → reversal-risico bij bevestiging\n` +
+          `• n.v.t.: geen duidelijk marktbewegend event aanwijsbaar\n\n` +
 
           `Nieuws (meest recent eerst):\n${newsBlock}${eventsNote}`,
       },

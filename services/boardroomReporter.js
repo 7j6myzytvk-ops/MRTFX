@@ -66,7 +66,7 @@ export function formatTraceMessages({
       : '');
 
   const messages = [
-    `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal.toUpperCase()} (zekerheid: ${analyst.confidence}%)\n${analyst.reasoning}`,
+    `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal.toUpperCase()} (zekerheid: ${analyst.confidence}%) | AMD-fase: ${analyst.amdPhase ?? 'onbekend'}\n${analyst.reasoning}`,
     `**🛡️ Risicomanager**\nSL: ${riskManager.stopLoss} | TP: ${riskManager.takeProfit} | Positiegrootte: ${riskManager.positionSize}\n${riskManager.reasoning}`,
     `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
@@ -76,8 +76,11 @@ export function formatTraceMessages({
     const keyEventsNote = geopolitical.keyEvents?.length
       ? `\nSleutel-events: ${geopolitical.keyEvents.join('; ')}`
       : '';
+    const decayNote = geopolitical.sellTheNewsRisk && geopolitical.sellTheNewsRisk !== 'n.v.t.'
+      ? `\n"Sell the news"-risico: ${geopolitical.sellTheNewsRisk}`
+      : '';
     messages.push(
-      `**📰 Geopolitieke/nieuws-analyse**\nOordeel: ${geopolitical.assessment} (zekerheid: ${geopolitical.confidence}%)\n${geopolitical.reasoning}${keyEventsNote}`,
+      `**📰 Geopolitieke/nieuws-analyse**\nOordeel: ${geopolitical.assessment} (zekerheid: ${geopolitical.confidence}%)${decayNote}\n${geopolitical.reasoning}${keyEventsNote}`,
     );
   }
 
