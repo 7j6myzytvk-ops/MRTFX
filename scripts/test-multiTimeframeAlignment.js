@@ -68,18 +68,29 @@ check('computeTimeframeBias - 19 candles', computeTimeframeBias(makeCandles(Arra
   check('computeMultiTFAlignment - alle bearish: direction', result.direction, 'bearish');
 }
 
-// 7. Gemengd → niet aligned
+// 7. H1 of M30 onduidelijk/tegenstrijdig → niet aligned
 {
   check('computeMultiTFAlignment - h1 mixed: niet aligned', computeMultiTFAlignment('mixed', 'bullish', 'bullish').aligned, false);
   check('computeMultiTFAlignment - m30 bearish: niet aligned', computeMultiTFAlignment('bullish', 'bearish', 'bullish').aligned, false);
-  check('computeMultiTFAlignment - m15 mixed: niet aligned', computeMultiTFAlignment('bearish', 'bearish', 'mixed').aligned, false);
+  check('computeMultiTFAlignment - h1 mixed m30 mixed: niet aligned', computeMultiTFAlignment('mixed', 'mixed', 'bullish').aligned, false);
 }
 
-// 8. Twee bullish, één mixed → niet aligned
+// 8. H1+M30 aligned, M15 mixed of bearish (pullback) → wél aligned
 {
-  const result = computeMultiTFAlignment('bullish', 'bullish', 'mixed');
-  check('computeMultiTFAlignment - 2 bullish 1 mixed: niet aligned', result.aligned, false);
-  check('computeMultiTFAlignment - direction null bij niet aligned', result.direction, null);
+  const r1 = computeMultiTFAlignment('bullish', 'bullish', 'mixed');
+  check('computeMultiTFAlignment - H1+M30 bullish M15 mixed: aligned', r1.aligned, true);
+  check('computeMultiTFAlignment - H1+M30 bullish M15 mixed: direction bullish', r1.direction, 'bullish');
+
+  const r2 = computeMultiTFAlignment('bullish', 'bullish', 'bearish');
+  check('computeMultiTFAlignment - H1+M30 bullish M15 bearish (pullback): aligned', r2.aligned, true);
+  check('computeMultiTFAlignment - H1+M30 bullish M15 bearish: direction bullish', r2.direction, 'bullish');
+
+  const r3 = computeMultiTFAlignment('bearish', 'bearish', 'bullish');
+  check('computeMultiTFAlignment - H1+M30 bearish M15 bullish (pullback): aligned', r3.aligned, true);
+  check('computeMultiTFAlignment - H1+M30 bearish M15 bullish: direction bearish', r3.direction, 'bearish');
+
+  const r4 = computeMultiTFAlignment('bearish', 'bearish', 'mixed');
+  check('computeMultiTFAlignment - H1+M30 bearish M15 mixed: aligned', r4.aligned, true);
 }
 
 // --- computeTrendBias ---
