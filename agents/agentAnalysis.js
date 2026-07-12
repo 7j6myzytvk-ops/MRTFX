@@ -44,8 +44,8 @@ export function classifyRiskReward(sample) {
   const risk = Math.abs(entryPrice - decision.stopLoss);
   const rr = reward / risk;
   if (rr < 1.5) return '<1.5';
-  if (rr <= 2.5) return '1.5-2.5';
-  return '>2.5';
+  if (rr <= 3.0) return '1.5-3.0';
+  return '>3.0';
 }
 
 // Combo-signaal uit de Fase 9/10-backtest-analyses: zekerheid omhoog na het
@@ -76,8 +76,8 @@ export function assessSignalQuality(sample) {
   if (classifyRebuttalShift(sample) === 'omlaag') {
     blockers.push('analist verloor vertrouwen na discussie');
   }
-  if (sample.entryPrice != null && classifyRiskReward(sample) === '>2.5') {
-    blockers.push('risico/winst-verhouding te ambitieus (>2.5)');
+  if (sample.entryPrice != null && classifyRiskReward(sample) === '>3.0') {
+    blockers.push('risico/winst-verhouding te ambitieus (>3.0)');
   }
   if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');

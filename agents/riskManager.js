@@ -80,9 +80,10 @@ export async function assessRisk(
           `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten — SL VOORBIJ zo'n niveau, ` +
           `nooit vlak ervoor (stop hunt risico)\n` +
           `• SL minimaal 0.5× avg range verwijderd van huidige prijs\n` +
-          `• TP realistisch voor H1-intraday: 1.5–2× avg range. TP op >3× avg range wordt zelden ` +
-          `bereikt binnen een sessie — kies dan een strakker niveau\n` +
-          `• R:R streefzone 1.2–2.0. Boven 2.5 = te ambitieus voor intraday XAU/USD\n\n` +
+          `• TP realistisch voor H1-intraday: 2–2.5× avg range. TP boven 3.5× avg range wordt ` +
+          `zelden bereikt binnen een sessie — kies dan een strakker niveau\n` +
+          `• R:R streefzone 2.0–2.5. Dit is het bewezen optimum (1-jaar backtest: EV piekt bij 2.5). ` +
+          `Onder 1.5 = te weinig risico/winst-verhouding. Boven 3.0 = TP te ver, zelden geraakt\n\n` +
 
           `POSITIEGROOTTE:\n` +
           `• <60% zekerheid → klein\n` +

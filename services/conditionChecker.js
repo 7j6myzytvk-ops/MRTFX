@@ -1,12 +1,13 @@
 import { computeTimeframeBias, computeMultiTFAlignment, computeTrendBias } from '../agents/multiTimeframeAlignment.js';
 import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 
-// Sessiefilter: alleen actief tijdens London + NY overlap (08:00–17:00 UTC).
-// Dit is de meest liquide periode voor XAU/USD — buiten deze uren is goud
-// volatiel maar onvoorspelbaar (dunne markt, weinig institutionele deelname).
+// Sessiefilter: actief vanaf 09:00 UTC (niet 08:00).
+// 1-jaar backtest (252 triggers, nov 2025–jul 2026): 08:00 UTC heeft slechts 35.1% winRate
+// (77 triggers) — dat is de London manipulation-fase waar institutionelen nep-breakouts zetten.
+// Vanaf 09:00 UTC loopt de winRate op naar 44–54%. Zie Fase 49.
 export function isActiveSession(now = new Date()) {
   const hour = now.getUTCHours();
-  return hour >= 8 && hour < 17;
+  return hour >= 9 && hour < 17;
 }
 
 // Controleert drie harde voorwaarden voor een setup-signaal.
@@ -25,7 +26,7 @@ export function checkConditions({
 
   // 1. Sessiefilter (goedkoopste check — eerst uitvoeren)
   if (!isActiveSession(now)) {
-    blockers.push('buiten actieve sessie (08:00–17:00 UTC)');
+    blockers.push('buiten actieve sessie (09:00–17:00 UTC)');
   }
 
   // 2. Multi-timeframe alignment (H1 + M30 + M15 moeten het eens zijn)

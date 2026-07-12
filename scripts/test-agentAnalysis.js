@@ -111,19 +111,24 @@ check(
   '<1.5',
 );
 check(
-  'rr 1.5 (reward 30 / risk 20) -> 1.5-2.5',
+  'rr 1.5 (reward 30 / risk 20) -> 1.5-3.0',
   classifyRiskReward({ entryPrice: 4350, decision: { takeProfit: 4380, stopLoss: 4330 } }),
-  '1.5-2.5',
+  '1.5-3.0',
 );
 check(
-  'rr 2.5 (reward 50 / risk 20) -> 1.5-2.5',
+  'rr 2.5 (reward 50 / risk 20) -> 1.5-3.0',
   classifyRiskReward({ entryPrice: 4350, decision: { takeProfit: 4400, stopLoss: 4330 } }),
-  '1.5-2.5',
+  '1.5-3.0',
 );
 check(
-  'rr 3.0 (reward 60 / risk 20) -> >2.5',
+  'rr 3.0 (reward 60 / risk 20) -> 1.5-3.0 (grens)',
   classifyRiskReward({ entryPrice: 4350, decision: { takeProfit: 4410, stopLoss: 4330 } }),
-  '>2.5',
+  '1.5-3.0',
+);
+check(
+  'rr 3.5 (reward 70 / risk 20) -> >3.0',
+  classifyRiskReward({ entryPrice: 4350, decision: { takeProfit: 4420, stopLoss: 4330 } }),
+  '>3.0',
 );
 check(
   'rr bearish richting (reward 40 / risk 30) -> <1.5',
@@ -142,7 +147,7 @@ check(
   true,
 );
 check(
-  'omhoog + 1.5-2.5 -> geen combo',
+  'omhoog + 1.5-3.0 -> geen combo',
   isComboSignal({
     discussion: { analyst: { confidence: 60 }, analystRebuttal: { confidence: 70 } },
     entryPrice: 4350,
@@ -275,12 +280,12 @@ check(
     entryPrice: 3000,
     decision: { ...groen.decision, stopLoss: 2990, takeProfit: 3100 },
   };
-  check('assessSignalQuality - R:R >2.5 -> geblokkeerd', assessSignalQuality(rrTeHoog).blockers.includes('risico/winst-verhouding te ambitieus (>2.5)'), true);
-  check('assessSignalQuality - R:R >2.5 -> passed false', assessSignalQuality(rrTeHoog).passed, false);
+  check('assessSignalQuality - R:R >3.0 -> geblokkeerd', assessSignalQuality(rrTeHoog).blockers.includes('risico/winst-verhouding te ambitieus (>3.0)'), true);
+  check('assessSignalQuality - R:R >3.0 -> passed false', assessSignalQuality(rrTeHoog).passed, false);
 
   // Geen entryPrice: R:R-filter mag niet triggeren
   const geenEntry = { ...groen, entryPrice: undefined };
-  check('assessSignalQuality - geen entryPrice -> R:R niet geblokkeerd', assessSignalQuality(geenEntry).blockers.includes('risico/winst-verhouding te ambitieus (>2.5)'), false);
+  check('assessSignalQuality - geen entryPrice -> R:R niet geblokkeerd', assessSignalQuality(geenEntry).blockers.includes('risico/winst-verhouding te ambitieus (>3.0)'), false);
 
   // Pre-mortem: counterConfidence >70 -> blocker
   const premortemSterk = {

@@ -27,7 +27,8 @@ const bearishCandles = makeCandles(bearishCloses);
 
 // --- isActiveSession ---
 
-check('isActiveSession - 08:00 UTC: actief', isActiveSession(new Date('2026-06-17T08:00:00Z')), true);
+check('isActiveSession - 08:00 UTC: inactief (manipulation-fase)', isActiveSession(new Date('2026-06-17T08:00:00Z')), false);
+check('isActiveSession - 09:00 UTC: actief', isActiveSession(new Date('2026-06-17T09:00:00Z')), true);
 check('isActiveSession - 16:59 UTC: actief', isActiveSession(new Date('2026-06-17T16:59:00Z')), true);
 check('isActiveSession - 17:00 UTC: inactief', isActiveSession(new Date('2026-06-17T17:00:00Z')), false);
 check('isActiveSession - 07:59 UTC: inactief', isActiveSession(new Date('2026-06-17T07:59:00Z')), false);
@@ -57,17 +58,31 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
 }
 
 // 3. TF niet aligned → geblokkeerd
+// Fase 46: M15 mag afwijken; H1 én M30 moeten het eens zijn.
+// Test: H1 bullish + M30 bearish → alignment faalt.
 {
   const result = checkConditions({
     h1Candles: bullishCandles.slice(-50),
-    m30Candles: bullishCandles.slice(-100),
-    m15Candles: bearishCandles.slice(-100), // M15 bearish, rest bullish
+    m30Candles: bearishCandles.slice(-100), // M30 bearish, H1 bullish → conflict
+    m15Candles: bullishCandles.slice(-100),
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bullishCandles.slice(-20),
     now: new Date('2026-06-17T12:00:00Z'),
   });
   check('checkConditions - TF niet aligned: niet triggered', result.triggered, false);
   checkTrue('checkConditions - TF niet aligned: heeft TF-blocker', result.blockers.some(b => b.includes('timeframes')));
+}
+// Fase 46-verificatie: M15 bearish terwijl H1+M30 bullish → WÈLL triggered (M15 is niet-blokkerend)
+{
+  const result = checkConditions({
+    h1Candles: bullishCandles.slice(-50),
+    m30Candles: bullishCandles.slice(-100),
+    m15Candles: bearishCandles.slice(-100), // M15 afwijkend → geen blocker
+    d1Candles: bullishCandles.slice(-30),
+    w1Candles: bullishCandles.slice(-20),
+    now: new Date('2026-06-17T12:00:00Z'),
+  });
+  check('checkConditions - M15 afwijkend (Fase 46): triggered want H1+M30 eens', result.triggered, true);
 }
 
 // 4. D1/W1 niet aligned → geblokkeerd
