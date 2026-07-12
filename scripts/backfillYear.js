@@ -171,7 +171,6 @@ let h1Ptr = 0, m30Ptr = 0, m15Ptr = 0, d1Ptr = 0, w1Ptr = 0;
 for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 3600 * 1000)) {
   const dayOfWeek = t.getUTCDay();
   if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-  if (!isActiveDay(t)) continue;
   if (!isActiveSession(t)) continue;
 
   const iso = t.toISOString();
