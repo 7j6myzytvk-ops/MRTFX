@@ -27,11 +27,12 @@ const bearishCandles = makeCandles(bearishCloses);
 
 // --- isActiveSession ---
 
-check('isActiveSession - 08:00 UTC: inactief (manipulation-fase)', isActiveSession(new Date('2026-06-17T08:00:00Z')), false);
-check('isActiveSession - 09:00 UTC: actief', isActiveSession(new Date('2026-06-17T09:00:00Z')), true);
+check('isActiveSession - 08:00 UTC: inactief (London manipulation)', isActiveSession(new Date('2026-06-17T08:00:00Z')), false);
+check('isActiveSession - 09:00 UTC: inactief (London ochtend)', isActiveSession(new Date('2026-06-17T09:00:00Z')), false);
+check('isActiveSession - 12:59 UTC: inactief (vlak voor NY open)', isActiveSession(new Date('2026-06-17T12:59:00Z')), false);
+check('isActiveSession - 13:00 UTC: actief (NY open)', isActiveSession(new Date('2026-06-17T13:00:00Z')), true);
 check('isActiveSession - 16:59 UTC: actief', isActiveSession(new Date('2026-06-17T16:59:00Z')), true);
 check('isActiveSession - 17:00 UTC: inactief', isActiveSession(new Date('2026-06-17T17:00:00Z')), false);
-check('isActiveSession - 07:59 UTC: inactief', isActiveSession(new Date('2026-06-17T07:59:00Z')), false);
 check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date('2026-06-17T00:00:00Z')), false);
 
 // --- checkConditions ---
@@ -52,7 +53,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
 
 // 2. Alle candles undefined → niet triggered (meerdere blockers)
 {
-  const result = checkConditions({ now: new Date('2026-06-17T12:00:00Z') });
+  const result = checkConditions({ now: new Date('2026-06-17T14:00:00Z') });
   check('checkConditions - geen candles: niet triggered', result.triggered, false);
   checkTrue('checkConditions - geen candles: heeft blockers', result.blockers.length > 0);
 }
@@ -67,7 +68,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
     m15Candles: bullishCandles.slice(-100),
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bullishCandles.slice(-20),
-    now: new Date('2026-06-17T12:00:00Z'),
+    now: new Date('2026-06-17T14:00:00Z'),
   });
   check('checkConditions - TF niet aligned: niet triggered', result.triggered, false);
   checkTrue('checkConditions - TF niet aligned: heeft TF-blocker', result.blockers.some(b => b.includes('timeframes')));
@@ -80,7 +81,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
     m15Candles: bearishCandles.slice(-100), // M15 afwijkend → geen blocker
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bullishCandles.slice(-20),
-    now: new Date('2026-06-17T12:00:00Z'),
+    now: new Date('2026-06-17T14:00:00Z'),
   });
   check('checkConditions - M15 afwijkend (Fase 46): triggered want H1+M30 eens', result.triggered, true);
 }
@@ -93,7 +94,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
     m15Candles: bullishCandles.slice(-100),
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bearishCandles.slice(-20), // W1 bearish
-    now: new Date('2026-06-17T12:00:00Z'),
+    now: new Date('2026-06-17T14:00:00Z'),
   });
   check('checkConditions - D1/W1 conflict: niet triggered', result.triggered, false);
   checkTrue('checkConditions - D1/W1 conflict: heeft trend-blocker', result.blockers.some(b => b.includes('D1/W1') || b.includes('trendrichting') || b.includes('conflicteert')));
@@ -107,7 +108,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
     m15Candles: bullishCandles.slice(-100),
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bullishCandles.slice(-20),
-    now: new Date('2026-06-17T12:00:00Z'),
+    now: new Date('2026-06-17T14:00:00Z'),
   });
   checkTrue('checkConditions - details bevat session', 'session' in result.details);
   checkTrue('checkConditions - details bevat h1Bias', 'h1Bias' in result.details);
@@ -124,7 +125,7 @@ check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date(
     m15Candles: bullishCandles.slice(-100),
     d1Candles: bullishCandles.slice(-30),
     w1Candles: bullishCandles.slice(-20),
-    now: new Date('2026-06-17T12:00:00Z'),
+    now: new Date('2026-06-17T14:00:00Z'),
   });
   // Triggered hangt af van sleutelniveau-proximity; richting is wél bullish als TF aligned
   if (result.details.tfAlignment.aligned) {

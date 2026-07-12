@@ -1,13 +1,13 @@
 import { computeTimeframeBias, computeMultiTFAlignment, computeTrendBias } from '../agents/multiTimeframeAlignment.js';
 import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 
-// Sessiefilter: actief vanaf 09:00 UTC (niet 08:00).
-// 1-jaar backtest (252 triggers, nov 2025–jul 2026): 08:00 UTC heeft slechts 35.1% winRate
-// (77 triggers) — dat is de London manipulation-fase waar institutionelen nep-breakouts zetten.
-// Vanaf 09:00 UTC loopt de winRate op naar 44–54%. Zie Fase 49.
+// Sessiefilter: actief 13:00–17:00 UTC (NY open en London/NY overlap).
+// 1-jaar backtest (208 triggers, jul 2025–jul 2026): London-ochtend (09:00–12:00 UTC)
+// heeft 25–40% WR door manipulation-fase. Pas vanaf 13:00 UTC krijg je echte institutionele
+// orderflow: 13:00=46%, 14:00=50%, 15:00=50% WR. Zie Fase 50.
 export function isActiveSession(now = new Date()) {
   const hour = now.getUTCHours();
-  return hour >= 9 && hour < 17;
+  return hour >= 13 && hour < 17;
 }
 
 // Controleert drie harde voorwaarden voor een setup-signaal.
@@ -26,7 +26,7 @@ export function checkConditions({
 
   // 1. Sessiefilter (goedkoopste check — eerst uitvoeren)
   if (!isActiveSession(now)) {
-    blockers.push('buiten actieve sessie (09:00–17:00 UTC)');
+    blockers.push('buiten actieve sessie (13:00–17:00 UTC)');
   }
 
   // 2. Multi-timeframe alignment (H1 + M30 + M15 moeten het eens zijn)
