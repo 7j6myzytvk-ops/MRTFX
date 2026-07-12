@@ -10,6 +10,13 @@ export function isActiveSession(now = new Date()) {
   return hour >= 13 && hour < 17;
 }
 
+// Dagfilter: maandag heeft de laagste WR (40.9%) van alle weekdagen.
+// Oorzaak: gap-risico van weekend, institutionelen orienteren zich nog,
+// dunne orderflow in de eerste handelsuren van de week. Zie Fase 51.
+export function isActiveDay(now = new Date()) {
+  return now.getUTCDay() !== 1; // 1 = maandag
+}
+
 // Controleert drie harde voorwaarden voor een setup-signaal.
 // nearLevel is een zachte voorkeur: wordt meegegeven als context aan agents,
 // maar blokkeert de trigger niet (diagnose toonde 93.4% blokkade door nearLevel).
@@ -23,6 +30,11 @@ export function checkConditions({
   now = new Date(),
 } = {}) {
   const blockers = [];
+
+  // 0. Dagfilter — maandag blokkeren (WR 40.9%, Fase 51)
+  if (!isActiveDay(now)) {
+    blockers.push('maandag uitgesloten (WR 40.9% in 1-jaar backtest)');
+  }
 
   // 1. Sessiefilter (goedkoopste check — eerst uitvoeren)
   if (!isActiveSession(now)) {

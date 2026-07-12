@@ -1,4 +1,4 @@
-import { isActiveSession, checkConditions, formatConditionContext } from '../services/conditionChecker.js';
+import { isActiveSession, isActiveDay, checkConditions, formatConditionContext } from '../services/conditionChecker.js';
 
 let pass = 0;
 let fail = 0;
@@ -34,6 +34,13 @@ check('isActiveSession - 13:00 UTC: actief (NY open)', isActiveSession(new Date(
 check('isActiveSession - 16:59 UTC: actief', isActiveSession(new Date('2026-06-17T16:59:00Z')), true);
 check('isActiveSession - 17:00 UTC: inactief', isActiveSession(new Date('2026-06-17T17:00:00Z')), false);
 check('isActiveSession - 00:00 UTC: inactief (nacht)', isActiveSession(new Date('2026-06-17T00:00:00Z')), false);
+
+// --- isActiveDay ---
+// 2026-06-15 = maandag, 2026-06-17 = woensdag
+check('isActiveDay - maandag: inactief', isActiveDay(new Date('2026-06-15T14:00:00Z')), false);
+check('isActiveDay - dinsdag: actief', isActiveDay(new Date('2026-06-16T14:00:00Z')), true);
+check('isActiveDay - woensdag: actief', isActiveDay(new Date('2026-06-17T14:00:00Z')), true);
+check('isActiveDay - vrijdag: actief', isActiveDay(new Date('2026-06-19T14:00:00Z')), true);
 
 // --- checkConditions ---
 
