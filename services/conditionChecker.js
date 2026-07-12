@@ -38,11 +38,6 @@ export function checkConditions({
 } = {}) {
   const blockers = [];
 
-  // 0. Dagfilter — maandag blokkeren (WR 40.9%, Fase 51)
-  if (!isActiveDay(now)) {
-    blockers.push('maandag uitgesloten (WR 40.9% in 1-jaar backtest)');
-  }
-
   // 1. Sessiefilter (goedkoopste check — eerst uitvoeren)
   if (!isActiveSession(now)) {
     blockers.push('buiten actieve sessie (13:00–17:00 UTC)');

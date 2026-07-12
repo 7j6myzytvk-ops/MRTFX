@@ -10,7 +10,7 @@ import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
-import { checkConditions, formatConditionContext, isActiveSession, isActiveDay } from './conditionChecker.js';
+import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
 import { checkFtmoLimits } from './ftmoGuard.js';
 import { recordConditionCheck } from './conditionDiagnostics.js';
@@ -33,7 +33,6 @@ async function poll(client) {
   try {
     // Goedkope checks eerst — geen API-calls als ze falen
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
-    if (!isActiveDay()) return;
     if (!isActiveSession()) return;
 
     // Dagelijkse heartbeat bij het begin van de NY-sessie (13:xx UTC, 1x per dag)
