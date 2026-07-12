@@ -6,7 +6,7 @@
 //    moment al beschikbaar waren. Cruciaal voor een jaar: goud was grotendeels
 //    bullish in H2 2025 en bearish in mid-2026. Een snapshot van nu zou dat missen.
 // 2. TP/SL SIMULATIE: na elke trigger wordt gesimuleerd of TP of SL geraakt wordt
-//    binnen 48 H1-candles (ATR-gebaseerd: SL=1×ATR, TP=1.5×ATR, R:R 1.5).
+//    binnen 48 H1-candles (ATR-gebaseerd: SL=1×ATR, TP=2×ATR, R:R 2.0 — live-target).
 // 3. KWALITEITSFILTERS: ATR >= $13 en SMA-gap <= $50 worden afzonderlijk bijgehouden.
 // 4. TWEEPUNTSALGORITME: O(N+M) i.p.v. O(N×M) — draait snel ook voor een heel jaar.
 //
@@ -77,10 +77,10 @@ async function fetchAllCandles(granularity, fromDate, toDate) {
 }
 
 // Simuleer TP/SL: kijk 48 H1-candles vooruit na de trigger.
-// SL = 1×ATR14 tegen de richting, TP = 1.5×ATR14 mee met de richting (R:R 1.5).
+// SL = 1×ATR14 tegen de richting, TP = 2×ATR14 mee met de richting (R:R 2.0 — live-target).
 function simulateOutcome(allH1, h1Ptr, direction, atr14, entryPrice) {
   const sl = direction === 'bearish' ? entryPrice + atr14 : entryPrice - atr14;
-  const tp = direction === 'bearish' ? entryPrice - atr14 * 1.5 : entryPrice + atr14 * 1.5;
+  const tp = direction === 'bearish' ? entryPrice - atr14 * 2 : entryPrice + atr14 * 2;
   const start = h1Ptr + 1;
   const end = Math.min(start + 48, allH1.length);
 

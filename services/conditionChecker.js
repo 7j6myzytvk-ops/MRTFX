@@ -17,6 +17,13 @@ export function isActiveDay(now = new Date()) {
   return now.getUTCDay() !== 1; // 1 = maandag
 }
 
+// Weekend gap-risico: vrijdag na 12:00 UTC. XAU/USD kan over het weekend gatten —
+// een technisch correcte SL kan geraakt worden zonder structuurbreuk.
+// Boardroom past hard positiegrootte-override toe op vrijdag na 12:00.
+export function hasFridayGapRisk(now = new Date()) {
+  return now.getUTCDay() === 5 && now.getUTCHours() >= 12;
+}
+
 // Controleert drie harde voorwaarden voor een setup-signaal.
 // nearLevel is een zachte voorkeur: wordt meegegeven als context aan agents,
 // maar blokkeert de trigger niet (diagnose toonde 93.4% blokkade door nearLevel).
@@ -50,10 +57,10 @@ export function checkConditions({
     blockers.push(`timeframes niet aligned (H1: ${h1Bias}, M30: ${m30Bias}, M15: ${m15Bias})`);
   }
 
-  // 3. Trendfilter (D1 en W1 moeten dezelfde richting hebben)
+  // 3. Trendfilter (W1 moet een heldere richting hebben — 'mixed' W1 blokkeert)
   const trendBias = computeTrendBias(d1Candles, w1Candles);
   if (!trendBias.aligned) {
-    blockers.push('D1/W1 trendrichting niet aligned');
+    blockers.push('W1-trendrichting onduidelijk (W1 bias: mixed)');
   }
 
   // 4. Richtingsconsistentie (TF-alignment en trendfilter moeten dezelfde kant wijzen)

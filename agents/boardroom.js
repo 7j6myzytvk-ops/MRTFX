@@ -74,6 +74,17 @@ export async function runDiscussion(
     assessGeopolitical(newsItems, { instrument, granularity, events: opts.events || [] }),
   ]);
 
+  // Hard vrijdag-override: positiegrootte altijd één stap kleiner op vrijdag na 12:00 UTC.
+  // weekendNote instrueert de riskManager al; dit garandeert het ook als de AI het negeert.
+  if (sessionTime.getUTCDay() === 5 && sessionTime.getUTCHours() >= 12 && risk.positionSize !== 'klein') {
+    const sizes = ['klein', 'normaal', 'groot'];
+    const idx = sizes.indexOf(risk.positionSize);
+    if (idx > 0) {
+      risk.positionSize = sizes[idx - 1];
+      risk.reasoning = `[Weekend gap-override: vrijdag → één stap kleiner] ${risk.reasoning}`;
+    }
+  }
+
   const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro, geopolitical }, opts);
 
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });

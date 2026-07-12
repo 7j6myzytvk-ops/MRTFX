@@ -137,17 +137,36 @@ check(
 );
 
 // --- isComboSignal ---
+// Combo = rebuttal omhoog + setupQualityScore >= 5
 check(
-  'omhoog + <1.5 -> combo',
+  'omhoog + score 5 -> combo',
   isComboSignal({
-    discussion: { analyst: { confidence: 60 }, analystRebuttal: { confidence: 70 } },
+    discussion: { analyst: { confidence: 60, setupQualityScore: 5 }, analystRebuttal: { confidence: 70 } },
     entryPrice: 4350,
-    decision: { takeProfit: 4370, stopLoss: 4330 },
+    decision: { takeProfit: 4400, stopLoss: 4330 },
   }),
   true,
 );
 check(
-  'omhoog + 1.5-3.0 -> geen combo',
+  'omhoog + score 6 -> combo',
+  isComboSignal({
+    discussion: { analyst: { confidence: 60, setupQualityScore: 6 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4400, stopLoss: 4330 },
+  }),
+  true,
+);
+check(
+  'omhoog + score 4 -> geen combo (te lage score)',
+  isComboSignal({
+    discussion: { analyst: { confidence: 60, setupQualityScore: 4 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { takeProfit: 4400, stopLoss: 4330 },
+  }),
+  false,
+);
+check(
+  'omhoog + score ontbreekt -> geen combo (default 0)',
   isComboSignal({
     discussion: { analyst: { confidence: 60 }, analystRebuttal: { confidence: 70 } },
     entryPrice: 4350,
@@ -156,20 +175,20 @@ check(
   false,
 );
 check(
-  'omlaag + <1.5 -> geen combo',
+  'omlaag + score 5 -> geen combo (rebuttal daalde)',
   isComboSignal({
-    discussion: { analyst: { confidence: 70 }, analystRebuttal: { confidence: 60 } },
+    discussion: { analyst: { confidence: 70, setupQualityScore: 5 }, analystRebuttal: { confidence: 60 } },
     entryPrice: 4350,
-    decision: { takeProfit: 4370, stopLoss: 4330 },
+    decision: { takeProfit: 4400, stopLoss: 4330 },
   }),
   false,
 );
 check(
-  'gelijk + <1.5 -> geen combo',
+  'gelijk + score 5 -> geen combo (rebuttal gelijk)',
   isComboSignal({
-    discussion: { analyst: { confidence: 70 }, analystRebuttal: { confidence: 70 } },
+    discussion: { analyst: { confidence: 70, setupQualityScore: 5 }, analystRebuttal: { confidence: 70 } },
     entryPrice: 4350,
-    decision: { takeProfit: 4370, stopLoss: 4330 },
+    decision: { takeProfit: 4400, stopLoss: 4330 },
   }),
   false,
 );
@@ -255,7 +274,13 @@ check(
   // Zekerheid te laag
   const laag = { ...base, decision: { ...base.decision, confidence: 55 }, discussion: { ...base.discussion, macro: { sentiment: 'risk-on' } } };
   check('assessSignalQuality - confidence 55 -> geblokkeerd', assessSignalQuality(laag).passed, false);
-  check('assessSignalQuality - confidence 55 -> juiste blocker', assessSignalQuality(laag).blockers.includes('CEO-zekerheid onder 60%'), true);
+  check('assessSignalQuality - confidence 55 -> juiste blocker', assessSignalQuality(laag).blockers.includes('CEO-zekerheid onder 65%'), true);
+
+  // Grenswaarde: 64 = geblokkeerd, 65 = niet geblokkeerd
+  const grens64 = { ...base, decision: { ...base.decision, confidence: 64 }, discussion: { ...base.discussion, macro: { sentiment: 'risk-on' } } };
+  check('assessSignalQuality - confidence 64 -> geblokkeerd', assessSignalQuality(grens64).passed, false);
+  const grens65 = { ...base, decision: { ...base.decision, confidence: 65 }, discussion: { ...base.discussion, macro: { sentiment: 'risk-on' } } };
+  check('assessSignalQuality - confidence 65 -> niet geblokkeerd op zekerheid', assessSignalQuality(grens65).blockers.includes('CEO-zekerheid onder 65%'), false);
 
   // Macro contraireert
   check('assessSignalQuality - macro contrarian -> geblokkeerd', assessSignalQuality(base).blockers.includes('macro contraireert de richting'), true);

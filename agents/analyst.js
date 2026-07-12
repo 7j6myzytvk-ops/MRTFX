@@ -118,8 +118,9 @@ export async function analyzeCandles(
           `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
           `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
           `richting op hogere timeframe.\n` +
-          `⑥ KILL ZONE TIMING: we bevinden ons in London Kill Zone (07:00–10:00 UTC) of ` +
-          `NY Kill Zone (12:00–15:00 UTC). Buiten deze zones is institutionele deelname laag ` +
+          `⑥ KILL ZONE TIMING: we bevinden ons in de NY Kill Zone (13:00–17:00 UTC). ` +
+          `Onze sessie-filter start op 13:00 UTC — London Kill Zone (07:00–10:00) valt hier buiten ` +
+          `en wordt nooit bereikt. Buiten de NY Kill Zone is institutionele deelname laag ` +
           `en zijn bewegingen minder betrouwbaar.\n\n` +
           `TELLING → MAXIMALE ZEKERHEID:\n` +
           `• 5–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +

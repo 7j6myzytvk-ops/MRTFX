@@ -9,18 +9,26 @@ export const DAILY_LOSS_LIMIT_PCT  = -5;   // max -5% van account per dag
 export const TOTAL_DRAWDOWN_PCT    = -10;  // max -10% totale drawdown (FTMO hard rule)
 export const DAILY_WARN_PCT        = -3;   // waarschuwing bij -3% vandaag
 
-// R:R 2.0 = standaard (backtest-optimum); TP levert 2× risico op.
-const RR = 2.0;
+// Fallback R:R als entry/TP/SL niet opgeslagen zijn (oude signalen).
+const FALLBACK_RR = 2.0;
 
 function riskPct(positionSize) {
   return RISK_PCT[positionSize] ?? RISK_PCT.normaal;
 }
 
 function pnlForSignal(signal) {
-  const { outcome, decision } = signal;
+  const { outcome, decision, entryPrice } = signal;
   if (!outcome || !['tp', 'sl'].includes(outcome.result)) return null;
   const risk = riskPct(decision?.positionSize);
-  return outcome.result === 'tp' ? risk * RR : -risk;
+
+  let rr = FALLBACK_RR;
+  if (entryPrice && decision?.takeProfit && decision?.stopLoss) {
+    const reward = Math.abs(decision.takeProfit - entryPrice);
+    const riskAmt = Math.abs(entryPrice - decision.stopLoss);
+    if (riskAmt > 0) rr = reward / riskAmt;
+  }
+
+  return outcome.result === 'tp' ? risk * rr : -risk;
 }
 
 function todayUtc() {

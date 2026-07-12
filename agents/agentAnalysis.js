@@ -48,11 +48,14 @@ export function classifyRiskReward(sample) {
   return '>3.0';
 }
 
-// Combo-signaal uit de Fase 9/10-backtest-analyses: zekerheid omhoog na het
-// weerwoord, gecombineerd met risk/reward <1.5, hangt samen met een duidelijk
-// hogere winRate dan de rest (record #10: 81.8% N=12 vs. 31.9% N=74).
+// Premium-signaal: analist won vertrouwen na de teamdiscussie (rebuttal shift omhoog)
+// EN de setup had hoge kwaliteit (setupQualityScore ≥ 5/6). Backtest toont dat
+// deze combinatie samenhangt met de hoogste WR. Score < 5 of shift niet omhoog = geen combo.
 export function isComboSignal(sample) {
-  return classifyRebuttalShift(sample) === 'omhoog' && classifyRiskReward(sample) === '<1.5';
+  return (
+    classifyRebuttalShift(sample) === 'omhoog' &&
+    (sample.discussion?.analyst?.setupQualityScore ?? 0) >= 5
+  );
 }
 
 // Kwaliteitsfilter: drie onafhankelijk vastgestelde signalen die sterk
@@ -67,8 +70,8 @@ export function assessSignalQuality(sample) {
 
   const blockers = [];
 
-  if (sample.decision.confidence < 60) {
-    blockers.push('CEO-zekerheid onder 60%');
+  if (sample.decision.confidence < 65) {
+    blockers.push('CEO-zekerheid onder 65%');
   }
   if (classifyMacroAlignment(sample) === 'contrarian') {
     blockers.push('macro contraireert de richting');

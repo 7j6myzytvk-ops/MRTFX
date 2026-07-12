@@ -415,7 +415,7 @@ export function createBot() {
         }
 
         const stats = summarize(resolved);
-        const BACKTEST_WR = 53.4; // combo-filter, 87 triggers, Fase 51
+        const BACKTEST_WR = 44.8; // combo-filter, 87 triggers @ R:R 2.0, Fase 55
         const BACKTEST_N_MIN = 15; // minimaal N voor betrouwbare vergelijking
         const wr = stats.winRate ?? 0;
         const vrTarget = stats.trades >= BACKTEST_N_MIN

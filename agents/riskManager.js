@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config/index.js';
+import { atr } from './indicators.js';
 
 const RISK_TOOL = {
   name: 'bepaal_risico',
@@ -17,11 +18,6 @@ const RISK_TOOL = {
   },
 };
 
-function averageRange(candles) {
-  const ranges = candles.map((c) => c.high - c.low);
-  return ranges.reduce((sum, r) => sum + r, 0) / ranges.length;
-}
-
 export async function assessRisk(
   candles,
   analysis,
@@ -30,7 +26,7 @@ export async function assessRisk(
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
   const lastClose = candles[candles.length - 1].close;
-  const avgRange = averageRange(candles);
+  const atr14 = atr(candles.slice(-50), 14) ?? 0;
 
   const eventsNote = events.length
     ? `\n\nLet op: binnen 48 uur staan de volgende belangrijke USD-economische events gepland: ` +
@@ -67,7 +63,7 @@ export async function assessRisk(
           `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
           `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/6 criteria aanwezig\n` +
           `Onderbouwing: "${analysis.reasoning}"\n` +
-          `Gem. candle-range (ATR-proxy) over ${candles.length} candles: ${avgRange.toFixed(2)}\n\n` +
+          `ATR14 (H1, periode 14): $${atr14.toFixed(2)}\n\n` +
 
           `ENTRY-ZONE (nieuw — vermeld dit expliciet in je reasoning):\n` +
           `• Leid uit de analist-onderbouwing het meest logische entry-niveau af: het dichtstbijzijnde ` +
@@ -79,8 +75,8 @@ export async function assessRisk(
           `SL/TP KENNIS:\n` +
           `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten — SL VOORBIJ zo'n niveau, ` +
           `nooit vlak ervoor (stop hunt risico)\n` +
-          `• SL minimaal 0.5× avg range verwijderd van huidige prijs\n` +
-          `• TP realistisch voor 13:00–17:00 UTC NY-sessie: 2–2.5× avg range\n` +
+          `• SL minimaal 0.5× ATR14 verwijderd van huidige prijs\n` +
+          `• TP realistisch voor 13:00–17:00 UTC NY-sessie: 2–2.5× ATR14\n` +
           `• R:R streefniveau: 2.0. Dit is het bewezen optimum voor zowel bullish (EV=0.345) als ` +
           `bearish signalen (EV=0.448). Vermijd 2.5 specifiek — backtest toont EV-dip op dat ` +
           `niveau (0.207) door liquiditeitsstop-zones bij 2.5× ATR. Acceptabel bereik: 1.5–2.0. ` +
@@ -88,16 +84,16 @@ export async function assessRisk(
 
           `POSITIEGROOTTE (confidence × kwaliteit — pas in deze volgorde toe):\n` +
           `• Harde blokkade: setup-kwaliteitsscore <3 → altijd 'klein', skip verdere berekening\n` +
-          `• Basislijn op CEO-zekerheid: <60% → klein | 60-70% → normaal | >70% → groot\n` +
+          `• Basislijn op CEO-zekerheid: <65% → klein | 65-70% → normaal | >70% → groot\n` +
           `• Kwaliteitskorting (elk van onderstaande verlaagt één stap, minimum 'klein'):\n` +
-          `  – ATR-proxy < $15: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
-          `  – avg range > 30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +
+          `  – ATR14 < $13: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
+          `  – ATR14 > $30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +
           `  – Entry te laat of geen logisch SL/TP niveau: altijd 'klein'\n` +
           `• Kwaliteitsbonus (alle drie vereist, verhoogt één stap, maximum 'groot'):\n` +
-          `  – setupQualityScore ≥ 5/6 ÉN ATR-proxy ≥ $15 ÉN zekerheid ≥ 70%\n` +
+          `  – setupQualityScore ≥ 5/6 ÉN ATR14 ≥ $13 ÉN zekerheid ≥ 70%\n` +
           `• Vermeld in reasoning: basislijn, eventuele korting/bonus, eindadvies.\n` +
-          `  Voorbeeld: "Basislijn groot (72%), ATR $18 > $15 geen korting, score 5/6 bonus → GROOT"\n` +
-          `  Voorbeeld: "Basislijn normaal (65%), ATR $11 < $15 één stap omlaag → KLEIN"` +
+          `  Voorbeeld: "Basislijn groot (72%), ATR14 $18 > $13 geen korting, score 5/6 bonus → GROOT"\n` +
+          `  Voorbeeld: "Basislijn normaal (67%), ATR14 $11 < $13 één stap omlaag → KLEIN"` +
           `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,
       },
     ],
