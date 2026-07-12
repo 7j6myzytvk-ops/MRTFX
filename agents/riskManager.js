@@ -86,13 +86,18 @@ export async function assessRisk(
           `niveau (0.207) door liquiditeitsstop-zones bij 2.5× ATR. Acceptabel bereik: 1.5–2.0. ` +
           `Boven 2.5 alleen als er een duidelijke technische reden is (OB/FVG verder weg)\n\n` +
 
-          `POSITIEGROOTTE:\n` +
-          `• <60% zekerheid → klein\n` +
-          `• 60-70% → normaal\n` +
-          `• >70% → groot, TENZIJ avg range > 30 → dan één stap lager (te volatiel)\n` +
-          `• Setup-kwaliteitsscore <3 (zie hierboven) → altijd 'klein', ongeacht het zekerheidspercentage\n` +
-          `• Als geen verantwoorde entry mogelijk (SL te groot, geen logisch TP, te laat in beweging): ` +
-          `adviseer 'klein' en leg dit uit in je reasoning.` +
+          `POSITIEGROOTTE (confidence × kwaliteit — pas in deze volgorde toe):\n` +
+          `• Harde blokkade: setup-kwaliteitsscore <3 → altijd 'klein', skip verdere berekening\n` +
+          `• Basislijn op CEO-zekerheid: <60% → klein | 60-70% → normaal | >70% → groot\n` +
+          `• Kwaliteitskorting (elk van onderstaande verlaagt één stap, minimum 'klein'):\n` +
+          `  – ATR-proxy < $15: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
+          `  – avg range > 30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +
+          `  – Entry te laat of geen logisch SL/TP niveau: altijd 'klein'\n` +
+          `• Kwaliteitsbonus (alle drie vereist, verhoogt één stap, maximum 'groot'):\n` +
+          `  – setupQualityScore ≥ 5/6 ÉN ATR-proxy ≥ $15 ÉN zekerheid ≥ 70%\n` +
+          `• Vermeld in reasoning: basislijn, eventuele korting/bonus, eindadvies.\n` +
+          `  Voorbeeld: "Basislijn groot (72%), ATR $18 > $15 geen korting, score 5/6 bonus → GROOT"\n` +
+          `  Voorbeeld: "Basislijn normaal (65%), ATR $11 < $15 één stap omlaag → KLEIN"` +
           `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,
       },
     ],

@@ -8,7 +8,7 @@ import {
   getRecentXauD1Candles,
   getRecentXauW1Candles,
 } from '../services/marketData.js';
-import { checkConditions, isActiveSession } from '../services/conditionChecker.js';
+import { checkConditions, isActiveSession, isActiveDay } from '../services/conditionChecker.js';
 import { getBriefing, setBriefing, clearBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
@@ -17,6 +17,7 @@ import { getRecentSignals, getAllSignals } from '../data/store.js';
 import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
+import { checkFtmoLimits, formatFtmoStatus } from '../services/ftmoGuard.js';
 import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
 import {
   getConditionLog,
@@ -70,6 +71,9 @@ const commands = [
         .setMinValue(0)
         .setMaxValue(23),
     ),
+  new SlashCommandBuilder()
+    .setName('ftmo')
+    .setDescription('FTMO risk monitor: dagelijks verlies en totale drawdown vs limieten'),
   new SlashCommandBuilder()
     .setName('briefing')
     .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
@@ -149,7 +153,12 @@ export function createBot() {
         const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
         const { details, triggered, direction, blockers } = conditions;
 
+        const now = new Date();
+        const activeDay = isActiveDay(now);
+        const dagNamen = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+        const dagNaam = dagNamen[now.getUTCDay()];
         const sessionIcon = details.session ? '✅' : '❌';
+        const dagIcon = activeDay ? '✅' : '❌';
         const tfIcon = details.tfAlignment?.aligned ? '✅' : '❌';
         const trendIcon = details.trendBias?.aligned ? '✅' : '❌';
         const levelIcon = details.nearLevel?.near ? '✅' : '❌';
@@ -176,10 +185,11 @@ export function createBot() {
           : `\n\n_Geen macro-briefing actief. Gebruik /briefing om context in te stellen._`;
 
         await interaction.editReply(
-          `**XAU/USD Status — ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
+          `**XAU/USD Status — ${now.toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
           `Koers: $${price.price}\n\n` +
           `**Conditie-check:**\n` +
-          `${sessionIcon} Sessie (08:00-17:00 UTC): ${details.session ? 'actief' : 'inactief'}\n` +
+          `${dagIcon} Dag (${dagNaam}): ${activeDay ? 'actief' : 'maandag geblokkeerd (WR 40.9%)'}\n` +
+          `${sessionIcon} Sessie (13:00–17:00 UTC): ${details.session ? 'actief' : 'inactief'}\n` +
           `${tfIcon} TF-alignment: ${tfLine}\n` +
           `${trendIcon} D1/W1 trend: ${trendLine}\n` +
           `${levelIcon} Sleutelniveau: ${levelLine}\n` +
@@ -375,6 +385,17 @@ export function createBot() {
       return;
     }
 
+    if (interaction.commandName === 'ftmo') {
+      await interaction.deferReply();
+      try {
+        const check = await checkFtmoLimits();
+        await interaction.editReply(truncateForDiscord(formatFtmoStatus(check)));
+      } catch (err) {
+        await interaction.editReply(`FTMO-check mislukt: ${err.message}`);
+      }
+      return;
+    }
+
     if (interaction.commandName === 'performance') {
       await interaction.deferReply();
       try {
@@ -394,9 +415,24 @@ export function createBot() {
         }
 
         const stats = summarize(resolved);
+        const BACKTEST_WR = 53.4; // combo-filter, 87 triggers, Fase 51
+        const BACKTEST_N_MIN = 15; // minimaal N voor betrouwbare vergelijking
+        const wr = stats.winRate ?? 0;
+        const vrTarget = stats.trades >= BACKTEST_N_MIN
+          ? (wr >= BACKTEST_WR ? `✅ boven backtest-target (${BACKTEST_WR}%)` : `⚠️ onder backtest-target (${BACKTEST_WR}%)`)
+          : `📊 te weinig data voor vergelijking (min. ${BACKTEST_N_MIN})`;
+
+        const recentResolved = resolved.slice(-5);
+        const recentStats = summarize(recentResolved);
+        const recentLine = recentResolved.length > 0
+          ? `Laatste ${recentResolved.length} trades: WR ${recentStats.winRate ?? '-'}% (TP: ${recentStats.tp} / SL: ${recentStats.sl})`
+          : '';
+
         await interaction.editReply(
           `**Performance-overzicht**\n` +
-            `Afgeronde trades: ${stats.trades} (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) -> winRate ${stats.winRate}%\n` +
+            `Afgeronde trades: ${stats.trades} (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) → WR ${stats.winRate ?? '-'}%\n` +
+            `${vrTarget}\n` +
+            `${recentLine ? recentLine + '\n' : ''}` +
             `Gem. zekerheid TP: ${stats.avgConfidenceTp ?? '-'}% | SL: ${stats.avgConfidenceSl ?? '-'}%\n` +
             `Open: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}`,
         );

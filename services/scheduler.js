@@ -10,8 +10,9 @@ import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
-import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
+import { checkConditions, formatConditionContext, isActiveSession, isActiveDay } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
+import { checkFtmoLimits } from './ftmoGuard.js';
 import { recordConditionCheck } from './conditionDiagnostics.js';
 import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './eventMonitor.js';
 import { computeIndicators } from '../agents/indicators.js';
@@ -32,12 +33,13 @@ async function poll(client) {
   try {
     // Goedkope checks eerst — geen API-calls als ze falen
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
+    if (!isActiveDay()) return;
     if (!isActiveSession()) return;
 
-    // Dagelijkse heartbeat bij het begin van de sessie (08:xx UTC, 1x per dag)
+    // Dagelijkse heartbeat bij het begin van de NY-sessie (13:xx UTC, 1x per dag)
     const utcHour = new Date().getUTCHours();
     const todayStr = new Date().toISOString().slice(0, 10);
-    if (utcHour === 8 && lastHeartbeatDate !== todayStr) {
+    if (utcHour === 13 && lastHeartbeatDate !== todayStr) {
       lastHeartbeatDate = todayStr;
       await sendHeartbeat(client, lastSignalTime);
     }
@@ -60,6 +62,16 @@ async function poll(client) {
     await recordConditionCheck(conditions).catch((err) => {
       console.error('[conditionDiagnostics] Kon conditie-log niet schrijven:', err.message);
     });
+
+    // FTMO-limiet check — blokkeer boardroom als dagelijks/totaal verlies te groot is
+    const ftmo = await checkFtmoLimits();
+    if (ftmo.blocked) {
+      console.warn(`[FTMO] Geblokkeerd: ${ftmo.blockers.join(' | ')}`);
+      return;
+    }
+    if (ftmo.warnings.length > 0) {
+      console.warn(`[FTMO] Waarschuwing: ${ftmo.warnings.join(' | ')}`);
+    }
 
     // --- Pad 1: condition-based setup ---
     if (conditions.triggered) {
