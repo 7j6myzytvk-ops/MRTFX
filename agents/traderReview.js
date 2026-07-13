@@ -36,6 +36,7 @@ export function buildReviewPrompt(ctx) {
     ftmoTotal,
     ftmoDrawdown,
     ftmoTrades,
+    recentVideos,
   } = ctx;
 
   const blockerText = dominantBlockers.length > 0
@@ -45,6 +46,10 @@ export function buildReviewPrompt(ctx) {
   const signalText = signalLines.length > 0
     ? signalLines.join('\n')
     : 'Geen boardroom-signalen vandaag.';
+
+  const videoText = recentVideos && recentVideos.length > 0
+    ? recentVideos.map((v) => `• "${v.title}" (${v.channel}, ${v.published?.slice(0, 10) ?? '?'})`).join('\n')
+    : null;
 
   return (
     `DAGRAPPORT ${dateStr} (${dayName})\n` +
@@ -57,6 +62,7 @@ export function buildReviewPrompt(ctx) {
     `\n` +
     `FTMO vandaag: ${ftmoToday >= 0 ? '+' : ''}${ftmoToday.toFixed(1)}% (${ftmoTrades} trades) | ` +
     `totaal: ${ftmoTotal >= 0 ? '+' : ''}${ftmoTotal.toFixed(1)}% | drawdown: ${ftmoDrawdown.toFixed(1)}%\n` +
+    (videoText ? `\nRecente YouTube-video's (ter context, niet als handelssignaal):\n${videoText}\n` : '') +
     `\n` +
     `Geef je review in dit formaat:\n` +
     `**Sessie:** [wat de cijfers vertellen]\n` +

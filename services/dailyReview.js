@@ -4,6 +4,7 @@ import { getConditionLog, filterConditionLog, summarizeConditionLog } from './co
 import { getFtmoStats } from './ftmoGuard.js';
 import { runTraderReview, DAY_NAMES } from '../agents/traderReview.js';
 import { truncateForDiscord } from './boardroomReporter.js';
+import { getRecentVideos } from './youtubeMonitor.js';
 
 function todayUtcRange() {
   const now = new Date();
@@ -66,6 +67,9 @@ export async function runDailyReview(client) {
   // FTMO
   const ftmoStats = await getFtmoStats();
 
+  // Recente YouTube-video's (laatste 7 dagen) als extra marktcontext
+  const recentVideos = await getRecentVideos(7).catch(() => []);
+
   const ctx = {
     dateStr,
     dayName,
@@ -81,6 +85,7 @@ export async function runDailyReview(client) {
     ftmoTotal: ftmoStats.totalPnL,
     ftmoDrawdown: ftmoStats.maxDrawdown,
     ftmoTrades: ftmoStats.todayTrades,
+    recentVideos,
   };
 
   const review = await runTraderReview(ctx);
