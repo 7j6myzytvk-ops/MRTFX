@@ -84,8 +84,8 @@ export function assessSignalQuality(sample) {
 
   const blockers = [];
 
-  if (sample.decision.confidence < 65) {
-    blockers.push('CEO-zekerheid onder 65%');
+  if (sample.decision.confidence < 58) {
+    blockers.push('CEO-zekerheid onder 58%');
   }
   if (classifyMacroAlignment(sample) === 'contrarian') {
     blockers.push('macro contraireert de richting');

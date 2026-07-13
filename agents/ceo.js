@@ -105,7 +105,7 @@ export async function decide(
           `Gebruik dat getal als harde grens:\n` +
           `• Score <3 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
           `Een richting zien is niet hetzelfde als een setup hebben.\n` +
-          `• Score 3–4 → maximaal 65% zekerheid; wees selectief\n` +
+          `• Score 3–4 → maximaal 72% zekerheid; wees selectief\n` +
           `• Score 5–6 → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n\n` +
 
           `BESLISSINGSGEWICHTEN:\n` +
@@ -127,7 +127,7 @@ export async function decide(
           `• Verdeeld of meerdere conflicten → neutraal; forceer geen richting\n\n` +
 
           `VASTE DREMPELS:\n` +
-          `1) Minimaal 65% zekerheid vereist voor directioneel signaal — onder 65% altijd neutraal\n` +
+          `1) Minimaal 58% zekerheid vereist voor directioneel signaal — onder 58% altijd neutraal\n` +
           `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +
           `onomwonden dezelfde richting steunen\n` +
           `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht: ` +
