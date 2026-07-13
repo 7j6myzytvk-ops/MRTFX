@@ -238,12 +238,36 @@ export function createBot() {
           await interaction.editReply('Nog geen signalen gelogd.');
           return;
         }
-        const lines = signals.map(
-          (s) =>
-            `${s.timestamp} - **${s.decision.signal.toUpperCase()}** (${s.decision.confidence}%) - ` +
-            `SL ${s.decision.stopLoss} / TP ${s.decision.takeProfit} (${s.decision.positionSize}) - ${formatOutcome(s.outcome)}`,
-        );
-        await interaction.editReply(lines.join('\n'));
+        const lines = signals.map((s) => {
+          const ts = s.timestamp
+            ? new Date(s.timestamp).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
+            : '?';
+          const sig = s.decision.signal.toUpperCase();
+          const conf = s.decision.confidence;
+          const score = s.discussion?.analyst?.setupQualityScore;
+          const scoreTag = score != null ? ` [${score}/6]` : '';
+          const outcome = formatOutcome(s.outcome);
+
+          const passed = s.qualityResult?.passed;
+          const blockers = s.qualityResult?.blockers ?? [];
+          let qualityTag;
+          if (s.decision.signal === 'neutral') {
+            qualityTag = '💤 neutraal';
+          } else if (passed === true) {
+            qualityTag = '✅ geadviseerd';
+          } else if (passed === false) {
+            qualityTag = `🔶 gefilterd${blockers.length ? ': ' + blockers[0] : ''}`;
+          } else {
+            qualityTag = '';
+          }
+
+          return (
+            `**${sig}** ${conf}%${scoreTag} | ${ts}\n` +
+            `  SL ${s.decision.stopLoss} / TP ${s.decision.takeProfit} (${s.decision.positionSize}) | ${outcome}\n` +
+            (qualityTag ? `  ${qualityTag}` : '')
+          );
+        });
+        await interaction.editReply(truncateForDiscord(lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Kon geschiedenis niet ophalen: ${err.message}`);
       }

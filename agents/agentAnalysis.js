@@ -58,7 +58,8 @@ export function classifyRiskReward(sample) {
   const rr = reward / risk;
   if (rr < 1.5) return '<1.5';
   if (rr <= 3.0) return '1.5-3.0';
-  return '>3.0';
+  if (rr <= 5.0) return '3.0-5.0';
+  return '>5.0';
 }
 
 // Premium-signaal: analist won vertrouwen na de teamdiscussie (rebuttal shift omhoog)
@@ -93,8 +94,8 @@ export function assessSignalQuality(sample) {
   if (classifyRebuttalShift(sample) === 'omlaag') {
     blockers.push('analist verloor vertrouwen na discussie');
   }
-  if (sample.entryPrice != null && classifyRiskReward(sample) === '>3.0') {
-    blockers.push('risico/winst-verhouding te ambitieus (>3.0)');
+  if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
+    blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
   }
   if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');

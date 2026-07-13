@@ -4,7 +4,7 @@ import { challengeAnalysis } from './devilsAdvocate.js';
 import { assessSentiment } from './macroAnalyst.js';
 import { decide } from './ceo.js';
 import { fetchForexFactoryEvents, getUpcomingEvents, getRecentlyReleasedEvents, formatEventsNote } from './economicCalendar.js';
-import { computeIndicators, formatIndicatorsNote } from './indicators.js';
+import { computeIndicators, formatIndicatorsNote, atr } from './indicators.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
@@ -32,6 +32,10 @@ export async function runDiscussion(
   const events = upcomingEvts; // backward compat: agents ontvangen aankomende events via opts.events
   const eventsNote = formatEventsNote(upcomingEvts, recentEvts);
   const indicators = computeIndicators(candles);
+  const atrPrev = candles.length > 19 ? atr(candles.slice(0, -5), 14) : null;
+  const atrTrend = (indicators.atr14 != null && atrPrev != null)
+    ? (indicators.atr14 > atrPrev * 1.05 ? 'stijgend' : indicators.atr14 < atrPrev * 0.95 ? 'dalend' : 'stabiel')
+    : null;
   const indicatorsNote = formatIndicatorsNote(indicators);
   const dollarContextNote =
     dollarCandles && dollarCandles.length >= 2 ? formatDollarContextNote(computeDollarContext(dollarCandles)) : '';
@@ -60,7 +64,7 @@ export async function runDiscussion(
   const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote;
 
   const perfStats = await getCeoPerformanceBriefing();
-  const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats);
+  const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats, atrTrend);
   const streakNote = formatRiskStreakNote(perfStats);
 
   const opts = { instrument, granularity, events, newsContext, contextNotes };

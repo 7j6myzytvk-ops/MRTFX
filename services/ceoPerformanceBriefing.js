@@ -16,6 +16,23 @@ async function readRecentSignals() {
   }
 }
 
+async function readWeeklyDirectionalSignals() {
+  try {
+    const raw = await readFile(SIGNALS_FILE, 'utf-8');
+    const signals = JSON.parse(raw);
+    const now = new Date();
+    const daysFromMonday = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1;
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - daysFromMonday);
+    monday.setUTCHours(0, 0, 0, 0);
+    return signals.filter(
+      (s) => s.timestamp && s.decision?.signal !== 'neutral' && new Date(s.timestamp) >= monday,
+    );
+  } catch {
+    return [];
+  }
+}
+
 // Pure functies — exporteer apart zodat ze unit-testbaar zijn zonder bestandsaccess.
 
 export function computeStreak(signals) {
@@ -41,14 +58,14 @@ export function computeBriefingStats(signals) {
 }
 
 export async function getCeoPerformanceBriefing() {
-  const recent = await readRecentSignals();
-  return computeBriefingStats(recent);
+  const [recent, weekly] = await Promise.all([readRecentSignals(), readWeeklyDirectionalSignals()]);
+  return { ...computeBriefingStats(recent), weeklyCount: weekly.length };
 }
 
-export function formatCeoPerformanceBriefingNote(stats) {
+export function formatCeoPerformanceBriefingNote(stats, atrTrend = null) {
   if (!stats) return '';
 
-  const { n, tp, sl, winRate, streak } = stats;
+  const { n, tp, sl, winRate, streak, weeklyCount } = stats;
 
   const wrNote =
     winRate === null
@@ -72,9 +89,25 @@ export function formatCeoPerformanceBriefingNote(stats) {
     }
   }
 
+  const weeklyNote = weeklyCount != null
+    ? weeklyCount === 0
+      ? `\nDeze week nog geen directioneel signaal afgegeven.`
+      : weeklyCount >= 3
+        ? `\n⚠️ WEEKFREQUENTIE: al ${weeklyCount} directionele signalen deze week. Verhoog je drempel — kwaliteit boven kwantiteit.`
+        : `\nDeze week al ${weeklyCount} directioneel signaal${weeklyCount > 1 ? 'en' : ''} afgegeven.`
+    : '';
+
+  const atrNote = atrTrend
+    ? atrTrend === 'stijgend'
+      ? `\nATR-trend: stijgend — volatiliteit neemt toe; SL/TP-niveaus zijn realistischer.`
+      : atrTrend === 'dalend'
+        ? `\nATR-trend: dalend — markt kalmeert; wees terughoudend met smalle SL/TP.`
+        : `\nATR-trend: stabiel.`
+    : '';
+
   return (
     `\n\nCHIEF OF STAFF — PRE-VERGADERING PERFORMANCE BRIEFING:\n` +
-    `Laatste ${n} afgeronde signalen: ${tp} TP / ${sl} SL. ${wrNote}${streakMsg}\n` +
+    `Laatste ${n} afgeronde signalen: ${tp} TP / ${sl} SL. ${wrNote}${streakMsg}${weeklyNote}${atrNote}\n` +
     `Gebruik dit als tiebreaker bij twijfel — laat het je analyse niet vervangen.`
   );
 }
