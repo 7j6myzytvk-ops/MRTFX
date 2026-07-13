@@ -37,6 +37,10 @@ export function buildReviewPrompt(ctx) {
     ftmoDrawdown,
     ftmoTrades,
     recentVideos,
+    weekAdvisedCount,
+    weekTp,
+    weekSl,
+    weekWr,
   } = ctx;
 
   const blockerText = dominantBlockers.length > 0
@@ -51,6 +55,11 @@ export function buildReviewPrompt(ctx) {
     ? recentVideos.map((v) => `• "${v.title}" (${v.channel}, ${v.published?.slice(0, 10) ?? '?'})`).join('\n')
     : null;
 
+  const weekLine = weekAdvisedCount != null
+    ? `Week t/m vandaag: ${weekAdvisedCount} geadviseerde signalen | TP: ${weekTp ?? 0} / SL: ${weekSl ?? 0}` +
+      (weekWr != null ? ` → WR ${weekWr}%` : ' (geen afgeronde trades)') + '\n'
+    : '';
+
   return (
     `DAGRAPPORT ${dateStr} (${dayName})\n` +
     `Sessie 13:00–17:00 UTC: ${sessionPolls} polls | ${triggered} condition-triggers | ${boardroomRuns} boardroom-runs\n` +
@@ -60,6 +69,7 @@ export function buildReviewPrompt(ctx) {
     `\n` +
     `Signalen:\n${signalText}\n` +
     `\n` +
+    weekLine +
     `FTMO vandaag: ${ftmoToday >= 0 ? '+' : ''}${ftmoToday.toFixed(1)}% (${ftmoTrades} trades) | ` +
     `totaal: ${ftmoTotal >= 0 ? '+' : ''}${ftmoTotal.toFixed(1)}% | drawdown: ${ftmoDrawdown.toFixed(1)}%\n` +
     (videoText ? `\nRecente YouTube-video's (ter context, niet als handelssignaal):\n${videoText}\n` : '') +

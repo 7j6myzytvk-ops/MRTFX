@@ -94,6 +94,14 @@ export async function decide(
               (geopolitical.keyEvents?.length
                 ? ` | Key events: ${geopolitical.keyEvents.join('; ')}`
                 : '') +
+              (geopolitical.sellTheNewsRisk && geopolitical.sellTheNewsRisk !== 'n.v.t.'
+                ? ` | "Sell the news"-risico: ${geopolitical.sellTheNewsRisk} — ` +
+                  (geopolitical.sellTheNewsRisk === 'hoog'
+                    ? `event grotendeels ingeprijsd, reversal-risico aanwezig`
+                    : geopolitical.sellTheNewsRisk === 'matig'
+                      ? `event deels ingeprijsd, wees alert op afnemend momentum`
+                      : `event vers (<4u), impact nog lopend`)
+                : '') +
               `\n→ Beoordeelt: geopolitieke news-events en nabije event-risico's die de setup kunnen omverwerpen.\n\n`
             : '') +
           `[F] MARKTSTRUCTUUR-ANALIST (weerwoord na discussie): signaal "${rebuttal.signal}" ` +

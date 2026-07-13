@@ -17,7 +17,7 @@ import { getRecentSignals, getAllSignals } from '../data/store.js';
 import { startSignalScheduler } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
-import { checkFtmoLimits, formatFtmoStatus } from '../services/ftmoGuard.js';
+import { checkFtmoLimits, formatFtmoStatus, getFtmoStats } from '../services/ftmoGuard.js';
 import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
 import {
   getConditionLog,
@@ -74,6 +74,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('ftmo')
     .setDescription('FTMO risk monitor: dagelijks verlies en totale drawdown vs limieten'),
+  new SlashCommandBuilder()
+    .setName('today')
+    .setDescription('Dagoverzicht: sessie-activiteit, signalen en FTMO-stand van vandaag'),
   new SlashCommandBuilder()
     .setName('week')
     .setDescription('Wekelijks overzicht: hoeveel signalen, richting, uitkomsten en winrate deze week'),
@@ -273,6 +276,71 @@ export function createBot() {
         await interaction.editReply(truncateForDiscord(lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Kon geschiedenis niet ophalen: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'today') {
+      await interaction.deferReply();
+      try {
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10);
+        const from = `${dateStr}T00:00:00.000Z`;
+        const to = `${dateStr}T23:59:59.999Z`;
+        const sessionFrom = `${dateStr}T13:00:00.000Z`;
+        const sessionTo = `${dateStr}T17:00:00.000Z`;
+
+        const [allSignals, allLog, ftmoStats] = await Promise.all([
+          getAllSignals(),
+          getConditionLog(),
+          getFtmoStats(),
+        ]);
+
+        const todaySignals = allSignals.filter((s) => s.timestamp >= from && s.timestamp <= to);
+        const sessionLog = filterConditionLog(allLog, { from: sessionFrom, to: sessionTo });
+        const logSummary = summarizeConditionLog(sessionLog);
+
+        const passed = todaySignals.filter((s) => s.qualityResult?.passed !== false && s.decision?.signal !== 'neutral').length;
+        const filtered = todaySignals.filter((s) => s.qualityResult?.passed === false).length;
+        const neutral = todaySignals.filter((s) => s.decision?.signal === 'neutral').length;
+
+        const signalLines = todaySignals.map((s) => {
+          const time = s.timestamp.slice(11, 16) + ' UTC';
+          const dir = s.decision?.signal?.toUpperCase() ?? '?';
+          const conf = s.decision?.confidence ?? '?';
+          const score = s.discussion?.analyst?.setupQualityScore;
+          const scoreTag = score != null ? ` [${score}/6]` : '';
+          const status = s.qualityResult?.passed === false
+            ? `🔶 ${(s.qualityResult.blockers ?? []).slice(0, 1).join(', ')}`
+            : s.decision?.signal === 'neutral' ? '💤 neutraal' : '✅ geadviseerd';
+          const outcome = s.outcome?.result && s.outcome.result !== 'open'
+            ? ` → ${s.outcome.result.toUpperCase()}` : '';
+          return `• ${time} **${dir}** ${conf}%${scoreTag} | ${status}${outcome}`;
+        });
+
+        const sessionNow = now.getUTCHours() >= 13 && now.getUTCHours() < 17;
+        const sessionStatus = sessionNow
+          ? `🟢 actief (nog ${(17 - now.getUTCHours()) * 60 - now.getUTCMinutes()} min)`
+          : now.getUTCHours() < 13 ? `⏳ start om 13:00 UTC` : `✅ afgelopen`;
+
+        const ftmoLine = `${ftmoStats.todayPnL >= 0 ? '+' : ''}${ftmoStats.todayPnL.toFixed(1)}% vandaag (${ftmoStats.todayTrades} trades) | totaal ${ftmoStats.totalPnL >= 0 ? '+' : ''}${ftmoStats.totalPnL.toFixed(1)}%`;
+
+        const signalBlock = signalLines.length > 0
+          ? signalLines.join('\n')
+          : '_Nog geen boardroom-runs vandaag._';
+
+        await interaction.editReply(
+          truncateForDiscord(
+            `**📅 Vandaag — ${dateStr}**\n` +
+            `Sessie: ${sessionStatus}\n` +
+            `Polls: ${logSummary.n} | Triggers: ${logSummary.triggered} | Boardroom: ${todaySignals.length} runs\n` +
+            `✅ ${passed} geadviseerd | 🔶 ${filtered} gefilterd | 💤 ${neutral} neutraal\n\n` +
+            `**Signalen:**\n${signalBlock}\n\n` +
+            `**FTMO:** ${ftmoLine}`,
+          ),
+        );
+      } catch (err) {
+        await interaction.editReply(`Dagoverzicht mislukt: ${err.message}`);
       }
       return;
     }

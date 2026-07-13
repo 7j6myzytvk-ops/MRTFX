@@ -70,6 +70,18 @@ export async function runDailyReview(client) {
   // Recente YouTube-video's (laatste 7 dagen) als extra marktcontext
   const recentVideos = await getRecentVideos(7).catch(() => []);
 
+  // Weekcontext: geef de reviewer longitudinaal perspectief
+  const now2 = new Date();
+  const daysFromMonday = now2.getUTCDay() === 0 ? 6 : now2.getUTCDay() - 1;
+  const monday = new Date(now2);
+  monday.setUTCDate(now2.getUTCDate() - daysFromMonday);
+  monday.setUTCHours(0, 0, 0, 0);
+  const weekSignals = allSignals.filter((s) => s.timestamp && s.timestamp >= monday.toISOString());
+  const weekAdvised = weekSignals.filter((s) => s.qualityResult?.passed !== false && s.decision?.signal !== 'neutral');
+  const weekTp = weekAdvised.filter((s) => s.outcome?.result === 'tp').length;
+  const weekSl = weekAdvised.filter((s) => s.outcome?.result === 'sl').length;
+  const weekWr = (weekTp + weekSl) > 0 ? Math.round((weekTp / (weekTp + weekSl)) * 100) : null;
+
   const ctx = {
     dateStr,
     dayName,
@@ -86,6 +98,10 @@ export async function runDailyReview(client) {
     ftmoDrawdown: ftmoStats.maxDrawdown,
     ftmoTrades: ftmoStats.todayTrades,
     recentVideos,
+    weekAdvisedCount: weekAdvised.length,
+    weekTp,
+    weekSl,
+    weekWr,
   };
 
   const review = await runTraderReview(ctx);
