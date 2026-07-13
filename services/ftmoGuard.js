@@ -16,15 +16,29 @@ function riskPct(positionSize) {
   return RISK_PCT[positionSize] ?? RISK_PCT.normaal;
 }
 
+// Parseert entry-zone string ("$4066-$4074") naar het midpoint.
+function parseEntryMidpoint(decision, entryPrice) {
+  if (!decision?.entryZone) return entryPrice;
+  const clean = decision.entryZone.replace(/\$/g, '').replace(/\s/g, '');
+  const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
+  if (!match) return entryPrice;
+  const mid = (parseFloat(match[1]) + parseFloat(match[2])) / 2;
+  return isNaN(mid) ? entryPrice : mid;
+}
+
 function pnlForSignal(signal) {
+  // Gefilterde signalen zijn nooit gehandeld — tellen niet mee voor FTMO-statistieken.
+  if (signal.qualityResult?.passed === false) return null;
+
   const { outcome, decision, entryPrice } = signal;
   if (!outcome || !['tp', 'sl'].includes(outcome.result)) return null;
   const risk = riskPct(decision?.positionSize);
 
   let rr = FALLBACK_RR;
-  if (entryPrice && decision?.takeProfit && decision?.stopLoss) {
-    const reward = Math.abs(decision.takeProfit - entryPrice);
-    const riskAmt = Math.abs(entryPrice - decision.stopLoss);
+  const entry = parseEntryMidpoint(decision, entryPrice);
+  if (entry && decision?.takeProfit && decision?.stopLoss) {
+    const reward = Math.abs(decision.takeProfit - entry);
+    const riskAmt = Math.abs(entry - decision.stopLoss);
     if (riskAmt > 0) rr = reward / riskAmt;
   }
 

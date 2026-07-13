@@ -38,10 +38,23 @@ export function classifyConfidenceBucket(sample) {
   return '>70%';
 }
 
+// Parseert entry-zone string ("$4066-$4074") naar het midpoint.
+// Valt terug op entryPrice (slotkoers) als de zone ontbreekt of niet parseerbaar is.
+function parseEntryMidpoint(decision, entryPrice) {
+  if (!decision?.entryZone) return entryPrice;
+  const clean = decision.entryZone.replace(/\$/g, '').replace(/\s/g, '');
+  const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
+  if (!match) return entryPrice;
+  const mid = (parseFloat(match[1]) + parseFloat(match[2])) / 2;
+  return isNaN(mid) ? entryPrice : mid;
+}
+
 export function classifyRiskReward(sample) {
   const { entryPrice, decision } = sample;
-  const reward = Math.abs(decision.takeProfit - entryPrice);
-  const risk = Math.abs(entryPrice - decision.stopLoss);
+  const entry = parseEntryMidpoint(decision, entryPrice);
+  const reward = Math.abs(decision.takeProfit - entry);
+  const risk = Math.abs(entry - decision.stopLoss);
+  if (risk === 0) return '<1.5';
   const rr = reward / risk;
   if (rr < 1.5) return '<1.5';
   if (rr <= 3.0) return '1.5-3.0';
@@ -53,6 +66,7 @@ export function classifyRiskReward(sample) {
 // deze combinatie samenhangt met de hoogste WR. Score < 5 of shift niet omhoog = geen combo.
 export function isComboSignal(sample) {
   return (
+    sample.decision?.signal !== 'neutral' &&
     classifyRebuttalShift(sample) === 'omhoog' &&
     (sample.discussion?.analyst?.setupQualityScore ?? 0) >= 5
   );

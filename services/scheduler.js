@@ -80,7 +80,6 @@ async function poll(client) {
     // --- Pad 1: condition-based setup ---
     if (conditions.triggered) {
       console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
-      lastSignalTime = Date.now();
 
       const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
       const yieldCandles = await getRecentUsYieldCandles({ count: 25 });
@@ -95,7 +94,14 @@ async function poll(client) {
         w1Candles,
         newsItems,
         newsContext: conditionContext,
+        triggerType: 'condition',
       });
+
+      // Cooldown alleen bij een directionale beslissing (bullish/bearish).
+      // Neutrale CEO-beslissing ("geen actie") blokkeert de rest van de sessie niet.
+      if (result.decision.signal !== 'neutral') {
+        lastSignalTime = Date.now();
+      }
 
       await reportToDiscord(client, result);
       return;
@@ -129,6 +135,7 @@ async function poll(client) {
       w1Candles,
       newsItems,
       newsContext: spikeContext,
+      triggerType: 'spike',
     });
 
     await reportToDiscord(client, spikeResult);

@@ -414,26 +414,36 @@ export function createBot() {
           return;
         }
 
-        const stats = summarize(resolved);
+        // Scheid geadviseerde (passed) van gefilterde (blocked) signalen
+        const advised = resolved.filter((s) => s.qualityResult?.passed !== false);
+        const filtered = resolved.filter((s) => s.qualityResult?.passed === false);
+
+        const stats = summarize(advised);
+        const filteredStats = summarize(filtered);
         const BACKTEST_WR = 44.8; // combo-filter, 87 triggers @ R:R 2.0, Fase 55
-        const BACKTEST_N_MIN = 15; // minimaal N voor betrouwbare vergelijking
+        const BACKTEST_N_MIN = 15;
         const wr = stats.winRate ?? 0;
         const vrTarget = stats.trades >= BACKTEST_N_MIN
           ? (wr >= BACKTEST_WR ? `✅ boven backtest-target (${BACKTEST_WR}%)` : `⚠️ onder backtest-target (${BACKTEST_WR}%)`)
           : `📊 te weinig data voor vergelijking (min. ${BACKTEST_N_MIN})`;
 
-        const recentResolved = resolved.slice(-5);
-        const recentStats = summarize(recentResolved);
-        const recentLine = recentResolved.length > 0
-          ? `Laatste ${recentResolved.length} trades: WR ${recentStats.winRate ?? '-'}% (TP: ${recentStats.tp} / SL: ${recentStats.sl})`
+        const recentAdvised = advised.slice(-5);
+        const recentStats = summarize(recentAdvised);
+        const recentLine = recentAdvised.length > 0
+          ? `Laatste ${recentAdvised.length} geadviseerd: WR ${recentStats.winRate ?? '-'}% (TP: ${recentStats.tp} / SL: ${recentStats.sl})`
+          : '';
+
+        const filteredLine = filtered.length > 0
+          ? `\n*Gefilterde signalen (niet gehandeld): ${filteredStats.trades} trades → WR ${filteredStats.winRate ?? '-'}% (TP: ${filteredStats.tp} / SL: ${filteredStats.sl})*`
           : '';
 
         await interaction.editReply(
           `**Performance-overzicht**\n` +
-            `Afgeronde trades: ${stats.trades} (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) → WR ${stats.winRate ?? '-'}%\n` +
+            `**Geadviseerde signalen:** ${stats.trades} trades (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) → WR ${stats.winRate ?? '-'}%\n` +
             `${vrTarget}\n` +
             `${recentLine ? recentLine + '\n' : ''}` +
-            `Gem. zekerheid TP: ${stats.avgConfidenceTp ?? '-'}% | SL: ${stats.avgConfidenceSl ?? '-'}%\n` +
+            `Gem. zekerheid TP: ${stats.avgConfidenceTp ?? '-'}% | SL: ${stats.avgConfidenceSl ?? '-'}%` +
+            `${filteredLine}\n` +
             `Open: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}`,
         );
       } catch (err) {

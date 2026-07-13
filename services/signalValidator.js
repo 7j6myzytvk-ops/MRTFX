@@ -67,6 +67,15 @@ export function validateSignalStructure(result) {
         issues.push(`INCONSISTENTIE: bearish maar SL ${decision.stopLoss} <= entryPrice ${entryPrice}`);
       }
     }
+    // SL/TP onderlinge richting-check
+    if (typeof decision?.stopLoss === 'number' && typeof decision?.takeProfit === 'number') {
+      if (signal === 'bullish' && decision.takeProfit <= decision.stopLoss) {
+        issues.push(`INCONSISTENTIE: bullish maar TP ${decision.takeProfit} <= SL ${decision.stopLoss}`);
+      }
+      if (signal === 'bearish' && decision.takeProfit >= decision.stopLoss) {
+        issues.push(`INCONSISTENTIE: bearish maar TP ${decision.takeProfit} >= SL ${decision.stopLoss}`);
+      }
+    }
   }
 
   const warnings = issues.filter(i => i.startsWith('setupQualityScore ontbreekt'));

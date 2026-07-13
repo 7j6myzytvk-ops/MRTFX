@@ -192,6 +192,15 @@ check(
   }),
   false,
 );
+check(
+  'omhoog + score 5 + neutraal CEO -> geen combo (CEO zegt geen actie)',
+  isComboSignal({
+    discussion: { analyst: { confidence: 60, setupQualityScore: 5 }, analystRebuttal: { confidence: 70 } },
+    entryPrice: 4350,
+    decision: { signal: 'neutral', takeProfit: 4400, stopLoss: 4330 },
+  }),
+  false,
+);
 
 // --- breakdown ---
 {
