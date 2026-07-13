@@ -31,6 +31,10 @@ let lastHeartbeatDate = null;
 
 async function poll(client) {
   try {
+    // Uitkomsten van openstaande signalen evalueren — ook buiten de sessie en tijdens cooldown.
+    // Zo missen we nooit een TP/SL-hit van een gefilterd of eerder signaal.
+    await evaluateOpenSignals(client);
+
     if (!isActiveSession()) return;
 
     // Dagelijkse heartbeat bij het begin van de NY-sessie (13:xx UTC, 1x per dag)
@@ -41,11 +45,7 @@ async function poll(client) {
       await sendHeartbeat(client, lastSignalTime);
     }
 
-    // Uitkomsten van openstaande signalen altijd evalueren — ook tijdens cooldown
-    // en ook voor gefilterde signalen. Zo missen we nooit een TP/SL-hit.
-    await evaluateOpenSignals(client);
-
-    // Geen nieuwe trigger mogelijk tijdens cooldown, maar outcome-evaluatie hierboven loopt door.
+    // Geen nieuwe trigger mogelijk tijdens cooldown.
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
