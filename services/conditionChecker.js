@@ -67,7 +67,8 @@ export function checkConditions({
 
   // 5. Sleutelniveau-proximity — zachte voorkeur, geen harde blokkade.
   // Agents ontvangen dit als context en wegen het mee in hun setupQualityScore.
-  const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles);
+  // d1Candles meegeven zodat vorige dag high/low en H1 swing levels ook gedetecteerd worden.
+  const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
 
   const triggered = blockers.length === 0;
   const direction = tfAlignment.direction;

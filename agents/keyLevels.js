@@ -54,20 +54,50 @@ export function isNearKeyLevel(currentPrice, keyLevels, atr, threshold = 0.5) {
   };
 }
 
+// Detecteert recente H1 swing highs en swing lows (lokale extrema).
+// Swing high: hogere high dan beide buurcandles. Swing low: lagere low.
+// lookback = hoeveel H1-candles terugkijken voor dynamische niveaus.
+export function computeSwingLevels(h1Candles, lookback = 30) {
+  if (!h1Candles || h1Candles.length < 5) return [];
+  const window = h1Candles.slice(-Math.min(lookback, h1Candles.length));
+  const levels = [];
+  for (let i = 1; i < window.length - 1; i++) {
+    if (window[i].high > window[i - 1].high && window[i].high > window[i + 1].high) {
+      levels.push({ level: window[i].high, type: 'swing_high', label: 'H1 swing high' });
+    }
+    if (window[i].low < window[i - 1].low && window[i].low < window[i + 1].low) {
+      levels.push({ level: window[i].low, type: 'swing_low', label: 'H1 swing low' });
+    }
+  }
+  return levels;
+}
+
+// Vorige dag high/low — klassiek ICT-niveau voor liquidity grabs en AMD-fase.
+export function computePreviousDayLevels(d1Candles) {
+  if (!d1Candles || d1Candles.length < 2) return [];
+  const prev = d1Candles[d1Candles.length - 2];
+  return [
+    { level: prev.high, type: 'prev_day_high', label: 'Vorige dag high' },
+    { level: prev.low,  type: 'prev_day_low',  label: 'Vorige dag low'  },
+  ];
+}
+
 // Berekent alle relevante sleutelniveaus voor de huidige prijs.
-export function getAllKeyLevels(currentPrice, weeklyCandles) {
+export function getAllKeyLevels(currentPrice, weeklyCandles, h1Candles = null, d1Candles = null) {
   return [
     ...computeWeeklyLevels(weeklyCandles),
     ...computeRoundLevels(currentPrice),
+    ...(h1Candles ? computeSwingLevels(h1Candles) : []),
+    ...(d1Candles ? computePreviousDayLevels(d1Candles) : []),
   ];
 }
 
 // Bepaalt of de prijs nabij een sleutelniveau zit, op basis van H1-candles.
-export function checkKeyLevelProximity(h1Candles, weeklyCandles) {
+export function checkKeyLevelProximity(h1Candles, weeklyCandles, d1Candles = null) {
   if (!h1Candles || h1Candles.length === 0) return { near: false };
   const currentPrice = h1Candles[h1Candles.length - 1].close;
   const indicators = computeIndicators(h1Candles);
   const atr = indicators.atr14;
-  const levels = getAllKeyLevels(currentPrice, weeklyCandles);
+  const levels = getAllKeyLevels(currentPrice, weeklyCandles, h1Candles, d1Candles);
   return isNearKeyLevel(currentPrice, levels, atr);
 }

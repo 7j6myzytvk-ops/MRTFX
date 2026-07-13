@@ -34,9 +34,33 @@ function formatDecisionBody(decision) {
   );
 }
 
-export function formatCeoMessage(decision, comboSignal = false, qualityResult = { passed: true, blockers: [] }) {
+function computeAlertContext(result) {
+  const setupScore = result.discussion?.analyst?.setupQualityScore ?? null;
+  const entryPrice = result.entryPrice;
+  const { stopLoss, takeProfit } = result.decision;
+  let rr = null;
+  if (entryPrice && stopLoss && takeProfit) {
+    const risk = Math.abs(entryPrice - stopLoss);
+    const reward = Math.abs(takeProfit - entryPrice);
+    if (risk > 0) rr = (reward / risk).toFixed(1);
+  }
+  const now = new Date();
+  const sessionEnd = new Date(now);
+  sessionEnd.setUTCHours(17, 0, 0, 0);
+  const minutesLeft = Math.floor((sessionEnd - now) / 60000);
+  const sessionNote = minutesLeft > 0 ? `${minutesLeft} min` : null;
+  return { setupScore, rr, sessionNote };
+}
+
+export function formatCeoMessage(decision, comboSignal = false, qualityResult = { passed: true, blockers: [] }, context = {}) {
   const marker = formatSetupMarker(decision.signal, comboSignal, qualityResult);
-  let msg = `**👔 CEO-besluit - ${marker}**\n${formatDecisionBody(decision)}`;
+  const { setupScore, rr, sessionNote } = context;
+  const metaParts = [];
+  if (setupScore != null) metaParts.push(`Setup: ${setupScore}/6`);
+  if (rr != null) metaParts.push(`R:R: ${rr}`);
+  if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);
+  const metaLine = metaParts.length ? metaParts.join(' | ') + '\n' : '';
+  let msg = `**👔 CEO-besluit - ${marker}**\n${metaLine}${formatDecisionBody(decision)}`;
   if (!qualityResult.passed && qualityResult.blockers?.length > 0) {
     msg += `\n⚠️ Niet geadviseerd: ${qualityResult.blockers.join(', ')}.`;
   }
@@ -96,6 +120,7 @@ export async function reportToDiscord(client, result, { ceoChannelId, traceChann
   const effectiveCeoChannelId = ceoChannelId ?? config.boardroom.ceoChannelId;
   const effectiveTraceChannelId = traceChannelId ?? config.boardroom.traceChannelId;
   const qualityResult = result.qualityResult ?? { passed: true, blockers: [] };
+  const alertContext = computeAlertContext(result);
 
   if (effectiveTraceChannelId) {
     const channel = await client.channels.fetch(effectiveTraceChannelId);
@@ -106,7 +131,7 @@ export async function reportToDiscord(client, result, { ceoChannelId, traceChann
 
   if (effectiveCeoChannelId) {
     const channel = await client.channels.fetch(effectiveCeoChannelId);
-    await channel.send(truncateForDiscord(formatCeoMessage(result.decision, result.comboSignal, qualityResult)));
+    await channel.send(truncateForDiscord(formatCeoMessage(result.decision, result.comboSignal, qualityResult, alertContext)));
 
     const alert = formatComboAlert(
       result.decision.signal,

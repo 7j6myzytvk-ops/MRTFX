@@ -75,6 +75,9 @@ const commands = [
     .setName('ftmo')
     .setDescription('FTMO risk monitor: dagelijks verlies en totale drawdown vs limieten'),
   new SlashCommandBuilder()
+    .setName('week')
+    .setDescription('Wekelijks overzicht: hoeveel signalen, richting, uitkomsten en winrate deze week'),
+  new SlashCommandBuilder()
     .setName('briefing')
     .setDescription('Stel de macro-briefing in die alle agents meekrijgen, of bekijk de huidige briefing')
     .addStringOption((option) =>
@@ -270,6 +273,56 @@ export function createBot() {
         await interaction.editReply(truncateForDiscord(lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Kon geschiedenis niet ophalen: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'week') {
+      await interaction.deferReply();
+      try {
+        const all = await getAllSignals();
+        const now = new Date();
+        const daysFromMonday = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1;
+        const monday = new Date(now);
+        monday.setUTCDate(now.getUTCDate() - daysFromMonday);
+        monday.setUTCHours(0, 0, 0, 0);
+        const weekStart = monday.toISOString().slice(0, 10);
+
+        const weekSignals = all.filter((s) => s.timestamp && new Date(s.timestamp) >= monday);
+        if (weekSignals.length === 0) {
+          await interaction.editReply(`**Week vanaf ${weekStart}**\nNog geen boardroom-runs deze week.`);
+          return;
+        }
+
+        const neutralCount = weekSignals.filter((s) => s.decision?.signal === 'neutral').length;
+        const directional = weekSignals.filter((s) => s.decision?.signal !== 'neutral');
+        const bullish = directional.filter((s) => s.decision?.signal === 'bullish').length;
+        const bearish = directional.filter((s) => s.decision?.signal === 'bearish').length;
+        const advised = directional.filter((s) => s.qualityResult?.passed !== false);
+        const filtered = directional.filter((s) => s.qualityResult?.passed === false);
+
+        const tp = advised.filter((s) => s.outcome?.result === 'tp').length;
+        const sl = advised.filter((s) => s.outcome?.result === 'sl').length;
+        const open = advised.filter((s) => !s.outcome || s.outcome.result === 'open').length;
+        const wr = (tp + sl) > 0 ? Math.round((tp / (tp + sl)) * 100) : null;
+        const wrLine = wr !== null ? ` → **WR ${wr}%**` : '';
+
+        const filteredLine = filtered.length > 0
+          ? `\n*Gefilterd (niet gehandeld): ${filtered.length}*`
+          : '';
+
+        await interaction.editReply(
+          truncateForDiscord(
+            `**Week overzicht — vanaf ${weekStart}**\n` +
+            `Boardroom-runs: ${weekSignals.length} (${directional.length} directioneel | ${neutralCount} neutraal)\n` +
+            `Richting: ${bullish} bullish | ${bearish} bearish\n\n` +
+            `**Geadviseerde signalen: ${advised.length}**\n` +
+            `TP: ${tp} | SL: ${sl} | Open: ${open}${wrLine}` +
+            filteredLine,
+          ),
+        );
+      } catch (err) {
+        await interaction.editReply(`Week-overzicht mislukt: ${err.message}`);
       }
       return;
     }
