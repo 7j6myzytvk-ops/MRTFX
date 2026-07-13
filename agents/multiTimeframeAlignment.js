@@ -21,8 +21,9 @@ export function computeTimeframeBias(candles) {
 
   const rsi14 = rsi(closes, 14);
   if (rsi14 != null) {
-    if (rsi14 > 50) bullish++;
-    else bearish++;
+    if (rsi14 > 52) bullish++;
+    else if (rsi14 < 45) bearish++;
+    // RSI 45–52: neutrale pullback-zone, telt niet mee voor richting
   }
 
   if (closes.length >= 4) {
