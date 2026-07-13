@@ -31,8 +31,6 @@ let lastHeartbeatDate = null;
 
 async function poll(client) {
   try {
-    // Goedkope checks eerst — geen API-calls als ze falen
-    if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
     if (!isActiveSession()) return;
 
     // Dagelijkse heartbeat bij het begin van de NY-sessie (13:xx UTC, 1x per dag)
@@ -42,6 +40,13 @@ async function poll(client) {
       lastHeartbeatDate = todayStr;
       await sendHeartbeat(client, lastSignalTime);
     }
+
+    // Uitkomsten van openstaande signalen altijd evalueren — ook tijdens cooldown
+    // en ook voor gefilterde signalen. Zo missen we nooit een TP/SL-hit.
+    await evaluateOpenSignals(client);
+
+    // Geen nieuwe trigger mogelijk tijdens cooldown, maar outcome-evaluatie hierboven loopt door.
+    if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
     const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
@@ -93,7 +98,6 @@ async function poll(client) {
       });
 
       await reportToDiscord(client, result);
-      await evaluateOpenSignals(client);
       return;
     }
 
@@ -128,7 +132,6 @@ async function poll(client) {
     });
 
     await reportToDiscord(client, spikeResult);
-    await evaluateOpenSignals(client);
   } catch (err) {
     console.error('Setup-detector mislukt:', err.message);
     await sendDedupedAlert(client, err.message, formatErrorAlert(err));

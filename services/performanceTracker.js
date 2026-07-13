@@ -68,7 +68,7 @@ export async function evaluateOpenSignals(client) {
     const outcome = evaluateSignalOutcome(decision, horizonCandles);
 
     await updateSignalOutcome(signal.id, outcome);
-    const entry = { id: signal.id, timestamp: signal.timestamp, decision, outcome };
+    const entry = { id: signal.id, timestamp: signal.timestamp, decision, outcome, qualityResult: signal.qualityResult };
     updated.push(entry);
     if (NOTIFIABLE_RESULTS.has(outcome.result)) resolved.push(entry);
 

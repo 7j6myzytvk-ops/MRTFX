@@ -124,13 +124,14 @@ const OUTCOME_LABEL = {
   geen: '➖ Geen TP/SL geraakt binnen de horizon',
 };
 
-export function formatOutcomeMessage({ id, timestamp, decision, outcome }) {
+export function formatOutcomeMessage({ id, timestamp, decision, outcome, qualityResult }) {
   const label = OUTCOME_LABEL[outcome.result] ?? outcome.result;
   const candlesNote = outcome.candlesToHit ? ` (na ${outcome.candlesToHit} candles)` : '';
   const entryTime = new Date(timestamp).toISOString().replace('T', ' ').slice(0, 16);
+  const filteredNote = qualityResult?.passed === false ? ' *(gefilterd)*' : '';
 
   return (
-    `**Signaal #${id} afgerond - ${label}${candlesNote}**\n` +
+    `**Signaal #${id} afgerond${filteredNote} - ${label}${candlesNote}**\n` +
     `Origineel signaal (${entryTime} UTC): ${decision.signal.toUpperCase()} ` +
     `(zekerheid ${decision.confidence}%) - SL ${decision.stopLoss} / TP ${decision.takeProfit} ` +
     `(${decision.positionSize})`

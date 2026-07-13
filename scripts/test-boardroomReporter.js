@@ -60,6 +60,40 @@ function check(name, actual, expected) {
   );
 }
 
+// 3b. formatOutcomeMessage - gefilterd signaal krijgt *(gefilterd)* label
+{
+  const signal = {
+    id: 14,
+    timestamp: '2026-06-15T10:00:00Z',
+    decision,
+    outcome: { result: 'tp', candlesToHit: 6 },
+    qualityResult: { passed: false, blockers: ['CEO-zekerheid onder 65%'] },
+  };
+  check(
+    'tp-melding gefilterd signaal heeft label',
+    formatOutcomeMessage(signal),
+    '**Signaal #14 afgerond *(gefilterd)* - ✅ Take-profit geraakt (na 6 candles)**\n' +
+      'Origineel signaal (2026-06-15 10:00 UTC): BULLISH (zekerheid 72%) - SL 4300 / TP 4400 (klein)',
+  );
+}
+
+// 3c. formatOutcomeMessage - passed signaal (qualityResult.passed=true) geen label
+{
+  const signal = {
+    id: 15,
+    timestamp: '2026-06-15T10:00:00Z',
+    decision,
+    outcome: { result: 'sl', candlesToHit: 2 },
+    qualityResult: { passed: true, blockers: [] },
+  };
+  check(
+    'sl-melding passed signaal geen gefilterd-label',
+    formatOutcomeMessage(signal),
+    '**Signaal #15 afgerond - ❌ Stop-loss geraakt (na 2 candles)**\n' +
+      'Origineel signaal (2026-06-15 10:00 UTC): BULLISH (zekerheid 72%) - SL 4300 / TP 4400 (klein)',
+  );
+}
+
 // 4. reportOutcomes - post per resolved signaal naar het CEO-kanaal, geen
 // extra calls bij een lege lijst, en geen calls als ceoChannelId ontbreekt.
 {
