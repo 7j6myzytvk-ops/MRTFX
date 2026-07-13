@@ -1595,3 +1595,32 @@ De note zorgt dat de risicomanager dit meeweegt in de positiegrootte.
 `services/boardroomReporter.js` bijgewerkt voor beide nieuwe velden:
 - Analist: `AMD-fase: distribution` (of accumulation/manipulation/onduidelijk)
 - Geopolitiek: `"Sell the news"-risico: hoog` (verborgen bij n.v.t.)
+
+
+---
+
+## Concepten (uitgesteld)
+
+### Proactieve geopolitieke monitor (`services/geoWatch.js`)
+Het systeem heeft een reactieve geopolitieke agent: hij analyseert nieuws alleen op het moment
+dat een signaal triggert. Wat ontbreekt is continue achtergrond-intelligentie: gedurende de
+hele dag scannen op events die XAU/USD kunnen bewegen (oorlogsescalatie, Hormuz-spanningen,
+Trump-uitspraken, olieprijs, Fed-leden) en proactief een bericht sturen naar `#intel`.
+
+Bronnen: bestaande NewsAPI/Finnhub/GNews-keys, uitgebreid met geopolitieke zoektermen.
+Cadans: elk uur een scan, alleen melden als er iets nieuw en markt-relevant is.
+Wanneer bouwen: na ~2 weken live data (half augustus 2026). Dan is duidelijk of de
+geopolitieke agent zijn werk al doet in de boardroom, of dat we de proactieve laag nodig hebben.
+
+**YouTube-kanaal om te monitoren:** Camille van Merrienboer (@camillevanmerrienboer)
+— Nederlandse ICT/SMC-trader. Via YouTube RSS nieuwe video-titels detecteren en meenemen
+in de dagelijkse trader-review als extra marktcontext.
+
+### SQL-migratie (`data/store.js`)
+Huidig systeem slaat signalen op in JSON-bestanden op een Railway persistent volume.
+Werkt prima bij het huidige volume (~200 signalen/jaar, 1 proces). Zwakheid: geen
+transacties, risico op corruptie bij gelijktijdig schrijven.
+
+Wanneer relevant: bij opschaling naar signaalservice (meerdere gebruikers/processen).
+Aanpak dan: **SQLite** als eerste stap (geen server, één bestand, npm-pakket `better-sqlite3`),
+pas daarna PostgreSQL als dat echt nodig blijkt. Geen urgentie in de huidige testfase.
