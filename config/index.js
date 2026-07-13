@@ -24,6 +24,7 @@ export const config = {
     m30TraceChannelId: process.env.DISCORD_M30_TRACE_CHANNEL_ID,
     m15CeoChannelId: process.env.DISCORD_M15_CEO_CHANNEL_ID,
     m15TraceChannelId: process.env.DISCORD_M15_TRACE_CHANNEL_ID,
+    dagrapportChannelId: process.env.DISCORD_DAGRAPPORT_CHANNEL_ID,
   },
   news: {
     newsApiKey: process.env.NEWS_API_KEY,

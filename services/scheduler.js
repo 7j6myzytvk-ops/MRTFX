@@ -17,6 +17,7 @@ import { recordConditionCheck } from './conditionDiagnostics.js';
 import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './eventMonitor.js';
 import { computeIndicators } from '../agents/indicators.js';
 import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
+import { runDailyReview } from './dailyReview.js';
 
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -28,12 +29,27 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 let lastSignalTime = null;
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
+let lastDailyReviewDate = null;
 
 async function poll(client) {
   try {
     // Uitkomsten van openstaande signalen evalueren — ook buiten de sessie en tijdens cooldown.
     // Zo missen we nooit een TP/SL-hit van een gefilterd of eerder signaal.
     await evaluateOpenSignals(client);
+
+    // Dagelijkse trader-review: elke werkdag om 17:25–17:34 UTC (na sessie-einde).
+    // Eén keer per dag — onafhankelijk van cooldown en sessie-status.
+    {
+      const now = new Date();
+      const utcH = now.getUTCHours();
+      const utcM = now.getUTCMinutes();
+      const todayStr = now.toISOString().slice(0, 10);
+      const isWeekday = now.getUTCDay() >= 1 && now.getUTCDay() <= 5;
+      if (isWeekday && utcH === 17 && utcM >= 25 && utcM < 35 && lastDailyReviewDate !== todayStr) {
+        lastDailyReviewDate = todayStr;
+        runDailyReview(client).catch((err) => console.error('[dailyReview] Mislukt:', err.message));
+      }
+    }
 
     if (!isActiveSession()) return;
 
