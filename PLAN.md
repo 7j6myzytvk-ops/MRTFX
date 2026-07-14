@@ -1597,6 +1597,64 @@ De note zorgt dat de risicomanager dit meeweegt in de positiegrootte.
 - Geopolitiek: `"Sell the news"-risico: hoog` (verborgen bij n.v.t.)
 
 
+## Fase 68 — 11 bugfixes gecommit (14 juli 2026, klaar)
+
+Ongecommitte wijzigingen uit een eerdere sessie alsnog gecommit na analyse van de
+geproduceerde backtest-data. Alle fixes waren aanwezig in de working directory maar
+nooit gestaged.
+
+**Crashfixes:**
+- `ceoPerformanceBriefing.js`: `streak &&` guard op twee locaties — crash bij lege signalen-array
+- `geopoliticalAnalyst.js`: `sellTheNewsRisk: 'n.v.t.'` in NO_NEWS_RESULT (Fase 44 schema-eis)
+- `signalValidator.js`: drempel gesynchroniseerd van 60% naar 58% (na Fase 61)
+
+**Discord-correctheid:**
+- `boardroomReporter.js`: R:R berekening nu via entryZone-midpoint (consistent met quality filter)
+- `ftmoGuard.js`: risicopercentage via `config.trading` (consistent met Fase 65)
+
+**Analyse en opslag:**
+- `boardroom.js`: `atr14`/`sma20H1`/`dailyTrend`/`weeklyTrend` in fullResult (voor retrospectieve filteranalyse)
+- `backtest.js`: alle kwaliteitsvelden opgeslagen per sample
+- `analyzeBacktests.js`: gefilterd vs. ongefilterd vergelijking + R:R-labels gecorrigeerd
+
+**Nieuwe feature:**
+- `conditionChecker.js`: counter-trend triggers nabij sleutelniveaus (institutionele reversal-kans)
+- `conditionDiagnostics.js`: `isCounterTrend` in log-entry
+- `indicators.js`: granulere RSI-labels
+
+---
+
+## Fase 69 — Kwaliteitsfilter kalibratie (14 juli 2026, klaar)
+
+**Aanleiding:** Analyse van 18 directionale backtest-samples met qualityResult-data
+(runs 27–30) toonde aan dat beide hoofdfilters 100% van de directionale signalen blokkeerden,
+terwijl 70% van die signalen naar TP ging.
+
+**Root cause filter 3** ("analist verloor vertrouwen"):
+- Filter vuurde bij ELKE negatieve rebuttal-delta, ook bij -1 tot -6 punten (ruis)
+- Alle 18 directionale samples hadden een rebuttal-delta van -1 t/m -6 — nooit een echte daling
+
+**Root cause filter 1** (CEO-zekerheid):
+- Drempel van 58% blokkeerde signalen met CEO-confidence 54–55%
+- Die 4 signalen hadden 75% WR (3 TP / 1 SL)
+
+**Wijzigingen (`agents/agentAnalysis.js`):**
+- Filter 1: drempel 58% → 52% (signalen met lichte twijfel niet meer blokkeren)
+- Filter 3: drempel `delta < 0` → `delta ≤ -15` (alleen echte twijfel blokkeren)
+- `services/signalValidator.js`: consistentie-check gesynchroniseerd op 52%
+
+**Gesimuleerd effect op de 18 geblokkeerde samples:**
+- Oud: 0/18 passeerden (100% geblokkeerd)
+- Nieuw: 5/18 passeren | 4 TP / 1 SL → **WR 80%**
+
+**Resterende blockers (nog steeds actief):**
+- Move overextended (SMA20 ±$50): 2 correct (SL voorkomen), 3 ten onrechte (TP gemist)
+- ATR < $13: correct bij ATR 11.1–11.8 (te kalme markt)
+- R:R > 5.0: in de meeste gevallen terecht
+
+**Volgende aandacht:** "move overextended"-drempel dynamisch maken (bv. 2.5× ATR i.p.v.
+vast $50) zodra voldoende live ATR-data beschikbaar is.
+
 ---
 
 ## Concepten (uitgesteld)
