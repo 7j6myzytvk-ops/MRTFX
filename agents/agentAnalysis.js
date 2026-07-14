@@ -143,16 +143,16 @@ export function assessSignalQuality(sample) {
   }
 
   // Filter 9: Overextended move — koers te ver verwijderd van H1 SMA20.
-  // Backtest: gap < -$50 (bearish) gaf 3 SL-trades met RSI 11–30 (extreme oversold).
-  // ICT-logica: als de koers al $50+ van SMA20 afzit, is de distributie-fase
-  // grotendeels voorbij. Grote spelers nemen winst → reversal-risico neemt sterk toe.
-  const SMA_GAP_MAX = 50;
+  // Drempel: 2.5×ATR14 (dynamisch). Vaste $50 blokkeerde Feb 9 (gap $56, ATR $30 → 1.9×ATR
+  // → TP): normale marktbeweging bij hoge volatiliteit, geen reversal-signaal.
+  // Fallback naar $50 als ATR ontbreekt (oude backtest-runs vóór Fase 68).
+  const smaGapMax = sample.atr14 != null ? sample.atr14 * 2.5 : 50;
   if (sample.sma20H1 != null && sample.entryPrice != null) {
     const gap = sample.entryPrice - sample.sma20H1;
-    if (sample.decision.signal === 'bearish' && gap < -SMA_GAP_MAX) {
+    if (sample.decision.signal === 'bearish' && gap < -smaGapMax) {
       blockers.push(`move overextended: koers $${Math.abs(gap).toFixed(0)} onder H1 SMA20 — reversal-risico`);
     }
-    if (sample.decision.signal === 'bullish' && gap > SMA_GAP_MAX) {
+    if (sample.decision.signal === 'bullish' && gap > smaGapMax) {
       blockers.push(`move overextended: koers $${gap.toFixed(0)} boven H1 SMA20 — reversal-risico`);
     }
   }
