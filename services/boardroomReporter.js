@@ -1,4 +1,5 @@
 import { config } from '../config/index.js';
+import { classifyRebuttalShift } from '../agents/agentAnalysis.js';
 
 // Berekent de exacte lot size op basis van accountsaldo, risico% en SL-afstand.
 // positionSize (klein/normaal/groot) schaalt het risico: 0.5× / 1× / 1.5×.
@@ -93,15 +94,19 @@ function computeAlertContext(result) {
   const minutesLeft = Math.floor((sessionEnd - now) / 60000);
   const sessionNote = minutesLeft > 0 ? `${minutesLeft} min` : null;
   const lotSize = computeLotSize(result);
-  return { setupScore, rr, sessionNote, lotSize };
+  const rebuttalShift = result.discussion?.analyst && result.discussion?.analystRebuttal
+    ? classifyRebuttalShift(result)
+    : null;
+  return { setupScore, rr, sessionNote, lotSize, rebuttalShift };
 }
 
 export function formatCeoMessage(decision, comboSignal = false, qualityResult = { passed: true, blockers: [] }, context = {}) {
   const marker = formatSetupMarker(decision.signal, comboSignal, qualityResult);
-  const { setupScore, rr, sessionNote, lotSize } = context;
+  const { setupScore, rr, sessionNote, lotSize, rebuttalShift } = context;
   const metaParts = [];
   if (setupScore != null) metaParts.push(`Setup: ${setupScore}/6`);
   if (rr != null) metaParts.push(`R:R: ${rr}`);
+  if (rebuttalShift === 'gelijk') metaParts.push('⚖️ Hoge overtuiging');
   if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);
   if (lotSize) metaParts.push(`Lot: ${lotSize.lots} (€${lotSize.riskEur} = ${lotSize.riskPct}% | SL $${lotSize.slDistance})`);
   const metaLine = metaParts.length ? metaParts.join(' | ') + '\n' : '';

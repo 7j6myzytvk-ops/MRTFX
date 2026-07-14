@@ -1674,6 +1674,18 @@ geopolitieke agent zijn werk al doet in de boardroom, of dat we de proactieve la
 — Nederlandse ICT/SMC-trader. Via YouTube RSS nieuwe video-titels detecteren en meenemen
 in de dagelijkse trader-review als extra marktcontext.
 
+### Uitbreiding scan-window naar volledige dag
+Het systeem scant nu uitsluitend tijdens 13:00–17:00 UTC (London/NY overlap). Dit is een bewuste keuze voor de huidige testfase: hoge liquiditeit, beste ICT-setup-kwaliteit, lage ruis.
+
+Architecturele richting voor uitbreiding: de sessie-timing hoort als input mee te gaan naar de boardroom (via criterium ⑥ en sessionContext), niet als externe blokkade in conditionChecker. Het systeem moet de hele dag scannen en zelf bepalen of een setup handelbaar is gezien de actieve sessie.
+
+Uitbreidingsvolgorde:
+1. **London Kill Zone (07:00–10:00 UTC)** als eerste uitbreiding — hoge institutionele activiteit, sterke Judas Swing-patronen. Hogere kwaliteitsdrempel vereist (setupScore ≥ 4 i.p.v. ≥ 3) omdat manipulatiefase vaker onduidelijk is.
+2. **Asian sessie (00:00–07:00 UTC)** als laatste — lage liquiditeit, accumulatiefase, moeilijk te handelen. Alleen toevoegen als live data aantoont dat er edge is.
+3. **Volledige 24/5-scan** als eindtoestand — conditionChecker wordt puur informatief (sessie-context), geen blokkade meer.
+
+Wanneer starten: na ≥ 10 live directionale signalen in de huidige 13:00–17:00 UTC window, zodat de baseline WR vastgesteld is vóór uitbreiding.
+
 ### SQL-migratie (`data/store.js`)
 Huidig systeem slaat signalen op in JSON-bestanden op een Railway persistent volume.
 Werkt prima bij het huidige volume (~200 signalen/jaar, 1 proces). Zwakheid: geen

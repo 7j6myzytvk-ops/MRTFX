@@ -109,20 +109,30 @@ export async function analyzeCandles(
           `② CORRECTE PREMIUM/DISCOUNT: voor longs bevindt de prijs zich in de discount-zone ` +
           `(onder 50%-punt van de recente HTF-range); voor shorts in de premium-zone (erboven). ` +
           `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
-          `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast — prijs is er nog nooit ` +
-          `eerder op teruggekomen (geen mitigation). Een zone die al bezocht is, heeft z'n werk ` +
-          `gedaan en is geen betrouwbare entry meer.\n` +
-          `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft vóór de setup een BSL- of SSL-cluster ` +
-          `gecleard (stop hunt). Zonder voorafgaande sweep is de beweging verdacht — ` +
-          `institutions bewegen pas ná het claimen van liquiditeit.\n` +
+          `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast. Concreet beslismoment:\n` +
+          `  – VERS: geen enkele H1-candle heeft meer dan 50% van de zone gesloten sinds de zone ` +
+          `gevormd werd. De zone is ≤ 30 H1-candles geleden gecreëerd (ouder = verzwakt).\n` +
+          `  – GEMITIGEERD (niet vers): prijs heeft al één of meer keren in de zone gesloten, ` +
+          `of de zone bestaat al langer dan 30 candles zonder dat prijs er naartoe is bewogen. ` +
+          `Ken ③ NIET toe bij twijfel — liever te streng dan een verbruikte zone als vers markeren.\n` +
+          `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft kort vóór de huidige setup een BSL- of ` +
+          `SSL-cluster gecleard. Concreet beslismoment:\n` +
+          `  – BULLISH sweep: een recente swing low of gelijke lows zijn gebroken met een wick ` +
+          `(close terug erboven) — dit binnen de laatste 15 H1-candles. Daarna CHoCH omhoog.\n` +
+          `  – BEARISH sweep: een recente swing high of gelijke highs gebroken met wick ` +
+          `(close terug eronder) — binnen de laatste 15 H1-candles. Daarna CHoCH omlaag.\n` +
+          `  – Ken ④ NIET toe als de sweep meer dan 15 candles geleden was zonder duidelijke ` +
+          `opvolging, of als er geen identificeerbaar BSL/SSL-cluster was dat geraakt is.\n` +
           `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
           `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
           `richting op hogere timeframe.\n` +
-          `⑥ KILL ZONE TIMING: onze sessie-filter loopt van 13:00–17:00 UTC. Binnen dit venster ` +
-          `gelden twee sub-fases: NY Kill Zone (13:00–15:00 UTC) — hoogste institutionele liquiditeit, ` +
-          `meest betrouwbare window voor entries. London Close (15:00–17:00 UTC) — posities worden ` +
-          `gesloten, tijdelijke reversals mogelijk, wees voorzichtiger met de zekerheid. ` +
-          `London Kill Zone (07:00–10:00 UTC) valt buiten onze filter en wordt nooit bereikt.\n\n` +
+          `⑥ KILL ZONE TIMING: beoordeel de actuele sessie op basis van currentTime (UTC).\n` +
+          `  – NY Kill Zone (13:00–17:00 UTC): hoogste institutionele liquiditeit, sterkste window.\n` +
+          `  – London Kill Zone (07:00–10:00 UTC): manipulatiefase, Judas Swings — hogere drempel.\n` +
+          `  – Dead zones (10:00–13:00 UTC, 17:00+ UTC): lage institutionele activiteit.\n` +
+          `  – Asian sessie (00:00–07:00 UTC): accumulatie, zelden handelbare setups.\n` +
+          `  Ken ⑥ toe als de huidige tijd valt in NY Kill Zone of London Kill Zone. ` +
+          `In dead zones of Asian sessie: ⑥ niet toekennen.\n\n` +
           `TELLING → MAXIMALE ZEKERHEID:\n` +
           `• 5–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
           `• 3–4 criteria aanwezig → marginale setup → max 72% zekerheid, ook bij sterke structuur\n` +
