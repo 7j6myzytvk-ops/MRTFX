@@ -125,7 +125,7 @@ export async function analyzeCandles(
           `London Kill Zone (07:00–10:00 UTC) valt buiten onze filter en wordt nooit bereikt.\n\n` +
           `TELLING → MAXIMALE ZEKERHEID:\n` +
           `• 5–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
-          `• 3–4 criteria aanwezig → marginale setup → max 65% zekerheid, ook bij sterke structuur\n` +
+          `• 3–4 criteria aanwezig → marginale setup → max 72% zekerheid, ook bij sterke structuur\n` +
           `• <3 criteria aanwezig → geen handelbare setup → neutraal. ` +
           `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
 

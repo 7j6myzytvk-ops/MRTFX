@@ -75,6 +75,18 @@ const commands = [
     .setName('ftmo')
     .setDescription('FTMO risk monitor: dagelijks verlies en totale drawdown vs limieten'),
   new SlashCommandBuilder()
+    .setName('risk')
+    .setDescription('Berekent lot size, risico en potentiële winst op basis van SL en TP')
+    .addNumberOption((o) =>
+      o.setName('sl').setDescription('Stop-loss afstand in dollars (bijv. 18.5)').setRequired(true),
+    )
+    .addNumberOption((o) =>
+      o.setName('tp').setDescription('Take-profit afstand in dollars (bijv. 35)').setRequired(true),
+    )
+    .addStringOption((o) =>
+      o.setName('grootte').setDescription('Positiegrootte: klein / normaal / groot (standaard: normaal)'),
+    ),
+  new SlashCommandBuilder()
     .setName('today')
     .setDescription('Dagoverzicht: sessie-activiteit, signalen en FTMO-stand van vandaag'),
   new SlashCommandBuilder()
@@ -276,6 +288,49 @@ export function createBot() {
         await interaction.editReply(truncateForDiscord(lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Kon geschiedenis niet ophalen: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'risk') {
+      await interaction.deferReply();
+      try {
+        const slDist = interaction.options.getNumber('sl');
+        const tpDist = interaction.options.getNumber('tp');
+        const grootte = interaction.options.getString('grootte') ?? 'normaal';
+
+        const accountEur = config.trading?.accountBalanceEur;
+        const baseRiskPct = config.trading?.riskPct ?? 3;
+
+        if (!accountEur) {
+          await interaction.editReply('ACCOUNT_BALANCE_EUR is niet ingesteld in Railway. Voeg die variabele toe en herstart.');
+          return;
+        }
+
+        const sizeMultiplier = grootte === 'klein' ? 0.5 : grootte === 'groot' ? 1.5 : 1.0;
+        const riskPct = baseRiskPct * sizeMultiplier;
+        const riskEur = accountEur * (riskPct / 100);
+        const eurUsdRate = 1.08;
+        const riskUsd = riskEur * eurUsdRate;
+
+        const rawLots = riskUsd / (slDist * 100);
+        const lots = Math.max(0.001, Math.round(rawLots / 0.001) * 0.001);
+
+        const gainUsd = lots * 100 * tpDist;
+        const gainEur = gainUsd / eurUsdRate;
+        const gainPct = ((gainEur / accountEur) * 100).toFixed(1);
+        const rr = (tpDist / slDist).toFixed(2);
+
+        await interaction.editReply(
+          `**💰 Risico-calculator**\n` +
+          `Account: €${accountEur} | Basis risico: ${baseRiskPct}% | Grootte: ${grootte}\n\n` +
+          `**Lot size: ${lots.toFixed(3)}**\n` +
+          `SL $${slDist} weg → risico: €${Math.round(riskEur)} (${riskPct.toFixed(1)}%)\n` +
+          `TP $${tpDist} weg → potentiële winst: €${Math.round(gainEur)} (+${gainPct}%)\n` +
+          `R:R: ${rr}`,
+        );
+      } catch (err) {
+        await interaction.editReply(`Risico-berekening mislukt: ${err.message}`);
       }
       return;
     }
