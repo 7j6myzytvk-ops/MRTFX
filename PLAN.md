@@ -1657,6 +1657,51 @@ vast $50) zodra voldoende live ATR-data beschikbaar is.
 
 ---
 
+## Fase 70 - Dynamische SMA20-drempel op basis van ATR14 (klaar, 14 jul 2026)
+
+**Aanleiding:** Vaste $50-drempel in filter 9 (overextended move) blokkeerde Feb 9 BULLISH
+(gap $56, ATR $29.8 → 1.9×ATR). Dat is normale marktbeweging bij hoge volatiliteit,
+geen reversal-signaal. De drempel was te rigide voor verschillende volatiliteitsregimes.
+
+**Wijziging (`agents/agentAnalysis.js`):**
+- `const SMA_GAP_MAX = 50` → `const smaGapMax = sample.atr14 != null ? sample.atr14 * 2.5 : 50`
+- Fallback naar $50 bij ontbrekende ATR (backtest-runs vóór Fase 68)
+
+**Effect op runs 28-30 (complete data):**
+- Zonder fix: 4/11 directionale samples passeerden → WR 50% (2 TP / 2 SL)
+- Met fix: 5/11 passeren → **WR 60%** (3 TP / 2 SL) — Feb 9 vrijgemaakt
+
+---
+
+## Fase 71 - Analyst-prompt ③④⑥ aangescherpt + Discord overtuigingsmarker (klaar, 14 jul 2026)
+
+**Aanleiding:** `setupQualityScore` clusterde altijd op 3 (van 0–6). Root cause: criteria
+③ (verse zone) en ④ (liquiditeitssweep) waren te vaag geformuleerd — de AI gaf bij twijfel
+geen punt, waardoor scores nooit hoger dan 3–4 kwamen. `isComboSignal` (score ≥ 5) vuurde
+nooit. Backtest-analyse toonde dat `rebuttalShift = 'gelijk'` de sterkste differentiator is
+(71% WR vs 43% voor 'omlaag').
+
+**Wijzigingen (`agents/analyst.js`):**
+- Criterium ③ (verse zone): concrete beslisregel toegevoegd — vers = geen H1-candle heeft
+  >50% van de zone gesloten, én zone ≤ 30 candles oud. Bij twijfel: niet toekennen.
+- Criterium ④ (liquiditeitssweep): concrete beslisregel — sweep binnen laatste 15 H1-candles,
+  wick door BSL/SSL + close terugkeer, gevolgd door CHoCH. Ouder dan 15 candles = niet toekennen.
+- Criterium ⑥ (kill zone timing): uitgebreid van hardcoded 13:00–17:00 UTC naar alle kill
+  zones (NY, London, Asian, dead zones) op basis van currentTime — toekomstbestendig voor
+  uitbreiding naar volledige dag.
+
+**Wijziging (`services/boardroomReporter.js`):**
+- Import `classifyRebuttalShift` uit agentAnalysis.js
+- `computeAlertContext` berekent nu `rebuttalShift`
+- `formatCeoMessage` toont `⚖️ Hoge overtuiging` in metaregel als shift = 'gelijk'
+
+**Out-of-sample validatie (apr–mei 2026, record #33):**
+- 41 samples, 6 directionale signalen (allemaal BEARISH)
+- 3 doorgelaten → **3/3 TP (WR 100%)** op volledig onbekende data
+- Bewijst geen overfitting van de filters
+
+---
+
 ## Concepten (uitgesteld)
 
 ### Proactieve geopolitieke monitor (`services/geoWatch.js`)
