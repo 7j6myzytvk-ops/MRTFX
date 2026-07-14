@@ -1,5 +1,35 @@
 import { config } from '../config/index.js';
 
+// Berekent de exacte lot size op basis van accountsaldo, risico% en SL-afstand.
+// positionSize (klein/normaal/groot) schaalt het risico: 0.5× / 1× / 1.5×.
+// OANDA XAU/USD: 1 lot = 100 oz → $1 move = $100 P&L per lot.
+function computeLotSize(result) {
+  const accountEur = config.trading?.accountBalanceEur;
+  const baseRiskPct = config.trading?.riskPct ?? 3;
+  if (!accountEur || result.decision?.signal === 'neutral') return null;
+
+  const { stopLoss, positionSize } = result.decision;
+  const entryPrice = result.entryPrice;
+  const eurUsdRate = result.eurUsdRate ?? 1.08;
+  if (!stopLoss || !entryPrice) return null;
+
+  const sizeMultiplier = positionSize === 'klein' ? 0.5 : positionSize === 'groot' ? 1.5 : 1.0;
+  const riskPct = baseRiskPct * sizeMultiplier;
+  const riskEur = accountEur * (riskPct / 100);
+  const riskUsd = riskEur * eurUsdRate;
+  const slDistance = Math.abs(entryPrice - stopLoss);
+  if (slDistance === 0) return null;
+
+  const rawLots = riskUsd / (slDistance * 100);
+  const roundedLots = Math.max(0.001, Math.round(rawLots / 0.001) * 0.001);
+  return {
+    lots: roundedLots.toFixed(3),
+    riskEur: Math.round(riskEur),
+    riskPct: riskPct.toFixed(1),
+    slDistance: slDistance.toFixed(1),
+  };
+}
+
 // Discord staat maximaal 2000 tekens per berichtinhoud toe. CEO-reasoning kan
 // dat overschrijden (gezien tijdens live gebruik) - zonder deze guard crasht
 // de hele poll-cyclus op een 'Invalid Form Body'-fout en wordt het signaal
@@ -49,16 +79,18 @@ function computeAlertContext(result) {
   sessionEnd.setUTCHours(17, 0, 0, 0);
   const minutesLeft = Math.floor((sessionEnd - now) / 60000);
   const sessionNote = minutesLeft > 0 ? `${minutesLeft} min` : null;
-  return { setupScore, rr, sessionNote };
+  const lotSize = computeLotSize(result);
+  return { setupScore, rr, sessionNote, lotSize };
 }
 
 export function formatCeoMessage(decision, comboSignal = false, qualityResult = { passed: true, blockers: [] }, context = {}) {
   const marker = formatSetupMarker(decision.signal, comboSignal, qualityResult);
-  const { setupScore, rr, sessionNote } = context;
+  const { setupScore, rr, sessionNote, lotSize } = context;
   const metaParts = [];
   if (setupScore != null) metaParts.push(`Setup: ${setupScore}/6`);
   if (rr != null) metaParts.push(`R:R: ${rr}`);
   if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);
+  if (lotSize) metaParts.push(`Lot: ${lotSize.lots} (€${lotSize.riskEur} = ${lotSize.riskPct}% | SL $${lotSize.slDistance})`);
   const metaLine = metaParts.length ? metaParts.join(' | ') + '\n' : '';
   let msg = `**👔 CEO-besluit - ${marker}**\n${metaLine}${formatDecisionBody(decision)}`;
   if (!qualityResult.passed && qualityResult.blockers?.length > 0) {

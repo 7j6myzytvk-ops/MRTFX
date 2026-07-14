@@ -31,4 +31,8 @@ export const config = {
     finnhubApiKey: process.env.FINNHUB_API_KEY,
     gNewsApiKey: process.env.GNEWS_API_KEY,
   },
+  trading: {
+    accountBalanceEur: Number(process.env.ACCOUNT_BALANCE_EUR) || null,
+    riskPct: Number(process.env.RISK_PCT) || 3,
+  },
 };

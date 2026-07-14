@@ -107,8 +107,12 @@ export async function runDiscussion(
   const comboSignal = isComboSignal(sample);
   const qualityResult = assessSignalQuality(sample);
 
+  const eurUsdRate = dollarCandles && dollarCandles.length > 0
+    ? dollarCandles[dollarCandles.length - 1].close
+    : 1.08;
+
   const triggerType = opts.triggerType ?? 'condition';
-  const fullResult = { instrument, granularity, entryPrice, discussion, decision, comboSignal, qualityResult, triggerType };
+  const fullResult = { instrument, granularity, entryPrice, eurUsdRate, discussion, decision, comboSignal, qualityResult, triggerType };
   const validation = validateSignalStructure(fullResult);
   if (!validation.valid || validation.warnings.length > 0) {
     console.warn('[boardroom] ' + formatHealthReport(validation, `${instrument} ${new Date().toISOString()}`));
