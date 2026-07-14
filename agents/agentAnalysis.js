@@ -85,14 +85,23 @@ export function assessSignalQuality(sample) {
 
   const blockers = [];
 
-  if (sample.decision.confidence < 58) {
-    blockers.push('CEO-zekerheid onder 58%');
+  // Filter 1: CEO-zekerheid te laag. Drempel verlaagd van 58% naar 52%: backtest (4 signalen
+  // met confidence 54–55%) gaf 75% WR — te hoog om te blokkeren. Signalen onder 52% (volle
+  // twijfel) worden nog steeds tegengehouden.
+  if (sample.decision.confidence < 52) {
+    blockers.push('CEO-zekerheid onder 52%');
   }
   if (classifyMacroAlignment(sample) === 'contrarian') {
     blockers.push('macro contraireert de richting');
   }
-  if (classifyRebuttalShift(sample) === 'omlaag') {
-    blockers.push('analist verloor vertrouwen na discussie');
+  // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
+  // Backtest (11 omlaag-shifts, runs 27-30): deltas waren -1 t/m -6 punten — te klein
+  // om onderscheid te maken. Drempel van -15 vangt alleen echte twijfel op (agent
+  // trekt actief conclusies in), niet de marginale aanpassingen die het systeem altijd maakt.
+  const rebuttalDelta =
+    (sample.discussion.analystRebuttal?.confidence ?? 0) - (sample.discussion.analyst?.confidence ?? 0);
+  if (rebuttalDelta <= -15) {
+    blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
   }
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
     blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
