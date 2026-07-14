@@ -64,14 +64,27 @@ function formatDecisionBody(decision) {
   );
 }
 
+// Spiegelt parseEntryMidpoint uit agentAnalysis.js en ftmoGuard.js:
+// entry-zone string ("$4066-$4074") → midpoint; valt terug op candle-slotkoers.
+function parseEntryMidpoint(decision, entryPrice) {
+  if (!decision?.entryZone) return entryPrice;
+  const clean = decision.entryZone.replace(/\$/g, '').replace(/\s/g, '');
+  const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
+  if (!match) return entryPrice;
+  const mid = (parseFloat(match[1]) + parseFloat(match[2])) / 2;
+  return isNaN(mid) ? entryPrice : mid;
+}
+
 function computeAlertContext(result) {
   const setupScore = result.discussion?.analyst?.setupQualityScore ?? null;
   const entryPrice = result.entryPrice;
   const { stopLoss, takeProfit } = result.decision;
   let rr = null;
   if (entryPrice && stopLoss && takeProfit) {
-    const risk = Math.abs(entryPrice - stopLoss);
-    const reward = Math.abs(takeProfit - entryPrice);
+    // Gebruik entryZone-midpoint (consistent met kwaliteitsfilter in agentAnalysis.js)
+    const effectiveEntry = parseEntryMidpoint(result.decision, entryPrice);
+    const risk = Math.abs(effectiveEntry - stopLoss);
+    const reward = Math.abs(takeProfit - effectiveEntry);
     if (risk > 0) rr = (reward / risk).toFixed(1);
   }
   const now = new Date();

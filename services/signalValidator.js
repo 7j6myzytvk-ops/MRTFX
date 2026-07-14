@@ -54,9 +54,9 @@ export function validateSignalStructure(result) {
     if (typeof score === 'number' && score < 3 && passed === true) {
       issues.push(`INCONSISTENTIE: setupQualityScore ${score}/6 < 3 maar qualityResult.passed=true`);
     }
-    // CEO confidence < 60 maar toch passed → filter gemist
-    if (typeof decision?.confidence === 'number' && decision.confidence < 60 && passed === true) {
-      issues.push(`INCONSISTENTIE: decision.confidence ${decision.confidence}<60 maar qualityResult.passed=true`);
+    // CEO confidence < 58 maar toch passed → filter gemist (drempel: 58, zie agentAnalysis.js)
+    if (typeof decision?.confidence === 'number' && decision.confidence < 58 && passed === true) {
+      issues.push(`INCONSISTENTIE: decision.confidence ${decision.confidence}<58 maar qualityResult.passed=true`);
     }
     // SL/TP richting vs signaal
     if (typeof entryPrice === 'number' && typeof decision?.stopLoss === 'number') {

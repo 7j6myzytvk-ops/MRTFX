@@ -47,6 +47,7 @@ const NO_NEWS_RESULT = {
   confidence: 0,
   reasoning: 'Geen actueel nieuws beschikbaar voor deze periode. Geopolitieke stem is inactief.',
   keyEvents: [],
+  sellTheNewsRisk: 'n.v.t.',
 };
 
 export async function assessGeopolitical(

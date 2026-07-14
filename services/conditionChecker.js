@@ -58,17 +58,22 @@ export function checkConditions({
     blockers.push('W1-trendrichting onduidelijk (W1 bias: mixed)');
   }
 
-  // 4. Richtingsconsistentie (TF-alignment en trendfilter moeten dezelfde kant wijzen)
-  if (tfAlignment.aligned && trendBias.aligned && tfAlignment.direction !== trendBias.direction) {
+  // 4. Sleutelniveau-proximity (vroeg berekend: bepaalt of counter-trend triggers mogen doorgaan).
+  // d1Candles meegeven zodat vorige dag high/low en H1 swing levels ook gedetecteerd worden.
+  const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
+
+  // 5. Richtingsconsistentie (TF-alignment en trendfilter moeten dezelfde kant wijzen).
+  // Uitzondering: als prijs zich nabij een bewezen sleutelniveau bevindt, staan we een
+  // counter-trend trigger toe. Institutionele reversals vinden precies daar plaats —
+  // premium short in bull market, discount long in bear market. De kwaliteitsfilters
+  // (setupQualityScore, DA counter-confidence, filter 7) zorgen voor de verdere selectie.
+  const isCounterTrend =
+    tfAlignment.aligned && trendBias.aligned && tfAlignment.direction !== trendBias.direction;
+  if (isCounterTrend && !nearLevel.near) {
     blockers.push(
       `TF-richting (${tfAlignment.direction}) conflicteert met trendrichting (${trendBias.direction})`,
     );
   }
-
-  // 5. Sleutelniveau-proximity — zachte voorkeur, geen harde blokkade.
-  // Agents ontvangen dit als context en wegen het mee in hun setupQualityScore.
-  // d1Candles meegeven zodat vorige dag high/low en H1 swing levels ook gedetecteerd worden.
-  const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
 
   const triggered = blockers.length === 0;
   const direction = tfAlignment.direction;
@@ -85,6 +90,7 @@ export function checkConditions({
       tfAlignment,
       trendBias,
       nearLevel,
+      isCounterTrend: isCounterTrend && nearLevel.near,
     },
   };
 }
@@ -98,12 +104,24 @@ export function formatConditionContext(conditions) {
   const levelNote = details.nearLevel?.near
     ? `Prijs bevindt zich nabij ${details.nearLevel.label} ($${details.nearLevel.level.toFixed(2)}, ${details.nearLevel.approachDirection}) — verhoogt setup-kwaliteit.`
     : `Prijs bevindt zich NIET nabij een gekend sleutelniveau — weeg dit mee in je setupQualityScore (verlaagt kwaliteit).`;
+  const m15Note =
+    details.m15Bias === direction
+      ? `M15 bevestigt ook (${details.m15Bias}).`
+      : `M15 is ${details.m15Bias === 'mixed' ? 'gemengd' : details.m15Bias} (pullback op entry-timeframe — normaal bij ICT-setups, weeg dit mee in je triggercriterium ⑤).`;
+  const counterTrendWarning = details.isCounterTrend
+    ? `\n\n⚠️ COUNTER-TREND TRIGGER: H1+M30 wijzen ${direction} maar de weektrend (W1) is ` +
+      `${details.trendBias.direction}. Dit is een institutionele reversal-kans nabij een ` +
+      `sleutelniveau. Vereisten: zit de prijs in een premium zone (voor short) of discount zone ` +
+      `(voor long)? Bevestig minimaal 5/6 ICT-criteria. De kwaliteitsfilters zijn extra streng.`
+    : '';
   return (
     `\n\nAlgoritmische trigger: drie harde voorwaarden zijn voldaan. ` +
-    `H1/M30/M15 zijn allen ${direction === 'bullish' ? 'bullish' : 'bearish'} aligned. ` +
+    `H1 en M30 zijn beiden ${direction === 'bullish' ? 'bullish' : 'bearish'} aligned. ` +
+    `${m15Note} ` +
     `D1- en W1-trendrichting: ${details.trendBias.direction}. ` +
     `${levelNote} ` +
     `Dit is een condition-based setup-signaal, niet een tijdgebonden analyse — ` +
-    `weeg dit mee bij je zekerheidspercentage.`
+    `weeg dit mee bij je zekerheidspercentage.` +
+    counterTrendWarning
   );
 }

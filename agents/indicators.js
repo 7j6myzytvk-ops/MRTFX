@@ -118,9 +118,12 @@ export function formatIndicatorsNote(indicators) {
 
   let rsiLine = '';
   if (rsi14 !== null) {
-    let rsiLabel = 'neutraal';
+    let rsiLabel;
     if (rsi14 >= 70) rsiLabel = 'overbought';
-    else if (rsi14 <= 30) rsiLabel = 'oversold';
+    else if (rsi14 > 52) rsiLabel = 'bullish momentum';
+    else if (rsi14 >= 45) rsiLabel = 'neutrale zone (45–52)';
+    else if (rsi14 > 30) rsiLabel = 'bearish momentum';
+    else rsiLabel = 'oversold';
     rsiLine = `- RSI(14): ${rsi14.toFixed(1)} (${rsiLabel})\n`;
   }
 

@@ -1,8 +1,5 @@
 import { getAllSignals } from '../data/store.js';
-
-// Risicopercentage per positiegrootte (van account-kapitaal).
-// Aanpassen aan je eigen account-instellingen voor FTMO-challenge.
-const RISK_PCT = { klein: 0.5, normaal: 1.0, groot: 2.0 };
+import { config } from '../config/index.js';
 
 // FTMO Challenge Phase 1 limieten (conservatief):
 export const DAILY_LOSS_LIMIT_PCT  = -5;   // max -5% van account per dag
@@ -12,8 +9,12 @@ export const DAILY_WARN_PCT        = -3;   // waarschuwing bij -3% vandaag
 // Fallback R:R als entry/TP/SL niet opgeslagen zijn (oude signalen).
 const FALLBACK_RR = 2.0;
 
+// Spiegelt boardroomReporter.computeLotSize: baseRiskPct × positiegrootte-multiplier.
+// Zo klopt de FTMO P&L-simulatie met het werkelijke risico per trade.
 function riskPct(positionSize) {
-  return RISK_PCT[positionSize] ?? RISK_PCT.normaal;
+  const baseRiskPct = config.trading?.riskPct ?? 3;
+  const multiplier = positionSize === 'klein' ? 0.5 : positionSize === 'groot' ? 1.5 : 1.0;
+  return baseRiskPct * multiplier;
 }
 
 // Parseert entry-zone string ("$4066-$4074") naar het midpoint.

@@ -154,10 +154,10 @@ for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
     continue;
   }
 
-  const { decision, discussion, qualityResult } = result;
+  const { decision, discussion, qualityResult, dailyTrend, weeklyTrend, atr14, sma20H1 } = result;
   const entryPrice = window[window.length - 1].close;
   const outcome = evaluateOutcome(decision, horizonCandles);
-  samples.push({ sampleTime, entryPrice, decision, discussion, outcome });
+  samples.push({ sampleTime, entryPrice, decision, discussion, qualityResult, dailyTrend, weeklyTrend, atr14, sma20H1, outcome });
   const blockerSuffix =
     qualityResult && !qualityResult.passed && qualityResult.blockers.length
       ? ` [geblokkeerd: ${qualityResult.blockers.join(', ')}]`

@@ -52,7 +52,7 @@ export function computeBriefingStats(signals) {
   const sl = signals.filter((s) => s.outcome.result === 'sl').length;
   const geen = signals.filter((s) => s.outcome.result === 'geen').length;
   const trades = tp + sl + geen;
-  const winRate = trades > 0 ? Math.round((tp / (tp + sl)) * 100) : null;
+  const winRate = (tp + sl) > 0 ? Math.round((tp / (tp + sl)) * 100) : null;
   const streak = computeStreak(signals);
   return { n: signals.length, tp, sl, geen, winRate, streak };
 }
@@ -77,7 +77,7 @@ export function formatCeoPerformanceBriefingNote(stats, atrTrend = null) {
           : `Recente winRate: ${winRate}%.`;
 
   let streakMsg = '';
-  if (streak.count >= 3) {
+  if (streak && streak.count >= 3) {
     if (streak.type === 'sl') {
       streakMsg =
         `\n⚠️ REEKS-ALERT: ${streak.count}× achtereen SL. ` +
@@ -113,7 +113,7 @@ export function formatCeoPerformanceBriefingNote(stats, atrTrend = null) {
 }
 
 export function formatRiskStreakNote(stats) {
-  if (!stats || stats.streak.count < 3 || stats.streak.type !== 'sl') return '';
+  if (!stats || !stats.streak || stats.streak.count < 3 || stats.streak.type !== 'sl') return '';
   return (
     `\n\nREEKS-CONTEXT (voor positiegrootte): huidige verliesreeks is ${stats.streak.count}× SL. ` +
     `Standaard naar 'klein', ongeacht het zekerheidspercentage — ` +

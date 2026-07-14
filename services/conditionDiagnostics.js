@@ -35,6 +35,7 @@ export function toLogEntry(conditions, now = new Date()) {
           ? details.tfAlignment.direction === details.trendBias.direction
           : null, // niet van toepassing als TF of trend al niet aligned is
       nearLevel: details.nearLevel?.near ?? false,
+      isCounterTrend: details.isCounterTrend ?? false,
     },
   };
 }

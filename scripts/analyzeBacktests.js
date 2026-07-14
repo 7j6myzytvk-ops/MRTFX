@@ -43,6 +43,26 @@ console.log(`Backtest-analyse: ${all.length} run(s), ${samples.length} samples t
 printSummary('Algemeen overzicht (alle samples)', summarize(samples));
 printSummary(`Subset met teamdiscussie-data (sinds Fase 9, N=${withDiscussion.length})`, summarize(withDiscussion));
 
+// Gefilterd vs. ongefilterd (alleen directionale signalen, want neutraal wordt nooit gehandeld)
+const directional = withDiscussion.filter((s) => s.decision?.signal !== 'neutral');
+const filtered = directional.filter((s) => s.qualityResult?.passed === true);
+const noQualityResult = directional.filter((s) => s.qualityResult === undefined || s.qualityResult === null);
+
+if (directional.length > 0) {
+  console.log('\n--- Kwaliteitsfilter-vergelijking (directionale signalen) ---');
+  if (noQualityResult.length > 0) {
+    console.log(
+      `  Noot: ${noQualityResult.length}/${directional.length} directionale samples missen qualityResult (oude runs vóór opslag-fix).`,
+    );
+  }
+  printSummary(`Alle directionale signalen (N=${directional.length})`, summarize(directional));
+  if (filtered.length > 0) {
+    printSummary(`Kwaliteitsgefilterd (qualityResult.passed=true, N=${filtered.length})`, summarize(filtered));
+  } else {
+    console.log('\n  Geen samples met qualityResult.passed=true gevonden — draai een nieuwe backtest om filterde data te genereren.');
+  }
+}
+
 if (withDiscussion.length === 0) {
   console.log('\nGeen samples met discussion-data - agent-analyse wordt overgeslagen.');
 } else {
@@ -60,5 +80,6 @@ if (withDiscussion.length === 0) {
   );
   printBreakdown('CEO t.o.v. eerste analyse', breakdown(samples, classifyCeoAgreement, ['volgt-analist', 'wijkt-af']));
   printBreakdown('CEO-zekerheid', breakdown(samples, classifyConfidenceBucket, ['<60%', '60-70%', '>70%']));
-  printBreakdown('Risk/reward-ratio', breakdown(samples, classifyRiskReward, ['<1.5', '1.5-2.5', '>2.5']));
+  // R:R alleen zinvol voor directionale signalen (neutrale = geen SL/TP → vervuilen buckets)
+  printBreakdown('Risk/reward-ratio (directionale signalen)', breakdown(directional, classifyRiskReward, ['<1.5', '1.5-3.0', '3.0-5.0', '>5.0']));
 }

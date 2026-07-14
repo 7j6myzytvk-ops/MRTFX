@@ -112,7 +112,16 @@ export async function runDiscussion(
     : 1.08;
 
   const triggerType = opts.triggerType ?? 'condition';
-  const fullResult = { instrument, granularity, entryPrice, eurUsdRate, discussion, decision, comboSignal, qualityResult, triggerType };
+  const fullResult = {
+    instrument, granularity, entryPrice, eurUsdRate,
+    discussion, decision, comboSignal, qualityResult, triggerType,
+    // Context-velden die kwaliteitsfilters (filter 7–9) gebruiken — opgeslagen voor
+    // retrospectieve filteranalyse zonder de boardroom opnieuw te hoeven draaien.
+    dailyTrend: d1Ctx?.trend ?? null,
+    weeklyTrend: w1Ctx?.trend ?? null,
+    atr14: indicators.atr14,
+    sma20H1: indicators.sma20,
+  };
   const validation = validateSignalStructure(fullResult);
   if (!validation.valid || validation.warnings.length > 0) {
     console.warn('[boardroom] ' + formatHealthReport(validation, `${instrument} ${new Date().toISOString()}`));
