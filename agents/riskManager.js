@@ -84,7 +84,7 @@ export async function assessRisk(
 
           `POSITIEGROOTTE (confidence × kwaliteit — pas in deze volgorde toe):\n` +
           `• Harde blokkade: setup-kwaliteitsscore <3 → altijd 'klein', skip verdere berekening\n` +
-          `• Basislijn op CEO-zekerheid: <65% → klein | 65-70% → normaal | >70% → groot\n` +
+          `• Basislijn op analist-zekerheid: <65% → klein | 65-70% → normaal | >70% → groot\n` +
           `• Kwaliteitskorting (elk van onderstaande verlaagt één stap, minimum 'klein'):\n` +
           `  – ATR14 < $13: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
           `  – ATR14 > $30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +

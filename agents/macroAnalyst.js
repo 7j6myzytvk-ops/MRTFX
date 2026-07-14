@@ -102,9 +102,10 @@ export async function assessSentiment(
           `Als het technisch momentum de macro-richting tegenspreekt, VERLAAG je zekerheid naar ` +
           `maximaal 55% — ongeacht hoe sterk de macro-drivers lijken:\n` +
           `• Bearish macro-regime MAAR MACD stijgt richting signaallijn (bullish momentum opbouw) → max 55%\n` +
-          `• Bearish macro-regime MAAR RSI boven 50 of stijgend (geen bearish druk) → max 55%\n` +
+          `• Bearish macro-regime MAAR RSI boven 52 (buiten neutrale zone, richting bullish) → max 55%\n` +
           `• Bullish macro-regime MAAR MACD daalt onder signaallijn → max 55%\n` +
-          `• Bullish macro-regime MAAR RSI onder 45 of dalend → max 55%\n` +
+          `• Bullish macro-regime MAAR RSI onder 45 (buiten neutrale zone, richting bearish) → max 55%\n` +
+          `• RSI tussen 45 en 52 = neutrale pullback-zone — géén momentum-contradictie, verlaag zekerheid NIET\n` +
           `Momentum-divergentie in een 'bewezen' macro-regime is historisch een van de sterkste ` +
           `reversal-signalen. Een hoge confidence bij tegenstrijdig momentum is misleidend.\n\n` +
 
