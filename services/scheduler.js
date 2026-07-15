@@ -23,11 +23,14 @@ import { checkForNewVideos, formatNewVideoAlert } from './youtubeMonitor.js';
 // Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
-// Na een signaal wachten we minimaal 4 uur voordat een nieuw signaal mogelijk is.
-// Voorkomt dat een aanhoudende trend tientallen signalen achter elkaar genereert.
+// Na een directioneel signaal wachten we minimaal 4 uur voordat een nieuw signaal mogelijk is.
+// Na een neutrale CEO-beslissing wachten we 1 uur — voorkomt dat de boardroom elke 5 minuten
+// opnieuw draait als de condities aanhoudend getriggerd blijven maar CEO geen actie ziet.
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
+const NEUTRAL_COOLDOWN_MS = 60 * 60 * 1000;
 
 let lastSignalTime = null;
+let lastNeutralTime = null;
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
@@ -80,6 +83,7 @@ async function poll(client) {
 
     // Geen nieuwe trigger mogelijk tijdens cooldown.
     if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
+    if (lastNeutralTime && Date.now() - lastNeutralTime < NEUTRAL_COOLDOWN_MS) return;
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
     const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
@@ -130,10 +134,12 @@ async function poll(client) {
         triggerType: 'condition',
       });
 
-      // Cooldown alleen bij een directionale beslissing (bullish/bearish).
-      // Neutrale CEO-beslissing ("geen actie") blokkeert de rest van de sessie niet.
+      // Directioneel: 4u cooldown. Neutraal: 1u cooldown (voorkomt dat de boardroom
+      // elke 5 min opnieuw draait bij aanhoudende condities zonder handelbare setup).
       if (result.decision.signal !== 'neutral') {
         lastSignalTime = Date.now();
+      } else {
+        lastNeutralTime = Date.now();
       }
 
       await reportToDiscord(client, result);
