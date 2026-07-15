@@ -50,7 +50,7 @@ export function formatHeartbeat(lastSignalTime) {
   return (
     `🟢 **Setup-detector — sessiestart ${dateStr}**\n` +
     `${lastSetup}\n` +
-    `Monitoring actief: 08:00–17:00 UTC | Interval: 5 min`
+    `Monitoring actief: 13:00–17:00 UTC | Interval: 5 min`
   );
 }
 
