@@ -1720,16 +1720,34 @@ geopolitieke agent zijn werk al doet in de boardroom, of dat we de proactieve la
 in de dagelijkse trader-review als extra marktcontext.
 
 ### Uitbreiding scan-window naar volledige dag
-Het systeem scant nu uitsluitend tijdens 13:00–17:00 UTC (London/NY overlap). Dit is een bewuste keuze voor de huidige testfase: hoge liquiditeit, beste ICT-setup-kwaliteit, lage ruis.
+~~Het systeem scant nu uitsluitend tijdens 13:00–17:00 UTC (London/NY overlap).~~
+**Fase 75 (16 jul 2026):** uitgebreid naar 08:00–17:00 UTC. London-sessie (08:00–12:00 UTC)
+valt nu volledig binnen het monitoringvenster. Sessie-timing is boardroom-criterium via
+criterium ⑥ en sessionContext — geen harde externe blokkade meer voor London.
+De dead zone (10:00–13:00 UTC) zit wel in het venster maar levert door het ontbreken van ⑥
+van nature lagere setup-scores op, waardoor neutrale beslissingen daar de norm zijn.
 
-Architecturele richting voor uitbreiding: de sessie-timing hoort als input mee te gaan naar de boardroom (via criterium ⑥ en sessionContext), niet als externe blokkade in conditionChecker. Het systeem moet de hele dag scannen en zelf bepalen of een setup handelbaar is gezien de actieve sessie.
+Volgende stap: **Asian sessie (00:00–07:00 UTC)** — lage liquiditeit, accumulatiefase.
+Alleen toevoegen als live data (≥ 10 live directionale signalen in huidig 08:00–17:00 venster)
+aantoont dat er edge is buiten de huidige window.
 
-Uitbreidingsvolgorde:
-1. **London Kill Zone (07:00–10:00 UTC)** als eerste uitbreiding — hoge institutionele activiteit, sterke Judas Swing-patronen. Hogere kwaliteitsdrempel vereist (setupScore ≥ 4 i.p.v. ≥ 3) omdat manipulatiefase vaker onduidelijk is.
-2. **Asian sessie (00:00–07:00 UTC)** als laatste — lage liquiditeit, accumulatiefase, moeilijk te handelen. Alleen toevoegen als live data aantoont dat er edge is.
-3. **Volledige 24/5-scan** als eindtoestand — conditionChecker wordt puur informatief (sessie-context), geen blokkade meer.
+## Fase 75 - Sessie-uitbreiding + audit-fixes (klaar, 16 jul 2026)
 
-Wanneer starten: na ≥ 10 live directionale signalen in de huidige 13:00–17:00 UTC window, zodat de baseline WR vastgesteld is vóór uitbreiding.
+**Sessietijd uitgebreid:** 13:00–17:00 UTC → 08:00–17:00 UTC (= 10:00–19:00 CEST).
+London Kill Zone (08:00–10:00 UTC) valt nu binnen het monitoringvenster. Heartbeat
+verplaatst naar 08:00 UTC. dailyReview haalt data op vanaf 08:00 UTC.
+
+**Maandag-filter (K4):** `isActiveDay()` bestond al maar werd nooit aangeroepen in de
+scheduler. Nu actief: maandag-triggers worden geblokkeerd (WR 40.9%, laagste van alle dagen).
+
+**Audit-verificatie:** K2 (isComboSignal), K6 (FTMO gefilterde signalen), A1 (sellTheNewsRisk),
+A3 (signalValidator drempel), O5 (SL/TP richting-check) en O7 (/performance splitsing) waren
+al correct geïmplementeerd in eerdere fasen — bevestigd via code-review.
+
+**riskManager TP-richtlijn:** aparte TP-targets voor London (1.5–2× ATR) en NY (2–2.5× ATR).
+
+**Openstaand (te complex voor nu):** K1 (entry-zone verificatie vóór TP/SL tellen) en
+K5 (R:R op basis van entry-zone prijs i.p.v. slotkoers) — vereisen redesign outcome-evaluatie.
 
 ### SQL-migratie (`data/store.js`)
 Huidig systeem slaat signalen op in JSON-bestanden op een Railway persistent volume.
