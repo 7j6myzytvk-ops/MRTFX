@@ -94,14 +94,15 @@ export function assessSignalQuality(sample) {
   if (classifyMacroAlignment(sample) === 'contrarian') {
     blockers.push('macro contraireert de richting');
   }
-  // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
-  // Backtest (11 omlaag-shifts, runs 27-30): deltas waren -1 t/m -6 punten — te klein
-  // om onderscheid te maken. Drempel van -15 vangt alleen echte twijfel op (agent
-  // trekt actief conclusies in), niet de marginale aanpassingen die het systeem altijd maakt.
-  const rebuttalDelta =
-    (sample.discussion.analystRebuttal?.confidence ?? 0) - (sample.discussion.analyst?.confidence ?? 0);
-  if (rebuttalDelta <= -15) {
-    blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
+  // Filter 3: analist heeft na de volledige boardroom-discussie geen vertrouwen meer over.
+  // Vorig criterium (delta ≤ -15) blokkeerde de CEO nà diens eindoordeel op basis van een
+  // tussentijdse maatstaf die de CEO zelf al had meegewogen — dubbel filteren. De rebuttal
+  // is by design bedoeld om twijfel te verwerken; enige daling is normaal boardroom-dynamiek.
+  // Nieuw: alleen blokkeren als de absolute rebuttal-confidence onder 35% zakt — dat is pas
+  // het geval als de analist zijn eigen setup vrijwel volledig heeft afgeschreven.
+  const rebuttalConfidence = sample.discussion.analystRebuttal?.confidence ?? null;
+  if (rebuttalConfidence !== null && rebuttalConfidence < 35) {
+    blockers.push(`analist heeft geen vertrouwen meer na discussie (${rebuttalConfidence}%)`);
   }
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
     blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
