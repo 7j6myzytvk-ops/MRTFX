@@ -2,15 +2,31 @@ import axios from 'axios';
 import { config } from '../config/index.js';
 
 // Keywords die een headline relevant maken voor XAU/USD.
-// Geopolitiek (oorlogen, sancties, vrede), centrale banken, inflatie en de dollar
-// zijn de vier grootste drijfveren van goud buiten de technische structuur.
+// Vier hoofddrijfveren: monetair beleid, economische data, geopolitiek, dollar/debt.
 const GOLD_KEYWORDS = [
-  'gold', 'xau', 'bullion',
-  'federal reserve', 'fed ', 'fomc', 'interest rate', 'inflation', 'cpi',
-  'dollar', 'treasury', 'yield',
-  'iran', 'israel', 'ukraine', 'russia', 'china', 'tariff', 'sanction',
-  'war', 'peace', 'ceasefire', 'geopolit', 'central bank', 'safe haven',
-  'trump', 'powell',
+  // Goud direct
+  'gold', 'xau', 'bullion', 'gold reserve', 'central bank buying',
+
+  // Monetair beleid (Fed)
+  'federal reserve', 'fed ', 'fomc', 'interest rate', 'rate cut', 'rate hike',
+  'powell', 'monetary policy',
+
+  // Economische data VS die goud beweegt
+  'inflation', 'cpi', 'ppi', 'pce', 'deflation', 'stagflation',
+  'nonfarm', 'jobs report', 'unemployment', 'jobless claims', 'gdp', 'retail sales',
+
+  // Dollar & rente
+  'dollar', 'dxy', 'treasury', 'yield', 'debt ceiling', 'us debt', 'deficit',
+  'credit rating', 'downgrade',
+
+  // Geopolitiek
+  'iran', 'israel', 'ukraine', 'russia', 'china', 'north korea', 'taiwan',
+  'tariff', 'sanction', 'war', 'peace', 'ceasefire', 'geopolit',
+  'central bank', 'safe haven', 'trump', 'military strike', 'escalat',
+
+  // Scheepvaart & energietoevoer (directe olieprijsimpact → inflatie → goud)
+  'tanker', 'vessel', 'shipping', 'maritime', 'red sea', 'hormuz',
+  'blockade', 'oil supply', 'houthi',
 ];
 
 function isRelevant(text = '') {
@@ -29,7 +45,7 @@ async function fetchFromNewsApi({ maxItems = 10 } = {}) {
   try {
     const { data } = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: 'gold OR "XAU" OR "Federal Reserve" OR "geopolitical" OR "safe haven"',
+        q: 'gold OR "XAU" OR "Federal Reserve" OR "geopolitical" OR "safe haven" OR "CPI" OR "NFP" OR "PCE" OR "PPI" OR tanker OR "Red Sea" OR Hormuz OR Houthi OR "debt ceiling" OR "credit rating"',
         language: 'en',
         sortBy: 'publishedAt',
         pageSize: 50,
@@ -87,7 +103,7 @@ async function fetchFromGNews({ maxItems = 10 } = {}) {
   try {
     const { data } = await axios.get('https://gnews.io/api/v4/search', {
       params: {
-        q: 'gold XAU geopolitical OR "Federal Reserve" OR war OR Iran',
+        q: 'gold OR XAU OR "Federal Reserve" OR geopolitical OR war OR Iran OR CPI OR NFP OR tanker OR "Red Sea" OR Houthi OR "debt ceiling"',
         lang: 'en',
         max: maxItems,
         token: key,
