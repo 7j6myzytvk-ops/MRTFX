@@ -1,13 +1,14 @@
 import { computeTimeframeBias, computeMultiTFAlignment, computeTrendBias } from '../agents/multiTimeframeAlignment.js';
 import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 
-// Sessiefilter: actief 13:00–17:00 UTC (NY open en London/NY overlap).
-// 1-jaar backtest (208 triggers, jul 2025–jul 2026): London-ochtend (09:00–12:00 UTC)
-// heeft 25–40% WR door manipulation-fase. Pas vanaf 13:00 UTC krijg je echte institutionele
-// orderflow: 13:00=46%, 14:00=50%, 15:00=50% WR. Zie Fase 50.
+// Sessiefilter: actief 08:00–17:00 UTC (London open t/m NY-sessie).
+// Uitgebreid van 13:00 naar 08:00 UTC (Fase 75): London-bewegingen (08:00–12:00 UTC)
+// zijn cruciaal als context voor de agents — ook als het handelssignaal zelf pas
+// in de NY-sessie (13:00–17:00 UTC) valt. Sessie-timing is boardroom-criterium
+// (analist beoordeelt kill zones via ⑥), geen harde externe blokkade.
 export function isActiveSession(now = new Date()) {
   const hour = now.getUTCHours();
-  return hour >= 13 && hour < 17;
+  return hour >= 8 && hour < 17;
 }
 
 // Dagfilter: maandag heeft de laagste WR (40.9%) van alle weekdagen.

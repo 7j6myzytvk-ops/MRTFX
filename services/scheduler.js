@@ -10,7 +10,7 @@ import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
-import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
+import { checkConditions, formatConditionContext, isActiveSession, isActiveDay } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
 import { checkFtmoLimits } from './ftmoGuard.js';
 import { recordConditionCheck } from './conditionDiagnostics.js';
@@ -70,10 +70,14 @@ async function poll(client) {
 
     if (!isActiveSession()) return;
 
-    // Dagelijkse heartbeat bij het begin van de NY-sessie (13:xx UTC, 1x per dag)
+    // Maandag-filter: maandag heeft laagste WR (40.9%) — gap-risico weekend,
+    // dunne orderflow, institutionelen oriënteren zich nog. Zie Fase 51.
+    if (!isActiveDay()) return;
+
+    // Dagelijkse heartbeat bij sessiestart (08:xx UTC, 1x per dag)
     const utcHour = new Date().getUTCHours();
     const todayStr = new Date().toISOString().slice(0, 10);
-    if (utcHour === 13 && lastHeartbeatDate !== todayStr) {
+    if (utcHour === 8 && lastHeartbeatDate !== todayStr) {
       lastHeartbeatDate = todayStr;
       await sendHeartbeat(client, lastSignalTime);
     }

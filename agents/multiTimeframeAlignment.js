@@ -58,6 +58,10 @@ export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
 // Blokkeert alleen als W1 zelf 'mixed' is (geen heldere weektrend).
 // De richtingsconsistentie-check in conditionChecker.js (stap 4) voorkomt
 // vervolgens dat H1+M30 tegen de W1-richting in triggeren.
+// d1Candles wordt bewust niet gebruikt: D1 mag in retracement zitten terwijl W1 de
+// richting bepaalt (klassieke ICT-setup). De parameter bestaat zodat de aanroeper
+// de D1-data kan doorgeven zonder de interface te wijzigen als D1 later wel
+// meeweegt — maar de huidige implementatie negeert d1Candles intentioneel.
 export function computeTrendBias(d1Candles, w1Candles) {
   const w1Bias = computeTimeframeBias(w1Candles);
   if (w1Bias === 'mixed') return { aligned: false, direction: null };
