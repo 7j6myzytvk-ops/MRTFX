@@ -121,7 +121,7 @@ await mkdir(path.dirname(FILE), { recursive: true });
 const MAX_ATTEMPTS = 3;
 
 const samples = record.samples;
-for (let i = LOOKBACK; i + HORIZON < candles.length; i += SAMPLE_STEP) {
+for (let i = LOOKBACK; i < candles.length; i += SAMPLE_STEP) {
   const window = candles.slice(i - LOOKBACK, i);
   const horizonCandles = candles.slice(i, i + HORIZON);
   const sampleTime = window[window.length - 1].time;
