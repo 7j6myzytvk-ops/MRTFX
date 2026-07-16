@@ -36,9 +36,10 @@ async function request(endpoint, params, retriesLeft = 2) {
     return data;
   } catch (err) {
     const status = err.response?.status;
-    // Retry bij tijdelijke server-side fouten (5xx, bv. Cloudflare 520).
+    // Retry bij tijdelijke server-side fouten (5xx, bv. Cloudflare 520) én 404
+    // (Twelve Data geeft soms een kortdurende 404 bij routing-haperingen).
     // Wacht 5 seconden tussen pogingen — geeft de externe server de kans te herstellen.
-    if ((!err.response || status >= 500) && retriesLeft > 0) {
+    if ((!err.response || status >= 500 || status === 404) && retriesLeft > 0) {
       await new Promise((r) => setTimeout(r, 5000));
       return request(endpoint, params, retriesLeft - 1);
     }
