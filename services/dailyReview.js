@@ -14,7 +14,7 @@ function todayUtcRange() {
     dayName: DAY_NAMES[now.getUTCDay()],
     from: `${dateStr}T00:00:00.000Z`,
     to: `${dateStr}T23:59:59.999Z`,
-    sessionFrom: `${dateStr}T13:00:00.000Z`,
+    sessionFrom: `${dateStr}T08:00:00.000Z`,
     sessionTo: `${dateStr}T17:00:00.000Z`,
   };
 }

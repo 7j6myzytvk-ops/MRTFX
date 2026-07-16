@@ -62,7 +62,7 @@ export function buildReviewPrompt(ctx) {
 
   return (
     `DAGRAPPORT ${dateStr} (${dayName})\n` +
-    `Sessie 13:00–17:00 UTC: ${sessionPolls} polls | ${triggered} condition-triggers | ${boardroomRuns} boardroom-runs\n` +
+    `Sessie 08:00–17:00 UTC: ${sessionPolls} polls | ${triggered} condition-triggers | ${boardroomRuns} boardroom-runs\n` +
     `Boardroom-uitkomsten: ${passed} geadviseerd | ${filtered} gefilterd | ${neutral} neutraal\n` +
     `\n` +
     `Dominante blokkers: ${blockerText}\n` +

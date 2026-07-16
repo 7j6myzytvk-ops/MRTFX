@@ -41,7 +41,7 @@ export function checkConditions({
 
   // 1. Sessiefilter (goedkoopste check — eerst uitvoeren)
   if (!isActiveSession(now)) {
-    blockers.push('buiten actieve sessie (13:00–17:00 UTC)');
+    blockers.push('buiten actieve sessie (08:00–17:00 UTC)');
   }
 
   // 2. Multi-timeframe alignment (H1 + M30 + M15 moeten het eens zijn)

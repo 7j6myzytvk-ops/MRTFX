@@ -76,7 +76,8 @@ export async function assessRisk(
           `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten — SL VOORBIJ zo'n niveau, ` +
           `nooit vlak ervoor (stop hunt risico)\n` +
           `• SL minimaal 0.5× ATR14 verwijderd van huidige prijs\n` +
-          `• TP realistisch voor 13:00–17:00 UTC NY-sessie: 2–2.5× ATR14\n` +
+          `• TP realistisch voor London-sessie (08:00–12:00 UTC): 1.5–2× ATR14\n` +
+          `• TP realistisch voor NY-sessie (13:00–17:00 UTC): 2–2.5× ATR14\n` +
           `• R:R streefniveau: 2.0. Dit is het bewezen optimum voor zowel bullish (EV=0.345) als ` +
           `bearish signalen (EV=0.448). Vermijd 2.5 specifiek — backtest toont EV-dip op dat ` +
           `niveau (0.207) door liquiditeitsstop-zones bij 2.5× ATR. Acceptabel bereik: 1.5–2.0. ` +
