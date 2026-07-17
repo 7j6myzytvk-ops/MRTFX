@@ -67,10 +67,12 @@ export async function evaluateOpenSignals(client) {
 
     const outcome = evaluateSignalOutcome(decision, horizonCandles);
 
-    await updateSignalOutcome(signal.id, outcome);
+    const writeResult = await updateSignalOutcome(signal.id, outcome);
     const entry = { id: signal.id, timestamp: signal.timestamp, decision, outcome, qualityResult: signal.qualityResult };
     updated.push(entry);
-    if (NOTIFIABLE_RESULTS.has(outcome.result)) resolved.push(entry);
+    // Alleen melden als wij degene waren die de uitkomst schreven. Als wasWritten=false
+    // was het signaal al door een gelijktijdige call afgesloten — niet nogmaals melden.
+    if (writeResult?.wasWritten && NOTIFIABLE_RESULTS.has(outcome.result)) resolved.push(entry);
 
     console.log(
       `[performance] signaal #${signal.id} (${signal.timestamp}) -> ${outcome.result}` +

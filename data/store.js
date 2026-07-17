@@ -45,20 +45,31 @@ export async function getAllSignals() {
   return readAll();
 }
 
+// Geeft { entry, wasWritten } terug. wasWritten=false als het signaal al een
+// definitieve uitkomst had — zo voorkomt de aanroeper dubbele Discord-meldingen
+// bij gelijktijdige evaluateOpenSignals-calls (bv. scheduler + /performance).
 export function updateSignalOutcome(id, outcome) {
   const result = queue.then(() => writeOutcome(id, outcome));
   queue = result.catch(() => {});
   return result;
 }
 
+const FINAL_OUTCOMES = new Set(['tp', 'sl', 'geen', 'neutraal', 'onbruikbaar']);
+
 async function writeOutcome(id, outcome) {
   const all = await readAll();
   const entry = all.find((s) => s.id === id);
-  if (!entry) return null;
+  if (!entry) return { entry: null, wasWritten: false };
+
+  // Nooit een definitieve uitkomst overschrijven — voorkomt dat een gelijktijdige
+  // tweede evaluatie een andere uitkomst schrijft en een dubbele melding triggert.
+  if (FINAL_OUTCOMES.has(entry.outcome?.result)) {
+    return { entry, wasWritten: false };
+  }
 
   entry.outcome = outcome;
   await mkdir(path.dirname(FILE), { recursive: true });
   await writeFile(FILE, JSON.stringify(all, null, 2));
 
-  return entry;
+  return { entry, wasWritten: true };
 }
