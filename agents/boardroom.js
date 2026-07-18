@@ -5,6 +5,7 @@ import { assessSentiment } from './macroAnalyst.js';
 import { decide } from './ceo.js';
 import { fetchForexFactoryEvents, getUpcomingEvents, getRecentlyReleasedEvents, formatEventsNote } from './economicCalendar.js';
 import { computeIndicators, formatIndicatorsNote, atr } from './indicators.js';
+import { computeTimeframeBias } from './multiTimeframeAlignment.js';
 import { computeDollarContext, formatDollarContextNote } from './dollarContext.js';
 import { computeYieldContext, formatYieldContextNote } from './yieldContext.js';
 import { isComboSignal, assessSignalQuality } from './agentAnalysis.js';
@@ -24,7 +25,7 @@ import { logBlockedSignal } from '../services/blockedSignalLog.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null } = {},
 ) {
   const now = currentTime ? new Date(currentTime) : new Date();
   const ffEvents = await fetchForexFactoryEvents();
@@ -46,6 +47,25 @@ export async function runDiscussion(
   const dailyContextNote = d1Ctx ? formatDailyContextNote(d1Ctx) : '';
   const w1Ctx = w1Candles && w1Candles.length >= 5 ? computeWeeklyContext(w1Candles) : null;
   const weeklyContextNote = w1Ctx ? formatWeeklyContextNote(w1Ctx) : '';
+
+  // 4H-structuurcontext: institutionele referentie-timeframe.
+  // Agents zien hiermee het 4H-niveau, onafhankelijk van de H1-candles die ze analyseren.
+  const h4ContextNote = (() => {
+    if (!h4Candles || h4Candles.length < 20) return '';
+    const bias = computeTimeframeBias(h4Candles);
+    const h4Ind = computeIndicators(h4Candles);
+    const recent = h4Candles.slice(-10);
+    const h4High = Math.max(...recent.map((c) => c.high)).toFixed(2);
+    const h4Low = Math.min(...recent.map((c) => c.low)).toFixed(2);
+    const sma20Str = h4Ind.sma20 != null ? ` | SMA20(4H): $${h4Ind.sma20.toFixed(2)}` : '';
+    const rsiStr = h4Ind.rsi14 != null ? ` | RSI14(4H): ${h4Ind.rsi14.toFixed(1)}` : '';
+    return `\n\n4H-STRUCTUUR (institutionele referentie-timeframe):\n` +
+      `Bias: ${bias.toUpperCase()} ${sma20Str}${rsiStr}\n` +
+      `Range laatste 10 4H-candles: hoog $${h4High} — laag $${h4Low}\n` +
+      `Order blocks, FVGs en liquiditeitszones op 4H hebben hogere institutionele betekenis ` +
+      `dan dezelfde structuren op H1. Laat de 4H-range meewegen bij je premium/discount-oordeel.`;
+  })();
+
   // Alle context-notes worden door elke agent op exact dezelfde plek
   // (na newsContextNote, in deze volgorde) aan de prompt toegevoegd - daarom
   // hier samengevoegd tot één string, zodat een nieuwe factor alleen
@@ -62,7 +82,7 @@ export async function runDiscussion(
     }
     return '';
   })();
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote;
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats, atrTrend);
