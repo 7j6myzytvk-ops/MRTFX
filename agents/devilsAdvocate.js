@@ -48,55 +48,51 @@ export async function challengeAnalysis(
       {
         role: 'user',
         content:
-          `Je bent een voormalig proprietary trader die 8 jaar bij een macro hedge fund werkte ` +
-          `en daar gespecialiseerd was in het bestuderen van waarom goud-setups falen. Je hebt ` +
-          `honderden verloren trades geautopseerd en weet precies welke patronen steeds terugkomen: ` +
-          `de te voor de hand liggende setup, het verkeerde tijdstip, de zone die al verbruikt was, ` +
-          `het bewijs dat er was maar genegeerd werd. Jouw methodologie: prospectief faalonderzoek ` +
-          `voor ${instrument} (${granularity}-candles).\n\n` +
+          `Je bent een voormalig proprietary trader die 8 jaar lang uitsluitend verloren trades ` +
+          `analyseerde bij een goud hedge fund. Jouw job was niet om te handelen, maar om te begrijpen ` +
+          `waarom goud-setups faalden — en je hebt honderden faalpatronen gedocumenteerd. ` +
+          `Je rol nu: structurele oppositie. Je ziet ALLEEN de meest recente price action (laatste ` +
+          `~15 candles) — niet de volledige historische context die de analist had. Dit is bewust: ` +
+          `jij zoekt naar wat er in het HUIDIGE marktmoment fout kan gaan, niet of de langetermijn-analyse klopt.\n\n` +
 
           `Een analist heeft het signaal "${analysis.signal}" gegeven (zekerheid ${analysis.confidence}%) ` +
           `met onderbouwing: "${analysis.reasoning}".\n\n` +
 
-          `JOUW MANDAAT — GEEN tegengesteld signaal zoeken. WEL: stel je voor dat je 3 uur in de ` +
-          `toekomst zit. De trade is gestopt op de stop-loss. Reconstrueer wat er mis ging.\n\n` +
+          `JOUW ENIGE TAAK: vind de sterkste structurele reden waarom dit signaal fout is. ` +
+          `Stel je voor dat je 3 uur in de toekomst zit. De trade is gestopt op de stop-loss. ` +
+          `Reconstrueer — op basis van de RECENTE candles die je ziet — wat er mis ging.\n\n` +
 
-          `Doorloop systematisch deze vijf faalscenario's. Bij elk: is dit scenario waarschijnlijk ` +
-          `gegeven de huidige data?\n\n` +
+          `Doorloop deze vier faalscenario's. Gebruik ALLEEN wat zichtbaar is in de candles voor je:\n\n` +
 
-          `① HTF-STRUCTUUR FOUT: Had de Weekly of Daily trend al gedraaid (CHoCH op hogere timeframe) ` +
-          `vóórdat het team inging? Is er een significant swing level dat intact was maar als ` +
-          `'gepasseerd' werd beschouwd? Beschrijf wat de hogere structuur concreet zegt.\n\n` +
+          `① INSTITUTIONELE VAL (meest voorkomend): Is de aankomende entry recht in een stop-cluster? ` +
+          `Staat de prijs op een niveau dat te voor de hand liggend is — dat retailers erin lokken ` +
+          `terwijl institutions hun positie aan de andere kant vullen? Is de swing-high/low die ` +
+          `"gebroken" werd eigenlijk een sweep die nog niet heeft gereturnd?\n\n` +
 
-          `② INSTITUTIONELE VAL: Was dit een te voor de hand liggende setup — zagen teveel retailers ` +
-          `precies hetzelfde? Staat de entry direct boven gelijke highs of onder gelijke lows ` +
-          `(recht in een stop-cluster)? Liepen we in een liquidity sweep die institutions ` +
-          `orkestreerden om hun positie aan de andere kant te vullen? Is de entry in een ` +
-          `premium-zone (voor longs) of discount-zone (voor shorts)?\n\n` +
+          `② ZONE AL VERWERKT: Heeft de prijs het beoogde OB of FVG in de RECENTE candles al bezocht? ` +
+          `Is er al eens een wick in de zone geweest? Is de zone zo recent gevormd dat er nog geen ` +
+          `echte institutionele orderflow heeft plaatsgevonden?\n\n` +
 
-          `③ TIMING MISMATCH: Stapten we in tijdens de verkeerde fase? London manipulatiefase ` +
-          `(07:00-10:00 UTC) zonder bevestiging dat de Judas Swing al afgerond was? Of in de ` +
-          `rustige Asian sessie (00:00-07:00 UTC) waar movements misleidend zijn? Stond er een ` +
-          `hoog-impact event op de agenda dat de setup kon omverwerpen?\n\n` +
+          `③ STRUCTUUR TEGENSTRIJDIG: Wat zegt de prijs in de LAATSTE candles concreet? ` +
+          `Is er een recente BOS of CHoCH die de analist-richting CONTRADICTEERT? ` +
+          `Zijn er gelijke highs of lows in de recente data die sweepen vóórdat de verwachte move ` +
+          `kan beginnen — een "stop-hunt" die nog moet plaatsvinden?\n\n` +
 
-          `④ ZONE AL VERWERKT: Waren het OB of de FVG die als entry dienden al eerder bezocht? ` +
-          `Had price er al doorheen bewogen (de zone had al als "mitigation" gefunctioneerd) ` +
-          `en hadden we dat niet opgemerkt?\n\n` +
+          `④ MOMENTUM BREEKT AF: Kijkend naar de candle-vorming van de laatste uren: ` +
+          `vertraagt het momentum in de richting van het signaal? Zijn er grote wicks tegen de ` +
+          `signaalrichting? Zijn de laatste candles kleiner en onzeker — het tegenovergestelde ` +
+          `van institutioneel commitment?\n\n` +
 
-          `⑤ GENEGEERD BEWIJS: Welk signaal was er in de data maar werd gerationaliseerd? ` +
-          `RSI/MACD-divergentie die de richting contradicteert? Een nieuwsitem dat macro-tegenwind ` +
-          `suggereerde? Een argument dat in de initiële analyse te snel werd afgedaan?\n\n` +
-
-          `CONCLUSIE: Wat is het meest waarschijnlijke faalscenario? Gebruik dat als je ` +
-          `counter-signaal en counter-zekerheid.\n\n` +
+          `CONCLUSIE: Wat is het meest waarschijnlijke faalscenario op basis van de recente candles? ` +
+          `Gebruik dat als je counter-signaal en counter-zekerheid.\n\n` +
           `COUNTER-CONFIDENCE KALIBRATIE (gebruik dit exact):\n` +
-          `• 0–30%: setup houdt volledig stand — geen enkel scenario overtuigend gevonden\n` +
+          `• 0–30%: recente structuur bevestigt de analist — geen overtuigend faalscenario gevonden\n` +
           `• 31–50%: zwak risico — één punt dat licht twijfel zaait, maar geen echt gevaar\n` +
-          `• 51–65%: matig risico — duidelijk aanwezig faalscenario, maar niet doorslaggevend\n` +
-          `• 66–80%: sterk risico — overtuigend faalscenario gevonden, setup kwetsbaar\n` +
-          `• 81–100%: zeker gevaar — meerdere scenario's bevestigd, setup zou vrijwel zeker falen\n` +
-          `"Setup houdt stand tegen pre-mortem" (lage counter-confidence) is de meest waardevolle ` +
-          `uitkomst — geef die eerlijk als het klopt. Forceer geen hoog getal.` +
+          `• 51–65%: matig risico — duidelijk aanwezig faalscenario in recente price action\n` +
+          `• 66–80%: sterk risico — recente candles contradicteren het signaal direct\n` +
+          `• 81–100%: zeker gevaar — meerdere recente signalen wijzen op een mislukte setup\n` +
+          `"Setup houdt stand" (lage counter-confidence) is de meest waardevolle uitkomst — ` +
+          `geef die eerlijk als het klopt. Forceer geen hoog getal.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

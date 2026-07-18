@@ -1781,3 +1781,93 @@ blijft ongewijzigd — die is ICT-correct, niet een code-bug.
 "Monitoring actief" → "Setup-scanner actief": verduidelijkt dat het systeem actief
 boards triggert (niet alleen pasief pollt) wanneer condities kloppen. Interval in de
 tekst bijgewerkt naar 2 min.
+
+## Fase 77 - Maandag-filter verwijderd (18 jul 2026)
+
+Maandag-filter (toegevoegd in Fase 75) verwijderd uit `services/scheduler.js`. Motivatie:
+het systeem zit nog in de data-verzamelingsfase — meer data is op dit moment waardevoller
+dan een geoptimaliseerde WR. WR van 40,9% op maandagen is lager dan andere dagen, maar
+statistisch niet uitsluitend van waarde in een testfase. Import van `isActiveDay` verwijderd.
+
+**Norm**: maandagfilter opnieuw overwegen als ≥ 20 live directionale maandag-signalen
+beschikbaar zijn met een statistisch afwijkende WR (> 15pp verschil t.o.v. andere dagen).
+
+## Fase 78 - Audit-implementatie: hoge + middelhoge prioriteit (18 jul 2026)
+
+Implementatie van HIGH en MEDIUM prioriteit items uit de boardroom-kwaliteitsaudit.
+
+### AMD-fase filter (`agents/agentAnalysis.js`)
+`amdPhase === 'manipulation'` en `amdPhase === 'onduidelijk'` blokkeren nu mechanisch.
+Manipulation = Judas Swing gaande, geen entry. Onduidelijk = geen structurele basis.
+Het veld bestond al in de analist-output maar had geen mechanische consequentie.
+
+### CEO confidence-cap (`agents/boardroom.js`)
+`setupScore ≤ 4/6 → max 72%` als harde override na `decide()`. LLM-instructies alleen
+zijn onvoldoende betrouwbaar voor numerieke grenzen. Tag wordt zichtbaar in Discord.
+
+### R:R ondergrens (`agents/agentAnalysis.js`)
+`R:R < 1.5` geblokkeerd. Was al een bovengrens (> 5.0); ondergrens ontbrak.
+Bij R:R < 1.5 is de verwachte waarde negatief ongeacht de winrate.
+
+### Rebuttal-shift label (`services/boardroomReporter.js`)
+`rebuttalShift === 'gelijk'` stuurde onterecht `⚖️ Hoge overtuiging`. Gecorrigeerd:
+label verschijnt nu alleen bij `rebuttalShift === 'omhoog'` met tekst "Overtuiging gestegen".
+
+### SL-patroon alert (`services/performanceTracker.js`)
+`checkSlPattern()` stuurt Discord-waarschuwing als de laatste 3 afgeronde directionale
+signalen allen SL waren. Vroeg signaal dat marktomstandigheden of filters herziening vragen.
+Geen automatische filteraanpassing, alleen alert.
+
+**Niet geïmplementeerd (te complex):** K1 (entry-zone verificatie vóór TP/SL tellen) —
+vereist redesign van `outcomeEvaluator.js` en nieuwe outcome-type ('geen-entry').
+
+## Fase 79 - Structurele correcties na boardroom-audit (18 jul 2026)
+
+Vier acties aanbevolen door de kritische boardroom-audit ("als dit ons project was"):
+
+### youtubeMonitor verwijderd
+`services/youtubeMonitor.js` verwijderd. Externe dependency (YouTube RSS) voor één kanaal,
+geen bijdrage aan detectie-kwaliteit, maskeert console-errors. Import en aanroepen
+verwijderd uit `scheduler.js` en `dailyReview.js`.
+
+### Filter-freeze norm (beslissing, geen code)
+Formele norm: een filter mag alleen worden aangepast als (a) ≥ 30 live directionale
+signalen op dat filter zijn toegepast, (b) WR-spreiding per filter-bucket > 15 procentpunt,
+én (c) dezelfde richting als in de backtest-cohort. Freeze actief tot er voldoende data is.
+Doel: voorkomen dat drempels worden verschoven op basis van ruis (< 5 signalen per beslissing).
+
+### Geblokkeerde-signalen log (`services/blockedSignalLog.js`)
+Nieuwe service die bij elk gefilterd signaal timestamp, richting, zekerheid, blockers,
+setupScore, AMD-fase en ATR wegschrijft naar `data/live/blockedSignals.json`.
+Geeft na 4 weken het inzicht dat ontbrak: welke filters blokkeren het vaakst, en zijn de
+geblokkeerde signalen structureel zwakker dan de doorgelaten signalen?
+
+### Criterion ⑥ (kill-zone-timing) uit setupQualityScore
+Score was /6; wordt /5. Kill-zone-timing is een tijdsvariabele, geen kwaliteitsvariabele.
+De sessiebewaker (`isActiveSession()`) blokkeert polls al buiten 08:00–17:00 UTC —
+het criterium telde timing dubbel en verlaagde kunstmatig de scores van London-setups
+(08:00–10:00 UTC) die structureel sterk waren maar net buiten NY Kill Zone vielen.
+
+Drempelaanpassingen (proportioneel):
+- `isComboSignal`: ≥ 5/6 → ≥ 4/5
+- `assessSignalQuality` blokkeerdrempel: < 3/6 → < 2/5
+- CEO confidence-cap: setupScore ≤ 4/6 → ≤ 3/5
+- Score-weergave in Discord en dagrapport: `/6` → `/5`
+
+### Devil's Advocate herdefiniëring (`agents/devilsAdvocate.js` + `agents/boardroom.js`)
+**Probleem:** DA ontving dezelfde 50 candles als de analist — bevestigde daardoor
+dezelfde HTF-structuur i.p.v. echte oppositie te leveren (echo-chamber).
+**Fix:** DA krijgt alleen de laatste 15 H1-candles (`candles.slice(-15)` in boardroom.js).
+Forceert focus op recente price action: wat gaat er MOMENTEEL fout, niet of de
+langetermijn-analyse klopt. Faalscenario's herschreven: specifiek gericht op zichtbare
+recente structuur (institutionele val, zone mitigation, recente CHoCH, momentum afbraak).
+"RSI/MACD-divergentie" uit de DA verwijderd — dat is het mandaat van de macroAnalyst.
+
+### macroAnalyst mandaat eerlijk gemaakt (`agents/macroAnalyst.js`)
+**Probleem:** Persona claimde "PhD macro-econoom bij global macro hedge fund" maar had
+geen echte macro-data — alleen candles, EUR/USD richting, renterichting en technische
+indicatoren. Persona schiep verwachtingen die het systeem niet kon waarmaken.
+**Fix:** Persona vervangen door "kwantitatieve regime-analist". Expliciete lijst van
+beschikbare data (EUR/USD, rente, indicatoren, HTF-structuur). Instructie uitgebreid:
+"Claim geen macro-events, centrale bankbeleid of geopolitieke ontwikkelingen die je niet
+direct kunt afleiden uit de beschikbare data." Slotalinea vereenvoudigd.

@@ -49,17 +49,19 @@ export async function assessSentiment(
       {
         role: 'user',
         content:
-          `Je bent een senior macro-econoom en kwantitatief momentum-analist met een PhD econometrie ` +
-          `en 12 jaar specialisatie in edelmetalen bij een global macro hedge fund. Je hebt de ` +
-          `goud-super-cycle van 2001-2011 uitgebreid geanalyseerd, het bearmarkt-decennium 2011-2018 ` +
-          `gedocumenteerd, en de correlatie-breuk van 2022-2026 (goud omhoog ondanks hoge rentes) ` +
-          `van dichtbij meegemaakt. Je specialiteit: het macro-regime voor goud bepalen en checken ` +
-          `of het technisch momentum dat regime bevestigt of contradicteert. Je analyseert ` +
-          `${instrument} (${granularity}-candles). Je weet niet wat de structuur-analist concludeerde — ` +
-          `jij kijkt alleen naar macro én indicators.\n` +
-          `Als er een macro-briefing beschikbaar is in de contextNotes hieronder (sectie "MACRO-BRIEFING"), ` +
-          `gebruik die dan als startpunt voor het huidige macro-regime — het is een door de gebruiker ` +
-          `opgesteld kader dat specifiek voor deze periode geldt.\n\n` +
+          `Je bent een kwantitatieve regime-analist voor ${instrument}. Je taak: bepaal het huidige ` +
+          `marktregime voor goud op basis van de data die je hebt, en check of het technisch momentum ` +
+          `dat regime bevestigt of contradicteert.\n\n` +
+          `JOUW DATA (dit en alleen dit):\n` +
+          `• EUR/USD richting (dollar-proxy) — zie dollarcontext in de contextNotes\n` +
+          `• US rente richting (reële rente proxy) — zie rentecontext in de contextNotes\n` +
+          `• Technische indicatoren: EMA50, RSI, MACD — zie indicatoren in de contextNotes\n` +
+          `• H1 candle-gedrag van de afgelopen ~50 uur\n` +
+          `• HTF-structuur (D1, W1) — zie dagcontext en weekcontext in de contextNotes\n` +
+          `• Macro-briefing (indien beschikbaar) — door de gebruiker opgesteld kader voor de huidige periode\n\n` +
+          `Je weet niet wat de structuur-analist concludeerde — jij kijkt alleen naar regime én momentum. ` +
+          `Claim GEEN macro-events, centrale bankbeleid, of geopolitieke ontwikkelingen die je niet ` +
+          `direct kunt afleiden uit de bovenstaande data.\n\n` +
 
           `GOUD-MACRO REGIME — vier drijfveren, ranggeschikt op historisch belang:\n` +
           `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud. ` +
@@ -109,9 +111,8 @@ export async function assessSentiment(
           `Momentum-divergentie in een 'bewezen' macro-regime is historisch een van de sterkste ` +
           `reversal-signalen. Een hoge confidence bij tegenstrijdig momentum is misleidend.\n\n` +
 
-          `Baseer je oordeel op (1) de dollar- en rentecontext hieronder, (2) de indicator-data ` +
-          `(RSI/MACD/EMA50) uit de contextNotes, en (3) het karakter van de candles. ` +
-          `Claim geen macro-events die je niet zeker weet.` +
+          `Baseer je oordeel uitsluitend op de data die je hierboven hebt. ` +
+          `Een hoge confidence is alleen gerechtvaardigd als dollar, rente EN momentum allemaal dezelfde kant op wijzen.` +
           `${eventsNote}${newsContextNote}${contextNotes}\n\n` +
           formatCandles(candles),
       },

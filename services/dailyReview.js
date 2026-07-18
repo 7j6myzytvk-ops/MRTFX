@@ -4,7 +4,6 @@ import { getConditionLog, filterConditionLog, summarizeConditionLog } from './co
 import { getFtmoStats } from './ftmoGuard.js';
 import { runTraderReview, DAY_NAMES } from '../agents/traderReview.js';
 import { truncateForDiscord } from './boardroomReporter.js';
-import { getRecentVideos } from './youtubeMonitor.js';
 
 function todayUtcRange() {
   const now = new Date();
@@ -24,7 +23,7 @@ function formatSignalLine(s) {
   const dir = s.decision?.signal?.toUpperCase() ?? '?';
   const conf = s.decision?.confidence ?? '?';
   const score = s.discussion?.analyst?.setupQualityScore;
-  const scoreStr = score != null ? ` | score ${score}/6` : '';
+  const scoreStr = score != null ? ` | score ${score}/5` : '';
   const status = s.qualityResult?.passed === false
     ? `gefilterd (${(s.qualityResult.blockers ?? []).slice(0, 1).join(', ')})`
     : s.decision?.signal === 'neutral' ? 'neutraal' : 'geadviseerd';
@@ -67,8 +66,7 @@ export async function runDailyReview(client) {
   // FTMO
   const ftmoStats = await getFtmoStats();
 
-  // Recente YouTube-video's (laatste 7 dagen) als extra marktcontext
-  const recentVideos = await getRecentVideos(7).catch(() => []);
+  const recentVideos = [];
 
   // Weekcontext: geef de reviewer longitudinaal perspectief
   const now2 = new Date();

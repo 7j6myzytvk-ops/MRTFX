@@ -72,7 +72,7 @@ export async function decide(
           `van hun mandaat:\n\n` +
 
           `[A] MARKTSTRUCTUUR-ANALIST (eerste oordeel): signaal "${analysis.signal}" ` +
-          `(zekerheid ${analysis.confidence}%) | setup-kwaliteit: ${analysis.setupQualityScore ?? '?'}/6 criteria — ${analysis.reasoning}\n` +
+          `(zekerheid ${analysis.confidence}%) | setup-kwaliteit: ${analysis.setupQualityScore ?? '?'}/5 criteria — ${analysis.reasoning}\n` +
           `→ Beoordeelt: HTF-bias, BOS/CHoCH, liquiditeitskaart, OBs/FVGs. Geen macro, geen indicatoren.\n\n` +
 
           `[B] RISICOMANAGER (trade-parameters — GEEN directioneel oordeel): ` +

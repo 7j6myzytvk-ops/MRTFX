@@ -18,7 +18,6 @@ import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './event
 import { computeIndicators } from '../agents/indicators.js';
 import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
 import { runDailyReview } from './dailyReview.js';
-import { checkForNewVideos, formatNewVideoAlert } from './youtubeMonitor.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
@@ -32,28 +31,12 @@ let lastSignalTime = null;
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
-let lastYoutubeCheckTime = null;
 
 async function poll(client) {
   try {
     // Uitkomsten van openstaande signalen evalueren — ook buiten de sessie en tijdens cooldown.
     // Zo missen we nooit een TP/SL-hit van een gefilterd of eerder signaal.
     await evaluateOpenSignals(client);
-
-    // YouTube-monitor: elke 30 minuten checken op nieuwe video's (24/7).
-    const YOUTUBE_INTERVAL_MS = 30 * 60 * 1000;
-    if (!lastYoutubeCheckTime || Date.now() - lastYoutubeCheckTime > YOUTUBE_INTERVAL_MS) {
-      lastYoutubeCheckTime = Date.now();
-      checkForNewVideos().then(async (newVideos) => {
-        if (newVideos.length === 0) return;
-        const channelId = config.boardroom.dagrapportChannelId;
-        if (!channelId) return;
-        const channel = await client.channels.fetch(channelId);
-        for (const v of newVideos) {
-          await channel.send(formatNewVideoAlert(v));
-        }
-      }).catch((err) => console.error('[youtube] Check mislukt:', err.message));
-    }
 
     // Dagelijkse trader-review: elke werkdag om 17:25–17:34 UTC (na sessie-einde).
     // Eén keer per dag — onafhankelijk van cooldown en sessie-status.

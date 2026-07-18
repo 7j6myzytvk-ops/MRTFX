@@ -63,13 +63,13 @@ export function classifyRiskReward(sample) {
 }
 
 // Premium-signaal: analist won vertrouwen na de teamdiscussie (rebuttal shift omhoog)
-// EN de setup had hoge kwaliteit (setupQualityScore ≥ 5/6). Backtest toont dat
+// EN de setup had hoge kwaliteit (setupQualityScore ≥ 4/5). Backtest toont dat
 // deze combinatie samenhangt met de hoogste WR. Score < 5 of shift niet omhoog = geen combo.
 export function isComboSignal(sample) {
   return (
     sample.decision?.signal !== 'neutral' &&
     classifyRebuttalShift(sample) === 'omhoog' &&
-    (sample.discussion?.analyst?.setupQualityScore ?? 0) >= 5
+    (sample.discussion?.analyst?.setupQualityScore ?? 0) >= 4
   );
 }
 
@@ -116,11 +116,13 @@ export function assessSignalQuality(sample) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
   }
 
-  // Setup-kwaliteitsscore: als de analist minder dan 3 van de 6 ICT/SMC-criteria
+  // Setup-kwaliteitsscore: als de analist minder dan 2 van de 5 ICT/SMC-criteria
   // aanwezig vindt, is er geen handelbare setup — altijd blokkeren ongeacht de rest.
+  // Drempel verlaagd van 3→2 (Fase 79): score is nu /5 (⑥ kill-zone-timing verwijderd
+  // als kwaliteitscriterium — timing is een sessiebewaker, geen setup-indicator).
   const setupScore = sample.discussion.analyst?.setupQualityScore;
-  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
-    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 criteria aanwezig)`);
+  if (setupScore !== undefined && setupScore !== null && setupScore < 2) {
+    blockers.push(`setup-kwaliteit te laag (${setupScore}/5 criteria aanwezig)`);
   }
 
   // AMD-fase filter: de analist berekent amdPhase al maar het veld had geen

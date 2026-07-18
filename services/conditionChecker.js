@@ -113,7 +113,7 @@ export function formatConditionContext(conditions) {
     ? `\n\n⚠️ COUNTER-TREND TRIGGER: H1+M30 wijzen ${direction} maar de weektrend (W1) is ` +
       `${details.trendBias.direction}. Dit is een institutionele reversal-kans nabij een ` +
       `sleutelniveau. Vereisten: zit de prijs in een premium zone (voor short) of discount zone ` +
-      `(voor long)? Bevestig minimaal 5/6 ICT-criteria. De kwaliteitsfilters zijn extra streng.`
+      `(voor long)? Bevestig minimaal 5/5 ICT-criteria. De kwaliteitsfilters zijn extra streng.`
     : '';
   return (
     `\n\nAlgoritmische trigger: drie harde voorwaarden zijn voldaan. ` +

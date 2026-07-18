@@ -61,7 +61,7 @@ export async function assessRisk(
 
           `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
           `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
-          `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/6 criteria aanwezig\n` +
+          `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/5 criteria aanwezig\n` +
           `Onderbouwing: "${analysis.reasoning}"\n` +
           `ATR14 (H1, periode 14): $${atr14.toFixed(2)}\n\n` +
 
@@ -84,16 +84,16 @@ export async function assessRisk(
           `Boven 2.5 alleen als er een duidelijke technische reden is (OB/FVG verder weg)\n\n` +
 
           `POSITIEGROOTTE (confidence × kwaliteit — pas in deze volgorde toe):\n` +
-          `• Harde blokkade: setup-kwaliteitsscore <3 → altijd 'klein', skip verdere berekening\n` +
+          `• Harde blokkade: setup-kwaliteitsscore <2 → altijd 'klein', skip verdere berekening\n` +
           `• Basislijn op analist-zekerheid: <65% → klein | 65-70% → normaal | >70% → groot\n` +
           `• Kwaliteitskorting (elk van onderstaande verlaagt één stap, minimum 'klein'):\n` +
           `  – ATR14 < $13: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
           `  – ATR14 > $30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +
           `  – Entry te laat of geen logisch SL/TP niveau: altijd 'klein'\n` +
           `• Kwaliteitsbonus (alle drie vereist, verhoogt één stap, maximum 'groot'):\n` +
-          `  – setupQualityScore ≥ 5/6 ÉN ATR14 ≥ $13 ÉN zekerheid ≥ 70%\n` +
+          `  – setupQualityScore ≥ 4/5 ÉN ATR14 ≥ $13 ÉN zekerheid ≥ 70%\n` +
           `• Vermeld in reasoning: basislijn, eventuele korting/bonus, eindadvies.\n` +
-          `  Voorbeeld: "Basislijn groot (72%), ATR14 $18 > $13 geen korting, score 5/6 bonus → GROOT"\n` +
+          `  Voorbeeld: "Basislijn groot (72%), ATR14 $18 > $13 geen korting, score 4/5 bonus → GROOT"\n` +
           `  Voorbeeld: "Basislijn normaal (67%), ATR14 $11 < $13 één stap omlaag → KLEIN"` +
           `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,
       },

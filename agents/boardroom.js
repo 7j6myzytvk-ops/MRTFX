@@ -20,6 +20,7 @@ import {
   formatRiskStreakNote,
 } from '../services/ceoPerformanceBriefing.js';
 import { validateSignalStructure, formatHealthReport } from '../services/signalValidator.js';
+import { logBlockedSignal } from '../services/blockedSignalLog.js';
 
 export async function runDiscussion(
   candles,
@@ -73,7 +74,9 @@ export async function runDiscussion(
 
   const [risk, devilsAdvocate, macro, geopolitical] = await Promise.all([
     assessRisk(candles, analysis, { ...opts, streakNote }),
-    challengeAnalysis(candles, analysis, opts),
+    // DA krijgt alleen de laatste 15 candles — forceert focus op recente price action
+    // i.p.v. bevestiging van dezelfde HTF-structuur als de analist (echo-chamber fix, Fase 79).
+    challengeAnalysis(candles.slice(-15), analysis, opts),
     assessSentiment(candles, analysis, opts),
     assessGeopolitical(newsItems, { instrument, granularity, events: opts.events || [] }),
   ]);
@@ -94,13 +97,13 @@ export async function runDiscussion(
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });
 
   // Mechanische confidence-cap: LLM-instructies alleen zijn onvoldoende betrouwbaar
-  // voor numerieke grenzen. setupScore ≤4 → max 72% (prompt zegt dit ook, maar de
-  // override garandeert het). Wordt zichtbaar in Discord via reasoning-tag.
+  // voor numerieke grenzen. setupScore ≤3 → max 72% (prompt zegt dit ook, maar de
+  // override garandeert het). Score is nu /5 (Fase 79: ⑥ verwijderd als kwaliteitscriterium).
   if (decision.signal !== 'neutral') {
-    const setupScore = analysis.setupQualityScore ?? 6;
-    if (setupScore <= 4 && decision.confidence > 72) {
+    const setupScore = analysis.setupQualityScore ?? 5;
+    if (setupScore <= 3 && decision.confidence > 72) {
       decision.confidence = 72;
-      decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/6 → max 72%] ${decision.reasoning}`;
+      decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/5 → max 72%] ${decision.reasoning}`;
     }
   }
 
@@ -136,6 +139,16 @@ export async function runDiscussion(
   const validation = validateSignalStructure(fullResult);
   if (!validation.valid || validation.warnings.length > 0) {
     console.warn('[boardroom] ' + formatHealthReport(validation, `${instrument} ${new Date().toISOString()}`));
+  }
+
+  if (!qualityResult.passed) {
+    logBlockedSignal({
+      decision,
+      qualityResult,
+      discussion,
+      entryPrice: fullResult.entryPrice,
+      atr14: indicators.atr14,
+    }).catch((err) => console.error('[blockedSignalLog] Kon log niet schrijven:', err.message));
   }
 
   return fullResult;

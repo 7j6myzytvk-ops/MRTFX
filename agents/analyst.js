@@ -13,8 +13,8 @@ const ANALYSIS_TOOL = {
       setupQualityScore: {
         type: 'integer',
         minimum: 0,
-        maximum: 6,
-        description: 'Aantal aanwezige setup-kwaliteitscriteria (① t/m ⑥). Bepaalt maximale zekerheid en of de setup handelbaar is.',
+        maximum: 5,
+        description: 'Aantal aanwezige setup-kwaliteitscriteria (① t/m ⑤). Bepaalt maximale zekerheid en of de setup handelbaar is.',
       },
       amdPhase: {
         type: 'string',
@@ -78,9 +78,7 @@ export async function analyzeCandles(
           `2024-2026 bull run naar $3000+. Je specialiteit is institutionele orderflow lezen via ` +
           `ICT/SMC — je ziet in de price action waar het grote geld zit en waar het naartoe beweegt. ` +
           `Je analyseert GEEN indicatoren (RSI/MACD) en geen macro-context — die vallen buiten ` +
-          `jouw mandaat en worden door gespecialiseerde collega's beoordeeld. Sessie-informatie ` +
-          `(welke kill zone we zitten) vind je in de contextNotes — je gebruikt die uitsluitend ` +
-          `voor criterium ⑥ van het setup-kwaliteitsoordeel hieronder. ` +
+          `jouw mandaat en worden door gespecialiseerde collega's beoordeeld. ` +
           `Jij beantwoordt één vraag: "Wat zegt de marktstructuur, en is dit een handelbare setup?"\n\n` +
 
           `ICT/SMC KENNIS (jouw gereedschapskist):\n` +
@@ -102,7 +100,7 @@ export async function analyzeCandles(
           `• RONDE NIVEAUS ($50-intervallen): harde institutionele zones.\n\n` +
 
           `SETUP KWALITEITSOORDEEL — doe dit EERST, vóór je de structuur analyseert:\n` +
-          `Een setup is pas handelbaar als de meeste van deze zes criteria aanwezig zijn. ` +
+          `Een setup is pas handelbaar als de meeste van deze vijf criteria aanwezig zijn. ` +
           `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
           `① HTF-BIAS HELDER: W1 én D1 wijzen beiden duidelijk dezelfde richting ` +
           `(niet zijwaarts, niet tegenstrijdig)\n` +
@@ -125,18 +123,11 @@ export async function analyzeCandles(
           `opvolging, of als er geen identificeerbaar BSL/SSL-cluster was dat geraakt is.\n` +
           `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
           `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
-          `richting op hogere timeframe.\n` +
-          `⑥ KILL ZONE TIMING: beoordeel de actuele sessie op basis van currentTime (UTC).\n` +
-          `  – NY Kill Zone (13:00–17:00 UTC): hoogste institutionele liquiditeit, sterkste window.\n` +
-          `  – London Kill Zone (07:00–10:00 UTC): manipulatiefase, Judas Swings — hogere drempel.\n` +
-          `  – Dead zones (10:00–13:00 UTC, 17:00+ UTC): lage institutionele activiteit.\n` +
-          `  – Asian sessie (00:00–07:00 UTC): accumulatie, zelden handelbare setups.\n` +
-          `  Ken ⑥ toe als de huidige tijd valt in NY Kill Zone of London Kill Zone. ` +
-          `In dead zones of Asian sessie: ⑥ niet toekennen.\n\n` +
+          `richting op hogere timeframe.\n\n` +
           `TELLING → MAXIMALE ZEKERHEID:\n` +
-          `• 5–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
-          `• 3–4 criteria aanwezig → marginale setup → max 72% zekerheid, ook bij sterke structuur\n` +
-          `• <3 criteria aanwezig → geen handelbare setup → neutraal. ` +
+          `• 4–5 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
+          `• 2–3 criteria aanwezig → marginale setup → max 72% zekerheid, ook bij sterke structuur\n` +
+          `• <2 criteria aanwezig → geen handelbare setup → neutraal. ` +
           `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
 
           `STRUCTUURANALYSE — doorloop élke stap expliciet:\n` +
@@ -154,7 +145,7 @@ export async function analyzeCandles(
           `IS DEZE FASE AANTOONBAAR AFGEROND (sweep bevestigd + CHoCH)?\n` +
           `• Distribution (D): echte institutionele move — alleen handelbaar ná afgeronde M-fase\n` +
           `Als M niet aantoonbaar afgerond is: verlaag je zekerheid of ga naar neutraal.\n` +
-          `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑥)? ` +
+          `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑤)? ` +
           `Signaal + zekerheid (gecapped op de telling hierboven) + het concrete ` +
           `prijs-invalidatieniveau (bij welk niveau bewijst de markt dat deze analyse fout is?).\n\n` +
 
@@ -211,7 +202,7 @@ export async function reviewDiscussion(
           `④ Zone verwerkt: is het OB/FVG al eerder bezocht (mitigation)?\n` +
           `⑤ Genegeerd bewijs: zijn er structurele signalen die je eerder te snel afdeed?\n\n` +
           `SETUP KWALITEIT HEROVERWEGING (verplicht):\n` +
-          `Heeft de discussie één van de zes kwaliteitscriteria in twijfel getrokken?\n` +
+          `Heeft de discussie één van de vijf kwaliteitscriteria in twijfel getrokken?\n` +
           `• Risicomanager meldt dat de entry te laat is of geen logisch OB/FVG beschikbaar → ③ of ④ valt weg\n` +
           `• Pre-mortem vindt dat de zone al bezocht was → ③ valt weg\n` +
           `• Pre-mortem vindt dat de sweep ontbrak of een institutionele val is → ④ valt weg\n` +

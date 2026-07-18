@@ -29,7 +29,7 @@ export function validateSignalStructure(result) {
   }
   const score = discussion?.analyst?.setupQualityScore;
   if (score !== undefined && score !== null) {
-    if (typeof score !== 'number' || score < 0 || score > 6 || !Number.isInteger(score)) {
+    if (typeof score !== 'number' || score < 0 || score > 5 || !Number.isInteger(score)) {
       issues.push(`setupQualityScore buiten bereik of geen geheel getal: ${score}`);
     }
   } else {
@@ -50,9 +50,9 @@ export function validateSignalStructure(result) {
 
   // --- Logische consistentie (alleen bij directionele signalen) ---
   if (signal !== 'neutral') {
-    // Setup-score < 3 maar toch passed → algorithmische filter gemist
-    if (typeof score === 'number' && score < 3 && passed === true) {
-      issues.push(`INCONSISTENTIE: setupQualityScore ${score}/6 < 3 maar qualityResult.passed=true`);
+    // Setup-score < 2 maar toch passed → algorithmische filter gemist (drempel aangepast Fase 79: score is nu /5)
+    if (typeof score === 'number' && score < 2 && passed === true) {
+      issues.push(`INCONSISTENTIE: setupQualityScore ${score}/5 < 2 maar qualityResult.passed=true`);
     }
     // CEO confidence < 52 maar toch passed → filter gemist (drempel: 52, zie agentAnalysis.js)
     if (typeof decision?.confidence === 'number' && decision.confidence < 52 && passed === true) {
