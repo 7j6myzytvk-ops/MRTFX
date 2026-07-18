@@ -23,11 +23,7 @@ import { runDailyReview } from './dailyReview.js';
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
 const POLL_INTERVAL_MS = 2 * 60 * 1000;
 
-// Na een signaal wachten we minimaal 4 uur voordat een nieuw signaal mogelijk is.
-// Voorkomt dat een aanhoudende trend tientallen signalen achter elkaar genereert.
-const COOLDOWN_MS = 4 * 60 * 60 * 1000;
-
-let lastSignalTime = null;
+let lastSignalTime = null;  // alleen voor heartbeat-weergave, geen cooldown meer
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
@@ -61,9 +57,6 @@ async function poll(client) {
       lastHeartbeatDate = todayStr;
       await sendHeartbeat(client, lastSignalTime);
     }
-
-    // Geen nieuwe trigger mogelijk tijdens cooldown.
-    if (lastSignalTime && Date.now() - lastSignalTime < COOLDOWN_MS) return;
 
     // Candle-data ophalen (D1 en W1 zijn gecached, M15/M30/H1 vers per poll)
     const [m15Candles, m30Candles, h1Candles, d1Candles, w1Candles] = await Promise.all([
