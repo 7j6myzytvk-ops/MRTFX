@@ -263,7 +263,7 @@ export function createBot() {
           const sig = s.decision.signal.toUpperCase();
           const conf = s.decision.confidence;
           const score = s.discussion?.analyst?.setupQualityScore;
-          const scoreTag = score != null ? ` [${score}/6]` : '';
+          const scoreTag = score != null ? ` [${score}/5]` : '';
           const outcome = formatOutcome(s.outcome);
 
           const passed = s.qualityResult?.passed;
@@ -364,7 +364,7 @@ export function createBot() {
           const dir = s.decision?.signal?.toUpperCase() ?? '?';
           const conf = s.decision?.confidence ?? '?';
           const score = s.discussion?.analyst?.setupQualityScore;
-          const scoreTag = score != null ? ` [${score}/6]` : '';
+          const scoreTag = score != null ? ` [${score}/5]` : '';
           const status = s.qualityResult?.passed === false
             ? `🔶 ${(s.qualityResult.blockers ?? []).slice(0, 1).join(', ')}`
             : s.decision?.signal === 'neutral' ? '💤 neutraal' : '✅ geadviseerd';
@@ -502,7 +502,7 @@ export function createBot() {
 
         const scoreLines = Object.entries(health.scoreDist)
           .filter(([, v]) => v > 0)
-          .map(([k, v]) => `  ${k === 'ontbreekt' ? 'ontbreekt' : `${k}/6`}: ${v}×`)
+          .map(([k, v]) => `  ${k === 'ontbreekt' ? 'ontbreekt' : `${k}/5`}: ${v}×`)
           .join('\n');
 
         const filterDist = {};

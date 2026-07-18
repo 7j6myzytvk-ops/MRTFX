@@ -66,7 +66,6 @@ export async function runDailyReview(client) {
   // FTMO
   const ftmoStats = await getFtmoStats();
 
-  const recentVideos = [];
 
   // Weekcontext: geef de reviewer longitudinaal perspectief
   const now2 = new Date();
@@ -95,7 +94,6 @@ export async function runDailyReview(client) {
     ftmoTotal: ftmoStats.totalPnL,
     ftmoDrawdown: ftmoStats.maxDrawdown,
     ftmoTrades: ftmoStats.todayTrades,
-    recentVideos,
     weekAdvisedCount: weekAdvised.length,
     weekTp,
     weekSl,
