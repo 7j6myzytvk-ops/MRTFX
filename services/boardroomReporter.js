@@ -106,7 +106,7 @@ export function formatCeoMessage(decision, comboSignal = false, qualityResult = 
   const metaParts = [];
   if (setupScore != null) metaParts.push(`Setup: ${setupScore}/6`);
   if (rr != null) metaParts.push(`R:R: ${rr}`);
-  if (rebuttalShift === 'gelijk') metaParts.push('⚖️ Hoge overtuiging');
+  if (rebuttalShift === 'omhoog') metaParts.push('⚖️ Overtuiging gestegen na discussie');
   if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);
   if (lotSize) metaParts.push(`Lot: ${lotSize.lots} (€${lotSize.riskEur} = ${lotSize.riskPct}% | SL $${lotSize.slDistance})`);
   const metaLine = metaParts.length ? metaParts.join(' | ') + '\n' : '';

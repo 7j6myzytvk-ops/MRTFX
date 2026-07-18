@@ -2,6 +2,7 @@ import { getXauUsdCandles } from './marketData.js';
 import { getAllSignals, updateSignalOutcome } from '../data/store.js';
 import { filterFlatCandles, HORIZON_CANDLES, evaluateOutcome } from '../agents/outcomeEvaluator.js';
 import { reportOutcomes } from './boardroomReporter.js';
+import { config } from '../config/index.js';
 
 // 'neutraal' (CEO nam geen positie) en 'onbruikbaar' (prijsschaal-mismatch) worden
 // direct bij de eerste evaluatie bepaald - dat is geen afgewacht handelsresultaat
@@ -82,7 +83,32 @@ export async function evaluateOpenSignals(client) {
 
   if (client && resolved.length > 0) {
     await reportOutcomes(client, resolved);
+    await checkSlPattern(client, all).catch((err) =>
+      console.error('[slPattern] Check mislukt:', err.message),
+    );
   }
 
   return { checked: pending.length, updated };
+}
+
+// Stuur een Discord-waarschuwing als de laatste 3 afgeronde directionale signalen
+// allemaal SL waren. Dit is een vroeg signaal dat de marktomstandigheden of filters
+// herziening nodig hebben — geen automatische filter-aanpassing, alleen een alert.
+async function checkSlPattern(client, allSignals) {
+  const channelId = config.boardroom?.ceoChannelId;
+  if (!channelId || !client) return;
+
+  const resolved = allSignals
+    .filter((s) => ['tp', 'sl', 'geen'].includes(s.outcome?.result) && s.decision?.signal !== 'neutral')
+    .slice(-3);
+
+  if (resolved.length < 3) return;
+  if (!resolved.every((s) => s.outcome?.result === 'sl')) return;
+
+  const channel = await client.channels.fetch(channelId);
+  await channel.send(
+    '⚠️ **SL-patroon gedetecteerd**: de laatste 3 afgeronde directionale signalen ' +
+    'eindigden allemaal in stop-loss. Bekijk de huidige marktomstandigheden en ' +
+    'overweeg de actieve filters te herzien via `/health` en `/diagnose`.',
+  );
 }

@@ -93,6 +93,17 @@ export async function runDiscussion(
 
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });
 
+  // Mechanische confidence-cap: LLM-instructies alleen zijn onvoldoende betrouwbaar
+  // voor numerieke grenzen. setupScore ≤4 → max 72% (prompt zegt dit ook, maar de
+  // override garandeert het). Wordt zichtbaar in Discord via reasoning-tag.
+  if (decision.signal !== 'neutral') {
+    const setupScore = analysis.setupQualityScore ?? 6;
+    if (setupScore <= 4 && decision.confidence > 72) {
+      decision.confidence = 72;
+      decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/6 → max 72%] ${decision.reasoning}`;
+    }
+  }
+
   const entryPrice = candles[candles.length - 1].close;
   const discussion = { analyst: analysis, riskManager: risk, devilsAdvocate, macro, geopolitical, analystRebuttal: rebuttal };
   const sample = {

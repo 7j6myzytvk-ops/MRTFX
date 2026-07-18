@@ -107,6 +107,11 @@ export function assessSignalQuality(sample) {
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
     blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
   }
+  // R:R ondergrens: bij R:R < 1.5 is de verwachte waarde negatief ongeacht WR.
+  // classifyRiskReward returnt al de bucket '<1.5' — één check dicht dit gat.
+  if (sample.entryPrice != null && classifyRiskReward(sample) === '<1.5') {
+    blockers.push('risico/winst-verhouding te laag (<1.5) — negatieve verwachte waarde');
+  }
   if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
   }
@@ -116,6 +121,17 @@ export function assessSignalQuality(sample) {
   const setupScore = sample.discussion.analyst?.setupQualityScore;
   if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
     blockers.push(`setup-kwaliteit te laag (${setupScore}/6 criteria aanwezig)`);
+  }
+
+  // AMD-fase filter: de analist berekent amdPhase al maar het veld had geen
+  // mechanische consequentie. Manipulatiefase = Judas Swing gaande, geen entry.
+  // Onduidelijk = geen structurele basis voor een beslissing.
+  const amdPhase = sample.discussion?.analyst?.amdPhase;
+  if (amdPhase === 'manipulation') {
+    blockers.push('AMD-fase: manipulatiefase niet afgerond — wacht op sweep + CHoCH');
+  }
+  if (amdPhase === 'onduidelijk') {
+    blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
   }
 
   // Counter-trend blocker: als D1 én W1 beide dezelfde richting wijzen én het signaal
