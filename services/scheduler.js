@@ -22,8 +22,12 @@ import { runDailyReview } from './dailyReview.js';
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
 const POLL_INTERVAL_MS = 2 * 60 * 1000;
+// Minimale pauze na een directionale boardroom-uitkomst. Voorkomt redundante runs
+// op dezelfde TF-alignment in trending markten (alignment kan uren aanstaan).
+// 25 min is lang genoeg voor ruis-preventie, kort genoeg om een nieuwe setup niet te missen.
+const MIN_SIGNAL_COOLDOWN_MS = 25 * 60 * 1000;
 
-let lastSignalTime = null;  // alleen voor heartbeat-weergave, geen cooldown meer
+let lastSignalTime = null;  // tijdstip laatste directionale beslissing (cooldown + heartbeat)
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
@@ -89,6 +93,8 @@ async function poll(client) {
 
     // --- Pad 1: condition-based setup ---
     if (conditions.triggered) {
+      if (lastSignalTime && Date.now() - lastSignalTime < MIN_SIGNAL_COOLDOWN_MS) return;
+
       console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
 
       const dollarCandles = await getRecentEurUsdCandles({ granularity: 'H1', count: 50 });
