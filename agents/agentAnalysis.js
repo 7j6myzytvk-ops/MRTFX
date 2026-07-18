@@ -95,11 +95,13 @@ export function assessSignalQuality(sample) {
     blockers.push('macro contraireert de richting');
   }
   // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
-  // Backtest (310 directionale samples): de ene sample met delta <= -15 was een SL (WR 0%).
-  // Drempel van -15 vangt alleen echte twijfel op — analist trekt actief conclusies in.
+  // Drempel verhoogd van -15 naar -25 (Fase 76): in live-omstandigheden triggerde -15 bij
+  // 20% van de signalen (4×/20) terwijl backtest slechts 0,3% (1×/310) gaf. Meerdere
+  // geblokkeerde signalen haalden TP — de filter was te agressief. Bij -25 blokkeren we
+  // alleen extremen (analist trekt meer dan een kwart van zijn zekerheid in).
   const rebuttalDelta =
     (sample.discussion.analystRebuttal?.confidence ?? 0) - (sample.discussion.analyst?.confidence ?? 0);
-  if (rebuttalDelta <= -15) {
+  if (rebuttalDelta <= -25) {
     blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
   }
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {

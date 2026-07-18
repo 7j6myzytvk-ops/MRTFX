@@ -1757,3 +1757,27 @@ transacties, risico op corruptie bij gelijktijdig schrijven.
 Wanneer relevant: bij opschaling naar signaalservice (meerdere gebruikers/processen).
 Aanpak dan: **SQLite** als eerste stap (geen server, één bestand, npm-pakket `better-sqlite3`),
 pas daarna PostgreSQL als dat echt nodig blijkt. Geen urgentie in de huidige testfase.
+
+## Fase 76 - Filter 3 versoepeling + poll-interval halvering (18 jul 2026)
+
+### Aanleiding
+Live /health-analyse (18 jul 2026): "analist verloor vertrouwen na discussie" triggerde
+**4× in de laatste 20 signalen (20%)**. In de backtest was dit 0,3% (1×/310 directionale
+samples). Meerdere gefilterde setups haalden TP — de filter blokkeerde te agressief.
+
+### Filter 3: drempel van −15 → −25 (`agents/agentAnalysis.js`)
+Bij −15 valt een analist die van 72% naar 57% zakt al uit. Bij −25 blokkeren we pas als
+de analist meer dan een kwart van zijn zekerheid inlevert (bv. 72% → 47%) — een
+duidelijker teken van echte twijfel. De motiverende comment is bijgewerkt met de
+live-observatie.
+
+### Poll-interval: 5 min → 2 min (`services/scheduler.js`)
+Gebruiker ontving een bearish signaal op het moment dat de move al gaande was. Kortere
+poll-cadans reduceert de detectie-lag (maximale vertraging van poll-grens + boardroom-run:
+5+1.5=6.5 min → 2+1.5=3.5 min). De M15-alignments-vereiste (entry-bevestiging)
+blijft ongewijzigd — die is ICT-correct, niet een code-bug.
+
+### Heartbeat-tekst (`services/botAlerts.js`)
+"Monitoring actief" → "Setup-scanner actief": verduidelijkt dat het systeem actief
+boards triggert (niet alleen pasief pollt) wanneer condities kloppen. Interval in de
+tekst bijgewerkt naar 2 min.

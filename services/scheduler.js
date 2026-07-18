@@ -20,8 +20,9 @@ import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/ec
 import { runDailyReview } from './dailyReview.js';
 import { checkForNewVideos, formatNewVideoAlert } from './youtubeMonitor.js';
 
-// Elke 5 minuten controleren — goedkoop (gecachede candle-data + 3 verse calls).
-const POLL_INTERVAL_MS = 5 * 60 * 1000;
+// Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
+// te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
+const POLL_INTERVAL_MS = 2 * 60 * 1000;
 
 // Na een signaal wachten we minimaal 4 uur voordat een nieuw signaal mogelijk is.
 // Voorkomt dat een aanhoudende trend tientallen signalen achter elkaar genereert.
