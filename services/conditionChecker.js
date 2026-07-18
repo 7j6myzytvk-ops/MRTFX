@@ -31,7 +31,7 @@ export function hasFridayGapRisk(now = new Date()) {
 // Geeft { triggered, direction, blockers, details } terug.
 export function checkConditions({
   h1Candles,
-  m30Candles,
+  h4Candles,
   m15Candles,
   d1Candles,
   w1Candles,
@@ -44,13 +44,14 @@ export function checkConditions({
     blockers.push('buiten actieve sessie (08:00–17:00 UTC)');
   }
 
-  // 2. Multi-timeframe alignment (H1 + M30 + M15 moeten het eens zijn)
+  // 2. Multi-timeframe alignment: 4H bepaalt institutionele bias, H1 bevestigt.
+  // M15 mag in pullback zijn — dat is het entry-niveau, niet het structuur-niveau.
+  const h4Bias = computeTimeframeBias(h4Candles);
   const h1Bias = computeTimeframeBias(h1Candles);
-  const m30Bias = computeTimeframeBias(m30Candles);
   const m15Bias = computeTimeframeBias(m15Candles);
-  const tfAlignment = computeMultiTFAlignment(h1Bias, m30Bias, m15Bias);
+  const tfAlignment = computeMultiTFAlignment(h4Bias, h1Bias, m15Bias);
   if (!tfAlignment.aligned) {
-    blockers.push(`timeframes niet aligned (H1: ${h1Bias}, M30: ${m30Bias}, M15: ${m15Bias})`);
+    blockers.push(`timeframes niet aligned (4H: ${h4Bias}, H1: ${h1Bias}, M15: ${m15Bias})`);
   }
 
   // 3. Trendfilter (W1 moet een heldere richting hebben — 'mixed' W1 blokkeert)
@@ -85,8 +86,8 @@ export function checkConditions({
     blockers,
     details: {
       session: isActiveSession(now),
+      h4Bias,
       h1Bias,
-      m30Bias,
       m15Bias,
       tfAlignment,
       trendBias,
@@ -110,14 +111,14 @@ export function formatConditionContext(conditions) {
       ? `M15 bevestigt ook (${details.m15Bias}).`
       : `M15 is ${details.m15Bias === 'mixed' ? 'gemengd' : details.m15Bias} (pullback op entry-timeframe — normaal bij ICT-setups, weeg dit mee in je triggercriterium ⑤).`;
   const counterTrendWarning = details.isCounterTrend
-    ? `\n\n⚠️ COUNTER-TREND TRIGGER: H1+M30 wijzen ${direction} maar de weektrend (W1) is ` +
+    ? `\n\n⚠️ COUNTER-TREND TRIGGER: 4H+H1 wijzen ${direction} maar de weektrend (W1) is ` +
       `${details.trendBias.direction}. Dit is een institutionele reversal-kans nabij een ` +
       `sleutelniveau. Vereisten: zit de prijs in een premium zone (voor short) of discount zone ` +
       `(voor long)? Bevestig minimaal 5/5 ICT-criteria. De kwaliteitsfilters zijn extra streng.`
     : '';
   return (
     `\n\nAlgoritmische trigger: drie harde voorwaarden zijn voldaan. ` +
-    `H1 en M30 zijn beiden ${direction === 'bullish' ? 'bullish' : 'bearish'} aligned. ` +
+    `4H en H1 zijn beiden ${direction === 'bullish' ? 'bullish' : 'bearish'} aligned. ` +
     `${m15Note} ` +
     `D1- en W1-trendrichting: ${details.trendBias.direction}. ` +
     `${levelNote} ` +

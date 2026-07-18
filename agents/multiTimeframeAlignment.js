@@ -37,16 +37,16 @@ export function computeTimeframeBias(candles) {
   return 'mixed';
 }
 
-// Controleert of H1 + M30 dezelfde richting laten zien (structuur-timeframes).
+// Controleert of 4H + H1 dezelfde richting laten zien (institutionele structuur-timeframes).
 // M15 mag afwijken — dat is de entry-timeframe en kan in pullback zijn terwijl
-// H1+M30 de trend bevestigen. Dit is ICT-conform: structuur lezen op H1/M30,
-// entry timen op M15-pullback.
-// H1 of M30 'mixed' = niet aligned (structuur moet helder zijn).
-export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
-  if (h1Bias === 'bullish' && m30Bias === 'bullish') {
+// 4H+H1 de bias bevestigen. ICT top-down: 4H bepaalt institutionele richting,
+// H1 bevestigt dat de bias aan het uitspelen is, M15 geeft de entry-trigger.
+// 4H of H1 'mixed' = niet aligned (structuur moet helder zijn).
+export function computeMultiTFAlignment(h4Bias, h1Bias, m15Bias) {
+  if (h4Bias === 'bullish' && h1Bias === 'bullish') {
     return { aligned: true, direction: 'bullish' };
   }
-  if (h1Bias === 'bearish' && m30Bias === 'bearish') {
+  if (h4Bias === 'bearish' && h1Bias === 'bearish') {
     return { aligned: true, direction: 'bearish' };
   }
   return { aligned: false, direction: null };
@@ -54,10 +54,10 @@ export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
 
 // Trendfilter: W1 is de enige richtingsbepaler.
 // D1 mag in retracement/correctie zitten (bullish D1 binnen bearish W1 is een
-// klassieke ICT-setup — dat is het moment waarop je shorts zoekt op H1+M30).
+// klassieke ICT-setup — dat is het moment waarop je shorts zoekt op 4H+H1).
 // Blokkeert alleen als W1 zelf 'mixed' is (geen heldere weektrend).
 // De richtingsconsistentie-check in conditionChecker.js (stap 4) voorkomt
-// vervolgens dat H1+M30 tegen de W1-richting in triggeren.
+// vervolgens dat 4H+H1 tegen de W1-richting in triggeren.
 // d1Candles wordt bewust niet gebruikt: D1 mag in retracement zitten terwijl W1 de
 // richting bepaalt (klassieke ICT-setup). De parameter bestaat zodat de aanroeper
 // de D1-data kan doorgeven zonder de interface te wijzigen als D1 later wel
