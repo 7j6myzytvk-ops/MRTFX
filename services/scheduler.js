@@ -3,6 +3,7 @@ import {
   getRecentRealCandles,
   getRecentEurUsdCandles,
   getRecentUsYieldCandles,
+  getRecentXauH4Candles,
   getRecentXauD1Candles,
   getRecentXauW1Candles,
 } from './marketData.js';
@@ -62,11 +63,11 @@ async function poll(client) {
       await sendHeartbeat(client, lastSignalTime);
     }
 
-    // Candle-data ophalen (D1 en W1 zijn gecached, M15/H1/H4 vers per poll)
+    // Candle-data ophalen (H4/D1/W1 gecached, M15/H1 vers per poll)
     const [m15Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
       getRecentRealCandles({ granularity: 'M15', count: 100 }),
       getRecentRealCandles({ granularity: 'H1', count: 50 }),
-      getRecentRealCandles({ granularity: 'H4', count: 50 }),
+      getRecentXauH4Candles({ count: 50 }),
       getRecentXauD1Candles({ count: 30 }),
       getRecentXauW1Candles({ count: 20 }),
     ]);

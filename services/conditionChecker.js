@@ -7,6 +7,10 @@ import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 // in de NY-sessie (13:00–17:00 UTC) valt. Sessie-timing is boardroom-criterium
 // (analist beoordeelt kill zones via ⑥), geen harde externe blokkade.
 export function isActiveSession(now = new Date()) {
+  const day = now.getUTCDay();
+  // XAU/USD markt gesloten: zaterdag geheel, zondag vóór 21:00 UTC
+  if (day === 6) return false;
+  if (day === 0 && now.getUTCHours() < 21) return false;
   const hour = now.getUTCHours();
   return hour >= 8 && hour < 17;
 }

@@ -174,6 +174,22 @@ export async function getRecentXauW1Candles({ count = 20 } = {}) {
   return data;
 }
 
+// XAU/USD 4H-candles als institutionele structuur-timeframe (zie agents/boardroom.js).
+// Een 4H-candle sluit maar 1x per 4 uur — cachen met 4u TTL is correct en scheelt
+// ~180 Twelve Data-calls per handelsdag (van 810 naar ~540).
+const H4_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+let h4CandlesCache = null;
+
+export async function getRecentXauH4Candles({ count = 50 } = {}) {
+  if (h4CandlesCache && h4CandlesCache.count === count && isCacheValid(h4CandlesCache.fetchedAt, H4_CACHE_TTL_MS)) {
+    return h4CandlesCache.data;
+  }
+  const raw = await getXauUsdCandles({ granularity: 'H4', count: count + 70 });
+  const data = filterFlatCandles(raw).slice(-count);
+  h4CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
+
 // XAU/USD dagcandles als D1-trendcontext (zie agents/dailyContext.js). Dagdata
 // verandert maar 1x per dag, dus 24u-cache voorkomt onnodige calls per tick.
 const D1_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
