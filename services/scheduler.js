@@ -115,11 +115,10 @@ async function poll(client) {
         triggerType: 'condition',
       });
 
-      // Cooldown alleen bij een directionale beslissing (bullish/bearish).
-      // Neutrale CEO-beslissing ("geen actie") blokkeert de rest van de sessie niet.
-      if (result.decision.signal !== 'neutral') {
-        lastSignalTime = Date.now();
-      }
+      // Altijd cooldown instellen na een boardroom-run, ook bij neutraal.
+      // 4H-alignment blijft uren stabiel — zonder neutrale cooldown triggert de
+      // boardroom elke 2 minuten zolang conditions.triggered true is.
+      lastSignalTime = Date.now();
 
       await reportToDiscord(client, result);
       return;
