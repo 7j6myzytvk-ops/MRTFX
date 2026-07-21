@@ -174,6 +174,21 @@ export async function getRecentXauW1Candles({ count = 20 } = {}) {
   return data;
 }
 
+// XAU/USD H1-candles: sluit 1x per uur, 10 minuten cache is voldoende voor
+// alignment-check en boardroom-analyse. Scheelt ~216 calls per handelsdag.
+const H1_CACHE_TTL_MS = 10 * 60 * 1000;
+let h1CandlesCache = null;
+
+export async function getRecentXauH1Candles({ count = 50 } = {}) {
+  if (h1CandlesCache && h1CandlesCache.count === count && isCacheValid(h1CandlesCache.fetchedAt, H1_CACHE_TTL_MS)) {
+    return h1CandlesCache.data;
+  }
+  const raw = await getXauUsdCandles({ granularity: 'H1', count: count + 70 });
+  const data = filterFlatCandles(raw).slice(-count);
+  h1CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
+
 // XAU/USD 4H-candles als institutionele structuur-timeframe (zie agents/boardroom.js).
 // Een 4H-candle sluit maar 1x per 4 uur — cachen met 4u TTL is correct en scheelt
 // ~180 Twelve Data-calls per handelsdag (van 810 naar ~540).

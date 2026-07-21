@@ -3,6 +3,7 @@ import {
   getRecentRealCandles,
   getRecentEurUsdCandles,
   getRecentUsYieldCandles,
+  getRecentXauH1Candles,
   getRecentXauH4Candles,
   getRecentXauD1Candles,
   getRecentXauW1Candles,
@@ -32,12 +33,17 @@ let lastSignalTime = null;  // tijdstip laatste directionale beslissing (cooldow
 let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
+let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
 
 async function poll(client) {
   try {
-    // Uitkomsten van openstaande signalen evalueren — ook buiten de sessie en tijdens cooldown.
-    // Zo missen we nooit een TP/SL-hit van een gefilterd of eerder signaal.
-    await evaluateOpenSignals(client);
+    // TP/SL-uitkomsten evalueren: max 1x per 15 minuten (H1-candles sluiten per uur,
+    // vaker checken levert geen nieuwe informatie maar kost wel een API-call).
+    const now = Date.now();
+    if (!lastOutcomeCheckTime || now - lastOutcomeCheckTime >= 15 * 60 * 1000) {
+      lastOutcomeCheckTime = now;
+      await evaluateOpenSignals(client);
+    }
 
     // Dagelijkse trader-review: elke werkdag om 17:25–17:34 UTC (na sessie-einde).
     // Eén keer per dag — onafhankelijk van cooldown en sessie-status.
@@ -63,10 +69,10 @@ async function poll(client) {
       await sendHeartbeat(client, lastSignalTime);
     }
 
-    // Candle-data ophalen (H4/D1/W1 gecached, M15/H1 vers per poll)
+    // Candle-data ophalen (H1/H4/D1/W1 gecached, alleen M15 vers per poll)
     const [m15Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
       getRecentRealCandles({ granularity: 'M15', count: 100 }),
-      getRecentRealCandles({ granularity: 'H1', count: 50 }),
+      getRecentXauH1Candles({ count: 50 }),
       getRecentXauH4Candles({ count: 50 }),
       getRecentXauD1Candles({ count: 30 }),
       getRecentXauW1Candles({ count: 20 }),
