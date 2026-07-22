@@ -37,16 +37,16 @@ export function computeTimeframeBias(candles) {
   return 'mixed';
 }
 
-// Controleert of 4H + H1 dezelfde richting laten zien (institutionele structuur-timeframes).
+// Controleert of H1 + M30 dezelfde richting laten zien (structuur-timeframes).
 // M15 mag afwijken — dat is de entry-timeframe en kan in pullback zijn terwijl
-// 4H+H1 de bias bevestigen. ICT top-down: 4H bepaalt institutionele richting,
-// H1 bevestigt dat de bias aan het uitspelen is, M15 geeft de entry-trigger.
-// 4H of H1 'mixed' = niet aligned (structuur moet helder zijn).
-export function computeMultiTFAlignment(h4Bias, h1Bias, m15Bias) {
-  if (h4Bias === 'bullish' && h1Bias === 'bullish') {
+// H1+M30 de trend bevestigen. Dit is ICT-conform: structuur lezen op H1/M30,
+// entry timen op M15-pullback.
+// H1 of M30 'mixed' = niet aligned (structuur moet helder zijn).
+export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
+  if (h1Bias === 'bullish' && m30Bias === 'bullish') {
     return { aligned: true, direction: 'bullish' };
   }
-  if (h4Bias === 'bearish' && h1Bias === 'bearish') {
+  if (h1Bias === 'bearish' && m30Bias === 'bearish') {
     return { aligned: true, direction: 'bearish' };
   }
   return { aligned: false, direction: null };

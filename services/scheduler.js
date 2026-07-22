@@ -69,17 +69,18 @@ async function poll(client) {
       await sendHeartbeat(client, lastSignalTime);
     }
 
-    // Candle-data ophalen (H1/H4/D1/W1 gecached, alleen M15 vers per poll)
-    const [m15Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
+    // Candle-data ophalen (H1/H4/D1/W1 gecached, M15/M30 vers per poll)
+    const [m15Candles, m30Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
       getRecentRealCandles({ granularity: 'M15', count: 100 }),
+      getRecentRealCandles({ granularity: 'M30', count: 100 }),
       getRecentXauH1Candles({ count: 50 }),
       getRecentXauH4Candles({ count: 50 }),
       getRecentXauD1Candles({ count: 30 }),
       getRecentXauW1Candles({ count: 20 }),
     ]);
 
-    // Alle vier voorwaarden controleren
-    const conditions = checkConditions({ h1Candles, h4Candles, m15Candles, d1Candles, w1Candles });
+    // Trigger op H1+M30 alignment; H4 gaat als context mee naar de agents
+    const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
 
     // Puur diagnostisch - beinvloedt de trigger-beslissing niet, legt alleen vast
     // welke voorwaarden wel/niet klopten zodat we later kunnen zien welke conditie
