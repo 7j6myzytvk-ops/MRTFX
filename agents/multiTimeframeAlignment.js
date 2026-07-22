@@ -52,16 +52,13 @@ export function computeMultiTFAlignment(h1Bias, m30Bias, m15Bias) {
   return { aligned: false, direction: null };
 }
 
-// Trendfilter: W1 is de enige richtingsbepaler.
+// W1-trendrichting als context: geen harde trigger-blokkade.
 // D1 mag in retracement/correctie zitten (bullish D1 binnen bearish W1 is een
-// klassieke ICT-setup — dat is het moment waarop je shorts zoekt op 4H+H1).
-// Blokkeert alleen als W1 zelf 'mixed' is (geen heldere weektrend).
-// De richtingsconsistentie-check in conditionChecker.js (stap 4) voorkomt
-// vervolgens dat 4H+H1 tegen de W1-richting in triggeren.
+// klassieke ICT-setup). W1-richting gaat via weeklyContextNote en conditionChecker
+// details naar alle agents; de CEO weegt het mee via zijn counter-trend stop-regel.
 // d1Candles wordt bewust niet gebruikt: D1 mag in retracement zitten terwijl W1 de
-// richting bepaalt (klassieke ICT-setup). De parameter bestaat zodat de aanroeper
-// de D1-data kan doorgeven zonder de interface te wijzigen als D1 later wel
-// meeweegt — maar de huidige implementatie negeert d1Candles intentioneel.
+// richting bepaalt. De parameter bestaat zodat de aanroeper D1-data kan doorgeven
+// zonder de interface te wijzigen als D1 later wel meeweegt.
 export function computeTrendBias(d1Candles, w1Candles) {
   const w1Bias = computeTimeframeBias(w1Candles);
   if (w1Bias === 'mixed') return { aligned: false, direction: null };

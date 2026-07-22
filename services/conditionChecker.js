@@ -29,9 +29,9 @@ export function hasFridayGapRisk(now = new Date()) {
   return now.getUTCDay() === 5 && now.getUTCHours() >= 12;
 }
 
-// Controleert drie harde voorwaarden voor een setup-signaal.
-// nearLevel is een zachte voorkeur: wordt meegegeven als context aan agents,
-// maar blokkeert de trigger niet (diagnose toonde 93.4% blokkade door nearLevel).
+// Controleert twee harde voorwaarden voor een setup-signaal: sessie + TF-alignment.
+// W1-trendrichting is context (geen blokkade) — gaat via weeklyContextNote en
+// trendBias naar alle agents. CEO weegt het mee via zijn counter-trend stop-regel.
 // Geeft { triggered, direction, blockers, details } terug.
 export function checkConditions({
   h1Candles,
@@ -58,28 +58,18 @@ export function checkConditions({
     blockers.push(`timeframes niet aligned (H1: ${h1Bias}, M30: ${m30Bias}, M15: ${m15Bias})`);
   }
 
-  // 3. Trendfilter (W1 moet een heldere richting hebben — 'mixed' W1 blokkeert)
+  // 3. W1-trendrichting als context voor agents (geen harde blokkade).
+  // Gaat via weeklyContextNote naar alle agents en via trendBias in details naar
+  // formatConditionContext. CEO weegt de weektrend mee via zijn eigen stop-regel.
   const trendBias = computeTrendBias(d1Candles, w1Candles);
-  if (!trendBias.aligned) {
-    blockers.push('W1-trendrichting onduidelijk (W1 bias: mixed)');
-  }
 
-  // 4. Sleutelniveau-proximity (vroeg berekend: bepaalt of counter-trend triggers mogen doorgaan).
+  // 4. Sleutelniveau-proximity: context voor agents.
   // d1Candles meegeven zodat vorige dag high/low en H1 swing levels ook gedetecteerd worden.
   const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
 
-  // 5. Richtingsconsistentie (TF-alignment en trendfilter moeten dezelfde kant wijzen).
-  // Uitzondering: als prijs zich nabij een bewezen sleutelniveau bevindt, staan we een
-  // counter-trend trigger toe. Institutionele reversals vinden precies daar plaats —
-  // premium short in bull market, discount long in bear market. De kwaliteitsfilters
-  // (setupQualityScore, DA counter-confidence, filter 7) zorgen voor de verdere selectie.
+  // Counter-trend detectie: alleen voor de context-noot aan agents, geen blokkade.
   const isCounterTrend =
     tfAlignment.aligned && trendBias.aligned && tfAlignment.direction !== trendBias.direction;
-  if (isCounterTrend && !nearLevel.near) {
-    blockers.push(
-      `TF-richting (${tfAlignment.direction}) conflicteert met trendrichting (${trendBias.direction})`,
-    );
-  }
 
   const triggered = blockers.length === 0;
   const direction = tfAlignment.direction;
@@ -96,7 +86,7 @@ export function checkConditions({
       tfAlignment,
       trendBias,
       nearLevel,
-      isCounterTrend: isCounterTrend && nearLevel.near,
+      isCounterTrend,
     },
   };
 }
@@ -116,9 +106,10 @@ export function formatConditionContext(conditions) {
       : `M15 is ${details.m15Bias === 'mixed' ? 'gemengd' : details.m15Bias} (pullback op entry-timeframe — normaal bij ICT-setups, weeg dit mee in je triggercriterium ⑤).`;
   const counterTrendWarning = details.isCounterTrend
     ? `\n\n⚠️ COUNTER-TREND TRIGGER: H1+M30 wijzen ${direction} maar de weektrend (W1) is ` +
-      `${details.trendBias.direction}. Dit is een institutionele reversal-kans nabij een ` +
-      `sleutelniveau. Vereisten: zit de prijs in een premium zone (voor short) of discount zone ` +
-      `(voor long)? Bevestig minimaal 5/5 ICT-criteria. De kwaliteitsfilters zijn extra streng.`
+      `${details.trendBias.direction}. Institutionele reversals zijn mogelijk, maar vereisen ` +
+      `hogere zekerheid. Vereisten: zit de prijs in een premium zone (voor short) of discount ` +
+      `zone (voor long)? Bevestig minimaal 4/5 ICT-criteria. CEO: max 55% bij counter-trend ` +
+      `tenzij setup-kwaliteit dit rechtvaardigt.`
     : '';
   return (
     `\n\nAlgoritmische trigger: drie harde voorwaarden zijn voldaan. ` +
