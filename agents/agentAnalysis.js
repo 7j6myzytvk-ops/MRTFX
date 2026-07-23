@@ -135,19 +135,21 @@ export function assessSignalQuality(sample) {
     blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
   }
 
-  // Counter-trend blocker: als D1 én W1 beide dezelfde richting wijzen én het signaal
-  // is tegengesteld, is de kans op succes historisch laag — de hogere trend wint vrijwel altijd.
-  const { dailyTrend, weeklyTrend } = sample;
+  // Counter-trend blocker: als H4 én D1 beide dezelfde richting wijzen én het signaal
+  // is tegengesteld, blokkeert de filter — de institutionele trend wint bijna altijd.
+  // W1 is macro-context voor de CEO, geen mechanische blokkade: als D1 draait maar W1
+  // nog niet, mag het systeem wél een bullish/bearish setup doorgeven.
+  const { h4Trend, dailyTrend } = sample;
   if (
-    dailyTrend && weeklyTrend &&
-    dailyTrend !== 'neutraal' && weeklyTrend !== 'neutraal' &&
-    dailyTrend === weeklyTrend
+    h4Trend && dailyTrend &&
+    h4Trend !== 'neutraal' && dailyTrend !== 'neutraal' &&
+    h4Trend === dailyTrend
   ) {
     const isContrarian =
       (sample.decision.signal === 'bullish' && dailyTrend === 'bearish') ||
       (sample.decision.signal === 'bearish' && dailyTrend === 'bullish');
     if (isContrarian) {
-      blockers.push(`counter-trend: signaal ${sample.decision.signal} tegen D1+W1 ${dailyTrend} trend`);
+      blockers.push(`counter-trend: signaal ${sample.decision.signal} tegen H4+D1 ${dailyTrend} trend`);
     }
   }
 

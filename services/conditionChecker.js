@@ -123,10 +123,10 @@ export function formatConditionContext(conditions) {
     ? `Prijs bevindt zich nabij ${details.nearLevel.label} ($${details.nearLevel.level.toFixed(2)}, ${details.nearLevel.approachDirection}) — verhoogt setup-kwaliteit.`
     : `Prijs bevindt zich NIET nabij een gekend sleutelniveau — weeg dit mee in je setupQualityScore (verlaagt kwaliteit).`;
   const counterTrendWarning = details.isCounterTrend
-    ? `\n\n⚠️ COUNTER-TREND TRIGGER: H1+M30 wijzen ${direction} maar de weektrend (W1) is ` +
-      `${details.trendBias.direction}. Institutionele reversals zijn mogelijk, maar vereisen ` +
-      `hogere zekerheid. Bevestig minimaal 4/5 ICT-criteria. CEO: max 55% bij counter-trend ` +
-      `tenzij setup-kwaliteit dit rechtvaardigt.`
+    ? `\n\n⚠️ CONTEXT: H1+M30 wijzen ${direction} maar de weektrend (W1) is nog ` +
+      `${details.trendBias.direction}. W1 is macro-achtergrond — geen blokkade. ` +
+      `Als H4 en D1 al gedraaid zijn, is dit een legitieme setup. ` +
+      `Controleer of de 4H CHoCH bevestigd is voordat je hoge zekerheid toekent.`
     : '';
   return (
     `\n\nAlgoritmische trigger (REVERSAL-MODUS): H1 en M30 zijn beiden ${dirLabel} aligned. ` +

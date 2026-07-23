@@ -50,9 +50,10 @@ export async function runDiscussion(
 
   // 4H-structuurcontext: institutionele referentie-timeframe.
   // Agents zien hiermee het 4H-niveau, onafhankelijk van de H1-candles die ze analyseren.
+  // h4Trend wordt ook opgeslagen in fullResult voor de mechanische counter-trend blocker (D1+H4).
+  const h4Trend = h4Candles && h4Candles.length >= 20 ? computeTimeframeBias(h4Candles) : null;
   const h4ContextNote = (() => {
-    if (!h4Candles || h4Candles.length < 20) return '';
-    const bias = computeTimeframeBias(h4Candles);
+    if (!h4Trend) return '';
     const h4Ind = computeIndicators(h4Candles);
     const recent = h4Candles.slice(-10);
     const h4High = Math.max(...recent.map((c) => c.high)).toFixed(2);
@@ -60,7 +61,7 @@ export async function runDiscussion(
     const sma20Str = h4Ind.sma20 != null ? ` | SMA20(4H): $${h4Ind.sma20.toFixed(2)}` : '';
     const rsiStr = h4Ind.rsi14 != null ? ` | RSI14(4H): ${h4Ind.rsi14.toFixed(1)}` : '';
     return `\n\n4H-STRUCTUUR (institutionele referentie-timeframe):\n` +
-      `Bias: ${bias.toUpperCase()} ${sma20Str}${rsiStr}\n` +
+      `Bias: ${h4Trend.toUpperCase()} ${sma20Str}${rsiStr}\n` +
       `Range laatste 10 4H-candles: hoog $${h4High} — laag $${h4Low}\n` +
       `Order blocks, FVGs en liquiditeitszones op 4H hebben hogere institutionele betekenis ` +
       `dan dezelfde structuren op H1. Laat de 4H-range meewegen bij je premium/discount-oordeel.`;
@@ -160,6 +161,7 @@ export async function runDiscussion(
     discussion,
     decision,
     entryPrice,
+    h4Trend,
     dailyTrend: d1Ctx?.trend ?? null,
     weeklyTrend: w1Ctx?.trend ?? null,
     atr14: indicators.atr14,
@@ -178,6 +180,7 @@ export async function runDiscussion(
     discussion, decision, comboSignal, qualityResult, triggerType,
     // Context-velden die kwaliteitsfilters (filter 7–9) gebruiken — opgeslagen voor
     // retrospectieve filteranalyse zonder de boardroom opnieuw te hoeven draaien.
+    h4Trend,
     dailyTrend: d1Ctx?.trend ?? null,
     weeklyTrend: w1Ctx?.trend ?? null,
     atr14: indicators.atr14,
