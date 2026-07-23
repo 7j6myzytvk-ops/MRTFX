@@ -37,11 +37,11 @@ export function formatWeeklyContextNote(ctx) {
       : '';
 
   return (
-    `\n\nWeektrendcontext (XAU/USD W1 — hogere tijdseenheid geeft de macro-weektrend als ` +
-    `achtergrond voor H1-setups): weekkoers ${currentClose.toFixed(2)}${smaNote}. ` +
+    `\n\nWeektrendcontext (XAU/USD W1 — macro-achtergrond, geen richting-criterium): ` +
+    `weekkoers ${currentClose.toFixed(2)}${smaNote}. ` +
     `5-weeks verandering: ${sign}${fiveWeekChangePct.toFixed(1)}% (${momentum}). ` +
     `Weektrend: ${trend.toUpperCase()}. ` +
-    `BELANGRIJK: signalen TEGEN de weektrend vereisen aanzienlijk hogere bevestiging — ` +
-    `de weektrend wint op langere termijn bijna altijd.`
+    `De 4H- en D1-trend zijn de primaire richtingsreferentie voor deze setups — ` +
+    `W1 geeft macro-context maar is geen kwaliteitscriterium.`
   );
 }

@@ -143,11 +143,12 @@ export async function decide(
           `zwaarste single-factor risico — verlaag significant of neutraal\n` +
           `4) Gebruik SL/TP van risicomanager [B]; als je van de analist-richting afwijkt, ` +
           `stel eigen SL/TP in die bij jouw richting passen\n` +
-          `5) COUNTER-TREND STOP: als de weektrend (W1) en dagtrend (D1) beide dezelfde richting ` +
+          `5) COUNTER-TREND STOP: als de 4H-trend en dagtrend (D1) beide dezelfde richting ` +
           `wijzen en het signaal is TEGENGESTELD → maximaal 55% zekerheid, ongeacht hoe sterk de ` +
           `H1-structuur eruitziet. De hogere trend wint op langere termijn bijna altijd. ` +
-          `Een bearish signaal in een bullish W1+D1-trend, of omgekeerd, is structureel ` +
-          `onverantwoord tenzij er een bevestigde HTF-CHoCH (trendbreuk op dagbasis) zichtbaar is.\n` +
+          `Een bearish signaal in een bullish 4H+D1-trend, of omgekeerd, is structureel ` +
+          `onverantwoord tenzij er een bevestigde 4H CHoCH zichtbaar is. ` +
+          `W1 is macro-achtergrond — gebruik het als context, niet als blokkade.\n` +
           `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
           `${newsContextNote}${ceoBriefingNote}${contextNotes}`,
       },

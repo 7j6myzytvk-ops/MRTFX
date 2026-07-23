@@ -84,7 +84,7 @@ export async function analyzeCandles(
           `ICT/SMC KENNIS (jouw gereedschapskist):\n` +
           `• MARKTSTRUCTUUR: onderscheid BOS (Break of Structure = trendbevestiging) van CHoCH ` +
           `(Change of Character = potentiële trendwisseling). CHoCH is zwaarder dan BOS.\n` +
-          `• HTF → LTF: lees eerst de Weekly/Daily bias, dan H1. Een entry tegen de Daily CHoCH ` +
+          `• HTF → LTF: lees eerst de 4H/Daily bias, dan H1. Een entry tegen de 4H CHoCH ` +
           `in is structureel onverantwoord — hogere timeframe wint altijd.\n` +
           `• PREMIUM vs DISCOUNT: equilibrium (50%-punt van de recente range). Boven equilibrium ` +
           `= premium (institutions verkopen); onder = discount (institutions kopen). Geen long in ` +
@@ -102,10 +102,11 @@ export async function analyzeCandles(
           `SETUP KWALITEITSOORDEEL — doe dit EERST, vóór je de structuur analyseert:\n` +
           `Een setup is pas handelbaar als de meeste van deze vijf criteria aanwezig zijn. ` +
           `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
-          `① HTF-BIAS HELDER: W1 én D1 wijzen beiden duidelijk dezelfde richting ` +
-          `(niet zijwaarts, niet tegenstrijdig)\n` +
+          `① HTF-BIAS HELDER: 4H én D1 wijzen beiden duidelijk dezelfde richting ` +
+          `(niet zijwaarts, niet tegenstrijdig). Gebruik de 4H-STRUCTUUR context hierboven om ` +
+          `de 4H-bias te bepalen. W1 is macro-achtergrond, niet het richting-criterium.\n` +
           `② CORRECTE PREMIUM/DISCOUNT: voor longs bevindt de prijs zich in de discount-zone ` +
-          `(onder 50%-punt van de recente HTF-range); voor shorts in de premium-zone (erboven). ` +
+          `(onder 50%-punt van de recente 4H/D1-range); voor shorts in de premium-zone (erboven). ` +
           `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
           `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast. Concreet beslismoment:\n` +
           `  – VERS: geen enkele H1-candle heeft meer dan 50% van de zone gesloten sinds de zone ` +
@@ -131,8 +132,8 @@ export async function analyzeCandles(
           `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
 
           `STRUCTUURANALYSE — doorloop élke stap expliciet:\n` +
-          `1. HTF BIAS: Wat is de Weekly/Daily trend? Is er een dominante richting of ` +
-          `is de hogere structuur onduidelijk/zijwaarts?\n` +
+          `1. HTF BIAS: Wat is de 4H/Daily trend? Is er een dominante richting of ` +
+          `is de hogere structuur onduidelijk/zijwaarts? Gebruik de 4H-STRUCTUUR context hierboven.\n` +
           `2. MARKTSTRUCTUUR (H1): BOS of CHoCH? Noem de laatste 2-3 swings met exacte ` +
           `highs/lows. Trend, consolidatie of trendbreuk?\n` +
           `3. LIQUIDITEITSKAART: Waar liggen de BSL/SSL-clusters (gelijke highs/lows, swing-extremen)? ` +
@@ -196,7 +197,7 @@ export async function reviewDiscussion(
               `${geopolitical.reasoning}\n\n`
             : '') +
           `VERPLICHTE REACTIE PER PRE-MORTEM SCENARIO (beknopt, max 1 zin per punt):\n` +
-          `① HTF-structuur fout: ${devilsAdvocate.counterConfidence > 50 ? '⚠️ hoge overtuiging — moet je weerleggen of erkennen' : 'beoordeel'} — klopt de Daily/Weekly bias nog steeds?\n` +
+          `① HTF-structuur fout: ${devilsAdvocate.counterConfidence > 50 ? '⚠️ hoge overtuiging — moet je weerleggen of erkennen' : 'beoordeel'} — klopt de Daily/4H bias nog steeds?\n` +
           `② Institutionele val: staan we in een stop-cluster of inducement? Of is de structuur zuiver?\n` +
           `③ Timing mismatch: geeft macro of geo informatie die de timing in twijfel trekt?\n` +
           `④ Zone verwerkt: is het OB/FVG al eerder bezocht (mitigation)?\n` +
