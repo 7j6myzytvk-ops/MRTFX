@@ -13,8 +13,8 @@ const ANALYSIS_TOOL = {
       setupQualityScore: {
         type: 'integer',
         minimum: 0,
-        maximum: 5,
-        description: 'Aantal aanwezige setup-kwaliteitscriteria. Reversal-modus: 0-5 (① t/m ⑤). Trend-modus: 0-4 (① t/m ④). Bepaalt maximale zekerheid en of de setup handelbaar is.',
+        maximum: 6,
+        description: 'Aantal aanwezige setup-kwaliteitscriteria. Reversal-modus: 0-6 (① t/m ⑥). Trend-modus: 0-4 (① t/m ④). Bepaalt maximale zekerheid en of de setup handelbaar is.',
       },
       amdPhase: {
         type: 'string',
@@ -187,10 +187,17 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `ook als de CHoCH-opvolging nog pril is. Ontbreekt elke sweep-beweging volledig? Dan ④ niet toekennen.\n` +
     `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
     `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
-    `richting op hogere timeframe.\n\n` +
+    `richting op hogere timeframe.\n` +
+    `⑥ KILL ZONE TIMING: beoordeel op basis van de sessie-context (zie SESSION-noot hieronder) ` +
+    `in welke handelsperiode de setup valt:\n` +
+    `  – NY Kill Zone (13:00–17:00 UTC): hoogste institutionele liquiditeit — sterkste window. Ken ⑥ toe.\n` +
+    `  – London Kill Zone (07:00–10:00 UTC): manipulatie → distributie-fase. Ken ⑥ toe.\n` +
+    `  – London-NY overlap / rustige uren (10:00–13:00 UTC): lagere institutionele activiteit. ⑥ NIET toekennen.\n` +
+    `  – Buiten sessie (vóór 07:00 of na 17:00 UTC): ⑥ NIET toekennen.\n\n` +
     `TELLING → MAXIMALE ZEKERHEID:\n` +
-    `• 4–5 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
-    `• 2–3 criteria aanwezig → marginale setup → max 72% zekerheid, ook bij sterke structuur\n` +
+    `• 4–6 criteria aanwezig → high-quality setup — hogere zekerheid gerechtvaardigd\n` +
+    `• 3 criteria aanwezig → solide setup → max 72% zekerheid\n` +
+    `• 2 criteria aanwezig → marginale setup → max 60% zekerheid\n` +
     `• <2 criteria aanwezig → geen handelbare setup → neutraal. ` +
     `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
 
@@ -209,7 +216,7 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `IS DEZE FASE AANTOONBAAR AFGEROND (sweep bevestigd + CHoCH)?\n` +
     `• Distribution (D): echte institutionele move — alleen handelbaar ná afgeronde M-fase\n` +
     `Als M niet aantoonbaar afgerond is: verlaag je zekerheid of ga naar neutraal.\n` +
-    `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑤)? ` +
+    `5. CONCLUSIE: Hoeveel setup-kwaliteitscriteria zijn aanwezig (① t/m ⑥)? ` +
     `Signaal + zekerheid (gecapped op de telling hierboven) + het concrete ` +
     `prijs-invalidatieniveau (bij welk niveau bewijst de markt dat deze analyse fout is?).\n\n` +
 

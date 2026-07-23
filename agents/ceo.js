@@ -117,13 +117,13 @@ export async function decide(
               `• Score 3 → maximaal 68% zekerheid; matige trend-setup, wees selectief\n` +
               `• Score 4 → maximaal 78% zekerheid; sterke trend-setup — hogere zekerheid gerechtvaardigd\n\n`
             : `SETUP KWALITEIT — beoordeel dit EERST, vóór je de gewichten toepast:\n` +
-              `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 5 ICT/SMC-kwaliteitscriteria aanwezig gevonden. ` +
+              `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 6 ICT/SMC-kwaliteitscriteria aanwezig gevonden. ` +
               `Gebruik dat getal als harde grens:\n` +
-              `• Score <2 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
+              `• Score <3 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
               `Een richting zien is niet hetzelfde als een setup hebben.\n` +
-              `• Score 2–3 → maximaal 72% zekerheid; wees selectief\n` +
+              `• Score 3 → maximaal 72% zekerheid; solide basis maar selectief blijven\n` +
               `• Score 4–5 → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n` +
-              `• Score 5/5 → perfecte setup; alle criteria aanwezig\n\n`
+              `• Score 6/6 → perfecte setup; alle criteria aanwezig — maximale zekerheid toegestaan\n\n`
           ) +
 
           `BESLISSINGSGEWICHTEN:\n` +

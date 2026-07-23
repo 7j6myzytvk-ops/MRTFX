@@ -117,13 +117,13 @@ export function assessSignalQuality(sample) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
   }
 
-  // Setup-kwaliteitsscore: als de analist minder dan 2 van de 5 ICT/SMC-criteria
+  // Setup-kwaliteitsscore: als de analist minder dan 3 van de 6 ICT/SMC-criteria
   // aanwezig vindt, is er geen handelbare setup — altijd blokkeren ongeacht de rest.
-  // Drempel verlaagd van 3→2 (Fase 79): score is nu /5 (⑥ kill-zone-timing verwijderd
-  // als kwaliteitscriterium — timing is een sessiebewaker, geen setup-indicator).
+  // Drempel hersteld naar 3 (Fase 91): ⑥ kill-zone-timing terug als kwaliteitscriterium,
+  // schaal is weer /6. Score 0-2 = geen setup, score 3+ = minimaal voldoende.
   const setupScore = sample.discussion.analyst?.setupQualityScore;
-  if (setupScore !== undefined && setupScore !== null && setupScore < 2) {
-    blockers.push(`setup-kwaliteit te laag (${setupScore}/5 criteria aanwezig)`);
+  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
+    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 criteria aanwezig)`);
   }
 
   // AMD-fase filter: alleen 'onduidelijk' blokkeert mechanisch.
