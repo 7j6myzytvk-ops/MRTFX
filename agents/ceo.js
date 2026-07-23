@@ -25,7 +25,7 @@ const DECISION_TOOL = {
 export async function decide(
   candles,
   { analysis, risk, devilsAdvocate, macro, geopolitical = null, rebuttal },
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '', ceoBriefingNote = '' } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '', ceoBriefingNote = '', trendMode = false } = {},
 ) {
   const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
 
@@ -108,14 +108,23 @@ export async function decide(
           `(zekerheid ${rebuttal.confidence}%) — ${rebuttal.reasoning}\n` +
           `→ Reageert specifiek op het pre-mortem faalscenario: zijn de structurele argumenten nog intact?\n\n` +
 
-          `SETUP KWALITEIT — beoordeel dit EERST, vóór je de gewichten toepast:\n` +
-          `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 5 ICT/SMC-kwaliteitscriteria aanwezig gevonden. ` +
-          `Gebruik dat getal als harde grens:\n` +
-          `• Score <2 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
-          `Een richting zien is niet hetzelfde als een setup hebben.\n` +
-          `• Score 2–3 → maximaal 72% zekerheid; wees selectief\n` +
-          `• Score 4–5 → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n` +
-          `• Score 5/5 → perfecte setup; alle criteria aanwezig\n\n` +
+          (trendMode
+            ? `SETUP KWALITEIT — beoordeel dit EERST (TREND-MODUS: max score = 4):\n` +
+              `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 4 trend-criteria aanwezig gevonden ` +
+              `(① 4H-trend helder, ② pullback aanwezig, ③ logische stop $20–80, ④ R:R ≥ 1:1). ` +
+              `Gebruik dat getal als harde grens:\n` +
+              `• Score ≤2 → altijd neutraal — geen handelbare trend-setup\n` +
+              `• Score 3 → maximaal 68% zekerheid; matige trend-setup, wees selectief\n` +
+              `• Score 4 → maximaal 78% zekerheid; sterke trend-setup — hogere zekerheid gerechtvaardigd\n\n`
+            : `SETUP KWALITEIT — beoordeel dit EERST, vóór je de gewichten toepast:\n` +
+              `De analist heeft ${analysis.setupQualityScore ?? '?'} van de 5 ICT/SMC-kwaliteitscriteria aanwezig gevonden. ` +
+              `Gebruik dat getal als harde grens:\n` +
+              `• Score <2 → altijd neutraal, ongeacht hoe sterk de structuur of het sentiment lijkt. ` +
+              `Een richting zien is niet hetzelfde als een setup hebben.\n` +
+              `• Score 2–3 → maximaal 72% zekerheid; wees selectief\n` +
+              `• Score 4–5 → high-quality setup; hogere zekerheid gerechtvaardigd als het team aligned is\n` +
+              `• Score 5/5 → perfecte setup; alle criteria aanwezig\n\n`
+          ) +
 
           `BESLISSINGSGEWICHTEN:\n` +
           `• Structuur + Liquiditeit [A + F gecombineerd]: 35% — weerwoord [F] is het meest actueel; ` +
@@ -143,12 +152,17 @@ export async function decide(
           `zwaarste single-factor risico — verlaag significant of neutraal\n` +
           `4) Gebruik SL/TP van risicomanager [B]; als je van de analist-richting afwijkt, ` +
           `stel eigen SL/TP in die bij jouw richting passen\n` +
-          `5) COUNTER-TREND STOP: als de 4H-trend en dagtrend (D1) beide dezelfde richting ` +
-          `wijzen en het signaal is TEGENGESTELD → maximaal 55% zekerheid, ongeacht hoe sterk de ` +
-          `H1-structuur eruitziet. De hogere trend wint op langere termijn bijna altijd. ` +
-          `Een bearish signaal in een bullish 4H+D1-trend, of omgekeerd, is structureel ` +
-          `onverantwoord tenzij er een bevestigde 4H CHoCH zichtbaar is. ` +
-          `W1 is macro-achtergrond — gebruik het als context, niet als blokkade.\n` +
+          (trendMode
+            ? `5) TREND-MODUS: het signaal is al aligned met 4H + D1 + H1 + M30. ` +
+              `De counter-trend stop is NIET van toepassing — dit IS een trend-setup. ` +
+              `Focus op setup-kwaliteit (criteria ①–④) en de teamconsensus.\n`
+            : `5) COUNTER-TREND STOP: als de 4H-trend en dagtrend (D1) beide dezelfde richting ` +
+              `wijzen en het signaal is TEGENGESTELD → maximaal 55% zekerheid, ongeacht hoe sterk de ` +
+              `H1-structuur eruitziet. De hogere trend wint op langere termijn bijna altijd. ` +
+              `Een bearish signaal in een bullish 4H+D1-trend, of omgekeerd, is structureel ` +
+              `onverantwoord tenzij er een bevestigde 4H CHoCH zichtbaar is. ` +
+              `W1 is macro-achtergrond — gebruik het als context, niet als blokkade.\n`
+          ) +
           `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
           `${newsContextNote}${ceoBriefingNote}${contextNotes}`,
       },

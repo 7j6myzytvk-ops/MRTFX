@@ -25,7 +25,7 @@ import { logBlockedSignal } from '../services/blockedSignalLog.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null, trendMode = false } = {},
 ) {
   const now = currentTime ? new Date(currentTime) : new Date();
   const ffEvents = await fetchForexFactoryEvents();
@@ -82,13 +82,22 @@ export async function runDiscussion(
     }
     return '';
   })();
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote;
+  const trendModeNote = trendMode
+    ? `\n\n🔵 TREND-MODUS ACTIEF: 4H + D1 + H1 + M30 wijzen allemaal dezelfde kant op. ` +
+      `Dit is een TREND-CONTINUATIE setup — geen ICT-reversal. ` +
+      `De analist beoordeelt 4 trend-criteria: ` +
+      `① 4H-trend helder, ② pullback aanwezig (2+ correctie-candles), ` +
+      `③ logische stop ($20–80 verwijderd), ④ R:R ≥ 1:1. ` +
+      `Sweep, OB/FVG en CHoCH zijn NIET vereist in trend-modus. ` +
+      `CEO: regel 5 (counter-trend stop) geldt NIET in trend-modus — het signaal IS al aligned.`
+    : '';
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote + trendModeNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats, atrTrend);
   const streakNote = formatRiskStreakNote(perfStats);
 
-  const opts = { instrument, granularity, events, newsContext, contextNotes };
+  const opts = { instrument, granularity, events, newsContext, contextNotes, trendMode };
 
   const analysis = await analyzeCandles(candles, opts);
 
@@ -117,13 +126,28 @@ export async function runDiscussion(
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });
 
   // Mechanische confidence-cap: LLM-instructies alleen zijn onvoldoende betrouwbaar
-  // voor numerieke grenzen. setupScore ≤3 → max 72% (prompt zegt dit ook, maar de
-  // override garandeert het). Score is nu /5 (Fase 79: ⑥ verwijderd als kwaliteitscriterium).
+  // voor numerieke grenzen. Caps per modus worden hier hard afgedwongen.
+  // Trend-modus (4 criteria): ≤2→neutraal, 3→max68%, 4→max78%
+  // Reversal-modus (5 criteria): ≤3→max72%
   if (decision.signal !== 'neutral') {
     const setupScore = analysis.setupQualityScore ?? 5;
-    if (setupScore <= 3 && decision.confidence > 72) {
-      decision.confidence = 72;
-      decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/5 → max 72%] ${decision.reasoning}`;
+    if (trendMode) {
+      if (setupScore <= 2) {
+        decision.signal = 'neutral';
+        decision.confidence = 50;
+        decision.reasoning = `[Trend-modus: score ${setupScore}/4 ≤ 2 → neutraal; geen handelbare trend-setup] ${decision.reasoning}`;
+      } else if (setupScore === 3 && decision.confidence > 68) {
+        decision.confidence = 68;
+        decision.reasoning = `[Trend-modus gecapped: score 3/4 → max 68%] ${decision.reasoning}`;
+      } else if (setupScore >= 4 && decision.confidence > 78) {
+        decision.confidence = 78;
+        decision.reasoning = `[Trend-modus gecapped: score 4/4 → max 78%] ${decision.reasoning}`;
+      }
+    } else {
+      if (setupScore <= 3 && decision.confidence > 72) {
+        decision.confidence = 72;
+        decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/5 → max 72%] ${decision.reasoning}`;
+      }
     }
   }
 

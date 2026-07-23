@@ -79,8 +79,8 @@ async function poll(client) {
       getRecentXauW1Candles({ count: 20 }),
     ]);
 
-    // Trigger op H1+M30 alignment; H4 gaat als context mee naar de agents
-    const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles });
+    // Trigger op H1+M30 alignment; H4 bepaalt mede trendMode en gaat als context mee naar agents
+    const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles, h4Candles });
 
     // Puur diagnostisch - beinvloedt de trigger-beslissing niet, legt alleen vast
     // welke voorwaarden wel/niet klopten zodat we later kunnen zien welke conditie
@@ -119,6 +119,7 @@ async function poll(client) {
         w1Candles,
         newsItems,
         newsContext: conditionContext,
+        trendMode: conditions.trendMode,
         triggerType: 'condition',
       });
 
