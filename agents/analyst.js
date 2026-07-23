@@ -172,19 +172,19 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `(onder 50%-punt van de recente 4H/D1-range); voor shorts in de premium-zone (erboven). ` +
     `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
     `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast. Concreet beslismoment:\n` +
-    `  – VERS: geen enkele H1-candle heeft meer dan 50% van de zone gesloten sinds de zone ` +
-    `gevormd werd. De zone is ≤ 30 H1-candles geleden gecreëerd (ouder = verzwakt).\n` +
-    `  – GEMITIGEERD (niet vers): prijs heeft al één of meer keren in de zone gesloten, ` +
-    `of de zone bestaat al langer dan 30 candles zonder dat prijs er naartoe is bewogen. ` +
-    `Ken ③ NIET toe bij twijfel — liever te streng dan een verbruikte zone als vers markeren.\n` +
-    `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft kort vóór de huidige setup een BSL- of ` +
+    `  – VERS: geen enkele H1-candle heeft meer dan 50% van de zone gesloten. ` +
+    `De zone is ≤ 50 H1-candles geleden gecreëerd.\n` +
+    `  – GEMITIGEERD: prijs heeft de zone al volledig bezocht of de zone is ouder dan 50 candles ` +
+    `zonder dat prijs er naartoe bewoog. Wees eerlijk — ken ③ toe als er een duidelijke ` +
+    `ongerepte zone zichtbaar is, ook als die niet perfect vers is.\n` +
+    `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft vóór de huidige setup een BSL- of ` +
     `SSL-cluster gecleard. Concreet beslismoment:\n` +
     `  – BULLISH sweep: een recente swing low of gelijke lows zijn gebroken met een wick ` +
-    `(close terug erboven) — dit binnen de laatste 15 H1-candles. Daarna CHoCH omhoog.\n` +
+    `(close terug erboven) — bij voorkeur binnen de laatste 25 H1-candles.\n` +
     `  – BEARISH sweep: een recente swing high of gelijke highs gebroken met wick ` +
-    `(close terug eronder) — binnen de laatste 15 H1-candles. Daarna CHoCH omlaag.\n` +
-    `  – Ken ④ NIET toe als de sweep meer dan 15 candles geleden was zonder duidelijke ` +
-    `opvolging, of als er geen identificeerbaar BSL/SSL-cluster was dat geraakt is.\n` +
+    `(close terug eronder) — bij voorkeur binnen de laatste 25 H1-candles.\n` +
+    `  – Wees eerlijk: ken ④ toe als er een herkenbare sweep-actie heeft plaatsgevonden, ` +
+    `ook als de CHoCH-opvolging nog pril is. Ontbreekt elke sweep-beweging volledig? Dan ④ niet toekennen.\n` +
     `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
     `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
     `richting op hogere timeframe.\n\n` +

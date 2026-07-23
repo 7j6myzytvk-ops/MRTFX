@@ -54,10 +54,10 @@ export function classifyRiskReward(sample) {
   const entry = parseEntryMidpoint(decision, entryPrice);
   const reward = Math.abs(decision.takeProfit - entry);
   const risk = Math.abs(entry - decision.stopLoss);
-  if (risk === 0) return '<1.5';
+  if (risk === 0) return '<1.0';
   const rr = reward / risk;
-  if (rr < 1.5) return '<1.5';
-  if (rr <= 3.0) return '1.5-3.0';
+  if (rr < 1.0) return '<1.0';
+  if (rr <= 3.0) return '1.0-3.0';
   if (rr <= 5.0) return '3.0-5.0';
   return '>5.0';
 }
@@ -107,10 +107,11 @@ export function assessSignalQuality(sample) {
   if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
     blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
   }
-  // R:R ondergrens: bij R:R < 1.5 is de verwachte waarde negatief ongeacht WR.
-  // classifyRiskReward returnt al de bucket '<1.5' — één check dicht dit gat.
-  if (sample.entryPrice != null && classifyRiskReward(sample) === '<1.5') {
-    blockers.push('risico/winst-verhouding te laag (<1.5) — negatieve verwachte waarde');
+  // R:R ondergrens: bij R:R < 1.0 is de verwachte waarde structureel negatief.
+  // Drempel verlaagd van 1.5 naar 1.0: backtest toonde dat setups met R:R 1.0–1.4
+  // vaker naar TP gingen dan de 1.5-drempel suggereerde.
+  if (sample.entryPrice != null && classifyRiskReward(sample) === '<1.0') {
+    blockers.push('risico/winst-verhouding te laag (<1.0) — negatieve verwachte waarde');
   }
   if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
     blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
@@ -125,13 +126,11 @@ export function assessSignalQuality(sample) {
     blockers.push(`setup-kwaliteit te laag (${setupScore}/5 criteria aanwezig)`);
   }
 
-  // AMD-fase filter: de analist berekent amdPhase al maar het veld had geen
-  // mechanische consequentie. Manipulatiefase = Judas Swing gaande, geen entry.
-  // Onduidelijk = geen structurele basis voor een beslissing.
+  // AMD-fase filter: alleen 'onduidelijk' blokkeert mechanisch.
+  // 'manipulation' (Judas Swing) wordt niet meer mechanisch geblokkeerd — de analist
+  // en CEO beoordelen dit al via AMD-fase en setup-criteria. London KZ werkt structureel
+  // via manipulatie naar distributie; mechanisch blokkeren snijdt de beste entries weg.
   const amdPhase = sample.discussion?.analyst?.amdPhase;
-  if (amdPhase === 'manipulation') {
-    blockers.push('AMD-fase: manipulatiefase niet afgerond — wacht op sweep + CHoCH');
-  }
   if (amdPhase === 'onduidelijk') {
     blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
   }

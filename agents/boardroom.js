@@ -144,7 +144,10 @@ export async function runDiscussion(
         decision.reasoning = `[Trend-modus gecapped: score 4/4 → max 78%] ${decision.reasoning}`;
       }
     } else {
-      if (setupScore <= 3 && decision.confidence > 72) {
+      // Reversal-modus: alleen score ≤1 mechanisch cappen — bij score 2+ heeft de CEO
+      // genoeg structurele basis om zelf te kalibreren. Prompt-instructies (max 72% bij 2-3)
+      // blijven als richtlijn; alleen bij volledig lege setup (≤1) forceren we 72%.
+      if (setupScore <= 1 && decision.confidence > 72) {
         decision.confidence = 72;
         decision.reasoning = `[Confidence gecapped: setupScore ${setupScore}/5 → max 72%] ${decision.reasoning}`;
       }
