@@ -104,9 +104,8 @@ export function assessSignalQuality(sample) {
   if (rebuttalDelta <= -25) {
     blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
   }
-  if (sample.entryPrice != null && classifyRiskReward(sample) === '>5.0') {
-    blockers.push('risico/winst-verhouding te ambitieus (>5.0)');
-  }
+  // R:R >5.0 filter verwijderd: CEO stelt soms een precision entry zone in (dicht bij SL)
+  // wat een hoge R:R geeft — dat is een geldige setup, geen reden om te blokkeren.
   // R:R ondergrens: bij R:R < 1.0 is de verwachte waarde structureel negatief.
   // Drempel verlaagd van 1.5 naar 1.0: backtest toonde dat setups met R:R 1.0–1.4
   // vaker naar TP gingen dan de 1.5-drempel suggereerde.
@@ -163,10 +162,10 @@ export function assessSignalQuality(sample) {
   }
 
   // Filter 9: Overextended move — koers te ver verwijderd van H1 SMA20.
-  // Drempel: 2.5×ATR14 (dynamisch). Vaste $50 blokkeerde Feb 9 (gap $56, ATR $30 → 1.9×ATR
-  // → TP): normale marktbeweging bij hoge volatiliteit, geen reversal-signaal.
-  // Fallback naar $50 als ATR ontbreekt (oude backtest-runs vóór Fase 68).
-  const smaGapMax = sample.atr14 != null ? sample.atr14 * 2.5 : 50;
+  // Drempel verhoogd van 2.5 naar 3.0×ATR: live data (23 jul) toonde dat signalen bij
+  // 2.7–3.1×ATR nog TP raakten. 2.5×ATR blokkeerde te vroeg in lopende trends.
+  // Fallback naar $60 als ATR ontbreekt (oude backtest-runs vóór Fase 68).
+  const smaGapMax = sample.atr14 != null ? sample.atr14 * 3.0 : 60;
   if (sample.sma20H1 != null && sample.entryPrice != null) {
     const gap = sample.entryPrice - sample.sma20H1;
     if (sample.decision.signal === 'bearish' && gap < -smaGapMax) {
