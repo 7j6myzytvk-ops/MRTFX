@@ -136,24 +136,12 @@ export function assessSignalQuality(sample) {
     blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
   }
 
-  // Counter-trend blocker: als D1 én W1 beide dezelfde richting wijzen én het signaal
-  // is tegengesteld, blokkeert de filter (terugkeer naar Fase 70 logica).
-  // W1 draait zelden — D1+W1 tegelijk aligned is een sterke macro-trend die reversal-
-  // entries structureel te risicovol maakt. H4 wordt NIET meegenomen: H4 kan in één dag
-  // draaien en blokkeerde daardoor te veel valid reversal setups in jul 2026.
-  const { dailyTrend, weeklyTrend } = sample;
-  if (
-    dailyTrend && weeklyTrend &&
-    dailyTrend !== 'neutraal' && weeklyTrend !== 'neutraal' &&
-    dailyTrend === weeklyTrend
-  ) {
-    const isContrarian =
-      (sample.decision.signal === 'bullish' && dailyTrend === 'bearish') ||
-      (sample.decision.signal === 'bearish' && dailyTrend === 'bullish');
-    if (isContrarian) {
-      blockers.push(`counter-trend: signaal ${sample.decision.signal} tegen D1+W1 ${dailyTrend} trend`);
-    }
-  }
+  // Counter-trend blocker verwijderd (Fase 99): CEO ontvangt de D1+W1-context al via zijn
+  // prompt (max 60% bij counter-trend D1+W1) en beslist zelfstandig. Een mechanische blokkade
+  // bovenop de CEO-beslissing telt de macro-trend dubbel en blokkeerde valid setups —
+  // met name de bullish move van $4061→$4159 op 21-22 jul 2026 waarbij CEO correct 57-60%
+  // gaf maar de blokkade die signals weggooide. Replay toonde dat alle 8 blocked setups
+  // winstgevend waren geweest.
 
   // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
   // Oorspronkelijk $13 op basis van 18-daagse backtest (22 jun–10 jul). Verlaagd naar $10
