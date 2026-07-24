@@ -154,10 +154,10 @@ export function assessSignalQuality(sample) {
   }
 
   // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
-  // Backtest (22 jun–10 jul 2026): ATR < $13 correleerde met 4 extra SL-trades.
-  // Reden: SL/TP-niveaus worden zo krap dat normaal marktgeluid de SL raakt
-  // voordat de koers richting TP beweegt. Geen edge in een slapende markt.
-  const ATR_MIN = 13;
+  // Oorspronkelijk $13 op basis van 18-daagse backtest (22 jun–10 jul). Verlaagd naar $10
+  // na live-observatie: signalen met ATR $11–12 op 23 jul troffen TP (WR 83% geblokkeerde signalen).
+  // $10 filtert echt slapende markten, laat licht-rustiger uren met voldoende beweging door.
+  const ATR_MIN = 10;
   if (sample.atr14 != null && sample.atr14 < ATR_MIN) {
     blockers.push(`ATR te laag ($${sample.atr14.toFixed(1)} < $${ATR_MIN}) — markt te kalm voor betrouwbare uitvoering`);
   }
