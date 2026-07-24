@@ -331,7 +331,7 @@ function buildReversalModeRebuttal({ analysis, risk, devilsAdvocate, macro, geop
     `④ Zone verwerkt: is het OB/FVG al eerder bezocht (mitigation)?\n` +
     `⑤ Genegeerd bewijs: zijn er structurele signalen die je eerder te snel afdeed?\n\n` +
     `SETUP KWALITEIT HEROVERWEGING (verplicht):\n` +
-    `Heeft de discussie één van de vijf kwaliteitscriteria in twijfel getrokken?\n` +
+    `Heeft de discussie één van de zes kwaliteitscriteria in twijfel getrokken?\n` +
     `• Risicomanager meldt dat de entry te laat is of geen logisch OB/FVG beschikbaar → ③ of ④ valt weg\n` +
     `• Pre-mortem vindt dat de zone al bezocht was → ③ valt weg\n` +
     `• Pre-mortem vindt dat de sweep ontbrak of een institutionele val is → ④ valt weg\n` +

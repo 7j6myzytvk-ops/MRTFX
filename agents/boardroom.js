@@ -129,9 +129,9 @@ export async function runDiscussion(
   // Mechanische confidence-cap: LLM-instructies alleen zijn onvoldoende betrouwbaar
   // voor numerieke grenzen. Caps per modus worden hier hard afgedwongen.
   // Trend-modus (4 criteria): ≤2→neutraal, 3→max68%, 4→max78%
-  // Reversal-modus (5 criteria): ≤3→max72%
+  // Reversal-modus (6 criteria): ≤2→neutraal via agentAnalysis, 3→max72% via CEO-prompt
   if (decision.signal !== 'neutral') {
-    const setupScore = analysis.setupQualityScore ?? 5;
+    const setupScore = analysis.setupQualityScore ?? 6;
     if (trendMode) {
       if (setupScore <= 2) {
         decision.signal = 'neutral';

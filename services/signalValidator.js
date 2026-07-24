@@ -50,9 +50,9 @@ export function validateSignalStructure(result) {
 
   // --- Logische consistentie (alleen bij directionele signalen) ---
   if (signal !== 'neutral') {
-    // Setup-score < 2 maar toch passed → algorithmische filter gemist (drempel aangepast Fase 79: score is nu /5)
+    // Setup-score < 2 maar toch passed → algorithmische filter gemist (/6 schaal, drempel <3)
     if (typeof score === 'number' && score < 2 && passed === true) {
-      issues.push(`INCONSISTENTIE: setupQualityScore ${score}/5 < 2 maar qualityResult.passed=true`);
+      issues.push(`INCONSISTENTIE: setupQualityScore ${score}/6 < 2 maar qualityResult.passed=true`);
     }
     // CEO confidence < 52 maar toch passed → filter gemist (drempel: 52, zie agentAnalysis.js)
     if (typeof decision?.confidence === 'number' && decision.confidence < 52 && passed === true) {

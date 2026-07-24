@@ -63,7 +63,7 @@ export function classifyRiskReward(sample) {
 }
 
 // Premium-signaal: analist won vertrouwen na de teamdiscussie (rebuttal shift omhoog)
-// EN de setup had hoge kwaliteit (setupQualityScore ≥ 4/5). Backtest toont dat
+// EN de setup had hoge kwaliteit (setupQualityScore ≥ 4/6). Backtest toont dat
 // deze combinatie samenhangt met de hoogste WR. Score < 5 of shift niet omhoog = geen combo.
 export function isComboSignal(sample) {
   return (
