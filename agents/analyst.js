@@ -175,12 +175,12 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `② CORRECTE PREMIUM/DISCOUNT: voor longs bevindt de prijs zich in de discount-zone ` +
     `(onder 50%-punt van de recente 4H/D1-range); voor shorts in de premium-zone (erboven). ` +
     `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
-    `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast. Concreet beslismoment:\n` +
-    `  – VERS (ken ③ toe): geen enkele H1-candle heeft gesloten BINNEN of VOORBIJ de zone; ` +
-    `prijs is er niet naartoe teruggekeerd; de zone is ≤ 50 H1-candles geleden gecreëerd.\n` +
-    `  – GEMITIGEERD (ken ③ NIET toe): (a) een candle sloot voor meer dan 50% van de zone; ` +
-    `(b) prijs doorsneed de zone volledig (body sloot voorbij de zone); ` +
-    `(c) de zone is ouder dan 50 candles. Dit zijn harde grenzen — geen uitzonderingen.\n` +
+    `③ VERSE ZONE: het beoogde OB of FVG is nog bruikbaar als entry. Concreet beslismoment:\n` +
+    `  – VERS (ken ③ toe): geen enkele H1-candle heeft gesloten voorbij het 50%-punt (midpoint) ` +
+    `van de zone. Wicks mogen de zone raken — dat is de initiële sweep/reactie. ` +
+    `De zone is ≤ 50 H1-candles geleden gecreëerd.\n` +
+    `  – GEMITIGEERD (ken ③ NIET toe): (a) een candle heeft gesloten voorbij de 50%-lijn van de zone ` +
+    `(body door de midpoint heen); (b) de zone is ouder dan 50 candles. Geen uitzonderingen.\n` +
     `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft vóór de huidige setup een BSL- of ` +
     `SSL-cluster gecleard. Concreet beslismoment:\n` +
     `  – BULLISH sweep: een recente swing low of gelijke lows zijn gebroken met een wick ` +
