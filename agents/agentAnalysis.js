@@ -111,8 +111,11 @@ export function assessSignalQuality(sample) {
   if (sample.entryPrice != null && classifyRiskReward(sample) === '<1.0') {
     blockers.push('risico/winst-verhouding te laag (<1.0) — negatieve verwachte waarde');
   }
-  if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 70) {
-    blockers.push('pre-mortem: duidelijk faalscenario gevonden (>70%)');
+  // DA-blocker verhoogd van 70% naar 82% (Fase 97): DA-kalibratie 66-80% = "sterk risico"
+  // scoorde systematisch 70-75%, waardoor geldige setups werden geblokkeerd. 82%+ = "zeker gevaar"
+  // (meerdere recente signalen wijzen op mislukking). CEO weegt DA al mee op 20%.
+  if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 82) {
+    blockers.push('pre-mortem: zeker faalscenario gevonden (>82%)');
   }
 
   // Setup-kwaliteitsscore: als de analist minder dan 3 van de 6 ICT/SMC-criteria

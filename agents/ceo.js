@@ -152,11 +152,21 @@ export async function decide(
           `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
           `• Structuur onduidelijk (A en F tegenstrijdig) of score <3 → neutraal\n\n` +
 
+          `BESLUIT-FLOW (doorloop stap voor stap):\n` +
+          `Stap 1 — Score check: score <3 → neutraal (stop hier)\n` +
+          `Stap 2 — Structuur check: geven [A] en [F] dezelfde richting? Ja → STRUCTUUR HELDER → ga naar stap 3\n` +
+          `          Nee (A en F tegenstrijdig) → neutraal (stop hier)\n` +
+          `Stap 3 — Geef een DIRECTIONEEL signaal. Vervolgens bepaal je de zekerheid:\n` +
+          `  • Macro [D] en pre-mortem [C] zwak of aligned: 65-72%\n` +
+          `  • Macro of DA tegenstrijdig maar niet doorslaggevend (<75% counter): 58-65%\n` +
+          `  • Beiden sterk tegenstrijdig (beide >70%): 55-60% — maar BLIJF directioneel als score ≥3\n` +
+          `  • Zekerheid onder 55%: dan en alleen dan → neutraal\n\n` +
+
           `VASTE DREMPELS:\n` +
           `1) Minimaal 55% zekerheid vereist voor directioneel signaal — onder 55% altijd neutraal\n` +
           `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +
           `onomwonden dezelfde richting steunen\n` +
-          `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht: ` +
+          `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht (>80%): ` +
           `zwaarste single-factor risico — verlaag significant of neutraal\n` +
           `4) Neem entry-zone, SL en TP van risicomanager [B] ongewijzigd over. ` +
           `Stel NOOIT een andere entry-zone in — de risicomanager heeft al gecontroleerd ` +
