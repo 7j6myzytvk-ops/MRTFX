@@ -176,12 +176,10 @@ export async function decide(
             ? `5) TREND-MODUS: het signaal is al aligned met 4H + D1 + H1 + M30. ` +
               `De counter-trend stop is NIET van toepassing — dit IS een trend-setup. ` +
               `Focus op setup-kwaliteit (criteria ①–④) en de teamconsensus.\n`
-            : `5) COUNTER-TREND STOP: als de 4H-trend en dagtrend (D1) beide dezelfde richting ` +
-              `wijzen en het signaal is TEGENGESTELD → maximaal 55% zekerheid, ongeacht hoe sterk de ` +
-              `H1-structuur eruitziet. De hogere trend wint op langere termijn bijna altijd. ` +
-              `Een bearish signaal in een bullish 4H+D1-trend, of omgekeerd, is structureel ` +
-              `onverantwoord tenzij er een bevestigde 4H CHoCH zichtbaar is. ` +
-              `W1 is macro-achtergrond — gebruik het als context, niet als blokkade.\n`
+            : `5) COUNTER-TREND CONTEXT: als D1 én W1 beide dezelfde richting wijzen en het ` +
+              `signaal is tegengesteld — wees extra selectief (max 60% zekerheid). ` +
+              `H4 is kortetermijn context, geen veto: een H4 CHoCH terwijl D1+W1 nog lopen ` +
+              `is een potentieel reversal-signaal, niet per definitie te riskant.\n`
           ) +
           `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
           `${newsContextNote}${ceoBriefingNote}${contextNotes}`,

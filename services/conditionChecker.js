@@ -1,13 +1,15 @@
 import { computeTimeframeBias, computeMultiTFAlignment, computeTrendBias } from '../agents/multiTimeframeAlignment.js';
 import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 
-// Sessiefilter: actief 08:00–17:00 UTC (London open t/m NY-sessie).
+// Sessiefilter: actief 07:00–17:00 UTC (London pre-open t/m NY-sessie).
+// Uitgebreid van 08:00 naar 07:00 (Fase 98): London open begint feitelijk om 07:00 UTC
+// met instituties die posities klaarzetten voor de kill zone (07:00–10:00 UTC).
 export function isActiveSession(now = new Date()) {
   const day = now.getUTCDay();
   if (day === 6) return false;
   if (day === 0 && now.getUTCHours() < 21) return false;
   const hour = now.getUTCHours();
-  return hour >= 8 && hour < 17;
+  return hour >= 7 && hour < 17;
 }
 
 // Dagfilter: maandag heeft de laagste WR (40.9%) van alle weekdagen.
@@ -55,16 +57,18 @@ export function checkConditions({
   // 4. Sleutelniveau-proximity: context voor agents.
   const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
 
-  // 5. Trend-modus detectie: 4H + D1 + H1 + M30 allemaal aligned in dezelfde richting.
-  // In trend-modus gebruikt de boardroom een trend-continuation analysepad:
-  // geen sweep/OB/CHoCH vereist, maar pullback-hervatting + logische stop + R:R.
+  // 5. Trend-modus detectie: 4H + D1 aligned in dezelfde richting (Fase 98).
+  // Eerder vereiste dit ook H1+M30 alignment — daardoor activeerde trend-modus NIET tijdens
+  // pullbacks (H1+M30 tijdelijk tegen de trend) wat juist de optimale entry is.
+  // Nu: H4+D1 aligned = trend actief, ook als H1+M30 een pullback laten zien.
+  // Trigger (H1+M30 aligned) valt dan samen met een TEGENSTELDE H4+D1-trend →
+  // boardroom analyseert de pullback als trend-continuation entry.
   const h4Bias = h4Candles && h4Candles.length >= 20 ? computeTimeframeBias(h4Candles) : null;
   const d1Bias = d1Candles && d1Candles.length >= 20 ? computeTimeframeBias(d1Candles) : null;
   const trendMode =
-    tfAlignment.aligned &&
-    tfAlignment.direction !== null &&
-    h4Bias === tfAlignment.direction &&
-    d1Bias === tfAlignment.direction;
+    h4Bias !== null && d1Bias !== null &&
+    h4Bias !== 'neutraal' && d1Bias !== 'neutraal' &&
+    h4Bias === d1Bias;
 
   // Counter-trend detectie (t.o.v. W1) — alleen voor context-noot, geen blokkade.
   const isCounterTrend =
