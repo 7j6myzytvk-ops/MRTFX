@@ -104,7 +104,7 @@ export function formatCeoMessage(decision, comboSignal = false, qualityResult = 
   const marker = formatSetupMarker(decision.signal, comboSignal, qualityResult);
   const { setupScore, rr, sessionNote, lotSize, rebuttalShift } = context;
   const metaParts = [];
-  if (setupScore != null) metaParts.push(`Setup: ${setupScore}/5`);
+  if (setupScore != null) metaParts.push(`Setup: ${setupScore}/6`);
   if (rr != null) metaParts.push(`R:R: ${rr}`);
   if (rebuttalShift === 'omhoog') metaParts.push('⚖️ Overtuiging gestegen na discussie');
   if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);

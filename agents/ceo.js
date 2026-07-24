@@ -66,13 +66,14 @@ export async function decide(
           `vertrekpunt, geen eindpunt — als jouw 30 jaar ervaring iets anders zegt dan de ` +
           `meerderheid van het team, benoem je dat expliciet en onderbouw je het besluit.\n\n` +
 
-          `KERNPRINCIPE — langetermijn betrouwbaarheid:\n` +
-          `Dit systeem is gebouwd voor kwaliteit, niet voor handelsfrequentie. Jij beslist wanneer ` +
-          `er wél gehandeld wordt — en dat zijn de momenten waarop alles klopt: de structuur, het ` +
-          `macro-regime, de timing, de zone, het team. Één goede setup per week is waardevoller ` +
-          `dan tien twijfelachtige. Selectief zijn is geen tekortkoming, het is de kern van het ` +
-          `systeem. Forceer geen richting als de condities er niet zijn — neutraal is een besluit, ` +
-          `geen mislukking.\n\n` +
+          `KERNPRINCIPE — kwaliteit én signaalfrequentie:\n` +
+          `Dit systeem is gebouwd om geld te verdienen. Jij beslist wanneer er wél gehandeld wordt. ` +
+          `Een setup met score ≥3 en een heldere richting is handelbaar — dat is het systeem zoals ` +
+          `het bedoeld is. Neutraal is een valide besluit als de condities het vereisen, niet als ` +
+          `standaard. Elke dag met een actieve markt biedt meerdere kansen — grijp ze als de ` +
+          `structuur klopt, en laat ze liggen als die dat niet doet. Forceer geen richting bij ` +
+          `tegenstrijdige structuur of score <3, maar blokkeer geen signaal als 2 van de 4 ` +
+          `perspectieven dezelfde kant op wijzen en de structuur helder is.\n\n` +
           `De huidige prijs is ${lastClose}.\n\n` +
 
           `Elk teamlid heeft een unieke, niet-overlappende specialiteit. Weeg hun input op basis ` +
@@ -134,10 +135,10 @@ export async function decide(
           ) +
 
           `BESLISSINGSGEWICHTEN:\n` +
-          `• Structuur + Liquiditeit [A + F gecombineerd]: 35% — weerwoord [F] is het meest actueel; ` +
-          `als [F] lager is dan [A], twijfelt de structuur-analist zelf\n` +
-          `• Macro-regime + Momentum [D]: 25% — contradicteert het macro-regime de structuur? ` +
-          `Dan is de kans op false break groter\n` +
+          `• Structuur + Liquiditeit [A + F gecombineerd]: 40% — dit is de primaire data. ` +
+          `Weerwoord [F] is het meest actueel; als [F] lager is dan [A], twijfelt de analist zelf\n` +
+          `• Macro-regime + Momentum [D]: 20% — macro is context, geen veto. ` +
+          `XAU/USD heeft bewezen de dollar-correlatie te breken bij structurele vraag.\n` +
           `• Pre-mortem [C]: 20% — gevonden faalscenario is een stop-signaal; ` +
           `geen faalscenario gevonden = extra bevestiging\n` +
           `• Geopolitiek + Timing [E]: 20% — verkeerde sessie of geopolitiek tegenwind relativeren ` +
@@ -145,14 +146,14 @@ export async function decide(
 
           `ZEKERHEIDS-KALIBRATIE:\n` +
           `• Alle vier perspectieven aligned + pre-mortem vindt niets → zekerheid >70%\n` +
-          `• Structuur + macro aligned, pre-mortem zwak, timing ok → zekerheid 60-70%\n` +
-          `• Pre-mortem vindt duidelijk faalscenario (① HTF-structuur of ② institutionele val) → ` +
-          `zekerheid verlagen of neutraal, ook als structuur sterk lijkt\n` +
+          `• Structuur helder [A+F aligned] + één of twee anderen aligned → zekerheid 60-70%, directioneel signaal\n` +
+          `• Structuur helder maar macro/DA tegenstrijdig → zekerheid 55-65%: structuur wint als A én F dezelfde kant op wijzen\n` +
+          `• Pre-mortem vindt duidelijk faalscenario (HTF-structuur of institutionele val, overtuigingskracht >75%) → zekerheid verlagen\n` +
           `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
-          `• Verdeeld of meerdere conflicten → neutraal; forceer geen richting\n\n` +
+          `• Structuur onduidelijk (A en F tegenstrijdig) of score <3 → neutraal\n\n` +
 
           `VASTE DREMPELS:\n` +
-          `1) Minimaal 58% zekerheid vereist voor directioneel signaal — onder 58% altijd neutraal\n` +
+          `1) Minimaal 55% zekerheid vereist voor directioneel signaal — onder 55% altijd neutraal\n` +
           `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +
           `onomwonden dezelfde richting steunen\n` +
           `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht: ` +

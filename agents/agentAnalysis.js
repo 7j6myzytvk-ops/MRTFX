@@ -85,15 +85,14 @@ export function assessSignalQuality(sample) {
 
   const blockers = [];
 
-  // Filter 1: CEO-zekerheid te laag. Drempel verlaagd van 58% naar 52%: backtest (4 signalen
-  // met confidence 54–55%) gaf 75% WR — te hoog om te blokkeren. Signalen onder 52% (volle
-  // twijfel) worden nog steeds tegengehouden.
-  if (sample.decision.confidence < 52) {
-    blockers.push('CEO-zekerheid onder 52%');
+  // Filter 1: CEO-zekerheid te laag. Drempel verlaagd van 52% naar 50% (Fase 97): CEO-prompt
+  // geeft nu minimaal 55% voor directionele signalen. Filter 50% vangt alleen systeem-anomalieën.
+  if (sample.decision.confidence < 50) {
+    blockers.push('CEO-zekerheid onder 50%');
   }
-  if (classifyMacroAlignment(sample) === 'contrarian') {
-    blockers.push('macro contraireert de richting');
-  }
+  // Macro contrarian blocker verwijderd (Fase 97): CEO weegt macro al mee op 20% in zijn
+  // beslissingsgewichten. Een aparte mechanische blokkade telt macro dubbel en verhinderde
+  // valid signals met CEO-confidence 59-61% die daadwerkelijk TP raakten (jul 23 data).
   // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
   // Drempel verhoogd van -15 naar -25 (Fase 76): in live-omstandigheden triggerde -15 bij
   // 20% van de signalen (4×/20) terwijl backtest slechts 0,3% (1×/310) gaf. Meerdere

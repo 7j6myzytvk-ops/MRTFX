@@ -23,7 +23,7 @@ function formatSignalLine(s) {
   const dir = s.decision?.signal?.toUpperCase() ?? '?';
   const conf = s.decision?.confidence ?? '?';
   const score = s.discussion?.analyst?.setupQualityScore;
-  const scoreStr = score != null ? ` | score ${score}/5` : '';
+  const scoreStr = score != null ? ` | score ${score}/6` : '';
   const status = s.qualityResult?.passed === false
     ? `gefilterd (${(s.qualityResult.blockers ?? []).slice(0, 1).join(', ')})`
     : s.decision?.signal === 'neutral' ? 'neutraal' : 'geadviseerd';
