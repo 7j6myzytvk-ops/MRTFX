@@ -167,7 +167,7 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `• RONDE NIVEAUS ($50-intervallen): harde institutionele zones.\n\n` +
 
     `SETUP KWALITEITSOORDEEL — doe dit EERST, vóór je de structuur analyseert:\n` +
-    `Een setup is pas handelbaar als de meeste van deze vijf criteria aanwezig zijn. ` +
+    `Een setup is pas handelbaar als de meeste van deze zes criteria aanwezig zijn. ` +
     `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
     `① HTF-BIAS HELDER: 4H én D1 wijzen beiden duidelijk dezelfde richting ` +
     `(niet zijwaarts, niet tegenstrijdig). Gebruik de 4H-STRUCTUUR context hierboven om ` +
@@ -176,11 +176,11 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `(onder 50%-punt van de recente 4H/D1-range); voor shorts in de premium-zone (erboven). ` +
     `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
     `③ VERSE ZONE: het beoogde OB of FVG is nog onaangetast. Concreet beslismoment:\n` +
-    `  – VERS: geen enkele H1-candle heeft meer dan 50% van de zone gesloten. ` +
-    `De zone is ≤ 50 H1-candles geleden gecreëerd.\n` +
-    `  – GEMITIGEERD: prijs heeft de zone al volledig bezocht of de zone is ouder dan 50 candles ` +
-    `zonder dat prijs er naartoe bewoog. Wees eerlijk — ken ③ toe als er een duidelijke ` +
-    `ongerepte zone zichtbaar is, ook als die niet perfect vers is.\n` +
+    `  – VERS (ken ③ toe): geen enkele H1-candle heeft gesloten BINNEN of VOORBIJ de zone; ` +
+    `prijs is er niet naartoe teruggekeerd; de zone is ≤ 50 H1-candles geleden gecreëerd.\n` +
+    `  – GEMITIGEERD (ken ③ NIET toe): (a) een candle sloot voor meer dan 50% van de zone; ` +
+    `(b) prijs doorsneed de zone volledig (body sloot voorbij de zone); ` +
+    `(c) de zone is ouder dan 50 candles. Dit zijn harde grenzen — geen uitzonderingen.\n` +
     `④ LIQUIDITEITSSWEEP BEVESTIGD: prijs heeft vóór de huidige setup een BSL- of ` +
     `SSL-cluster gecleard. Concreet beslismoment:\n` +
     `  – BULLISH sweep: een recente swing low of gelijke lows zijn gebroken met een wick ` +
@@ -189,9 +189,16 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `(close terug eronder) — bij voorkeur binnen de laatste 25 H1-candles.\n` +
     `  – Wees eerlijk: ken ④ toe als er een herkenbare sweep-actie heeft plaatsgevonden, ` +
     `ook als de CHoCH-opvolging nog pril is. Ontbreekt elke sweep-beweging volledig? Dan ④ niet toekennen.\n` +
-    `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager) ` +
-    `die de institutionele entry bevestigt. Dit is de concrete trigger, niet slechts een ` +
-    `richting op hogere timeframe.\n` +
+    `⑤ LTF CHoCH ALS TRIGGER: er is een bevestigde Change of Character op H1 (of lager).\n` +
+    `  DEFINITIE — CHoCH vs BOS:\n` +
+    `  – CHoCH bearish (ken ⑤ toe): na een bullish structuur (reeks hogere highs/lows) sluit ` +
+    `een H1-candle ONDER het laatste relevante swing low. Trendwisseling bevestigd.\n` +
+    `  – CHoCH bullish (ken ⑤ toe): na een bearish structuur (reeks lagere highs/lows) sluit ` +
+    `een H1-candle BOVEN het laatste relevante swing high. Trendwisseling bevestigd.\n` +
+    `  – BOS (ken ⑤ NIET toe): breuk in dezélfde richting als de lopende trend — dit is ` +
+    `trendbevestiging, geen trigger voor een reversal-entry.\n` +
+    `  – HARDE REGEL: alleen een gesloten candle geldt. Wick voorbij het swing level zonder ` +
+    `slotkoers = geen CHoCH. Ontbreekt een duidelijke CHoCH? Wijs ⑤ NIET toe.\n` +
     `⑥ KILL ZONE TIMING: beoordeel op basis van de sessie-context (zie SESSION-noot hieronder) ` +
     `in welke handelsperiode de setup valt:\n` +
     `  – NY Kill Zone (13:00–17:00 UTC): hoogste institutionele liquiditeit — sterkste window. Ken ⑥ toe.\n` +

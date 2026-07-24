@@ -61,16 +61,19 @@ export async function assessRisk(
 
           `Situatie: ${instrument} (${granularity}), huidige prijs ${lastClose}.\n` +
           `Analist-signaal: "${analysis.signal}" (zekerheid ${analysis.confidence}%)\n` +
-          `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/5 criteria aanwezig\n` +
+          `Setup-kwaliteitsscore: ${analysis.setupQualityScore ?? '?'}/6 criteria aanwezig\n` +
           `Onderbouwing: "${analysis.reasoning}"\n` +
           `ATR14 (H1, periode 14): $${atr14.toFixed(2)}\n\n` +
 
-          `ENTRY-ZONE (nieuw — vermeld dit expliciet in je reasoning):\n` +
-          `• Leid uit de analist-onderbouwing het meest logische entry-niveau af: het dichtstbijzijnde ` +
-          `onaangetaste Order Block (OB) of Fair Value Gap (FVG) in de signaalrichting\n` +
-          `• Geef een concrete prijsrange: "Optimale entry-zone: $X–$Y"\n` +
-          `• Als de huidige prijs al diep in de beweging zit (ver van OB/FVG): meld dat de entry ` +
-          `"te laat" is en adviseer 'klein' of wacht op een pullback\n\n` +
+          `ENTRY-ZONE — HARDE REGEL: entry moet VANDAAG actionabel zijn.\n` +
+          `• De entry-zone moet binnen 1.5×ATR14 ($${(atr14 * 1.5).toFixed(0)}) van de huidige prijs ` +
+          `($${lastClose}) liggen. Dat is de range $${(lastClose - atr14 * 1.5).toFixed(0)}–$${(lastClose + atr14 * 1.5).toFixed(0)}.\n` +
+          `• Zoek het dichtstbijzijnde onaangetaste OB of FVG in de signaalrichting BINNEN die range.\n` +
+          `• Is er een zone binnen bereik: gebruik die als entry-zone ("$X–$Y").\n` +
+          `• Is er GEEN logische zone binnen bereik: gebruik de huidige marktprijs als directe entry ` +
+          `("Directe markt-entry ~$${lastClose.toFixed(0)}").\n` +
+          `• NOOIT een entry instellen buiten de 1.5×ATR range — "wacht op pullback naar $X" ` +
+          `terwijl X ver buiten bereik ligt is GEEN actionabel signaal.\n\n` +
 
           `SL/TP KENNIS:\n` +
           `• Ronde $50-niveaus ($3250, $3300, $3350...) zijn magneten — SL VOORBIJ zo'n niveau, ` +
@@ -84,17 +87,17 @@ export async function assessRisk(
           `Boven 2.5 alleen als er een duidelijke technische reden is (OB/FVG verder weg)\n\n` +
 
           `POSITIEGROOTTE (confidence × kwaliteit — pas in deze volgorde toe):\n` +
-          `• Harde blokkade: setup-kwaliteitsscore <2 → altijd 'klein', skip verdere berekening\n` +
+          `• Harde blokkade: setup-kwaliteitsscore <3 → altijd 'klein', skip verdere berekening\n` +
           `• Basislijn op analist-zekerheid: <65% → klein | 65-70% → normaal | >70% → groot\n` +
           `• Kwaliteitskorting (elk van onderstaande verlaagt één stap, minimum 'klein'):\n` +
-          `  – ATR14 < $13: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
+          `  – ATR14 < $10: markt te kalm, SL/TP-niveaus onbetrouwbaar → één stap omlaag\n` +
           `  – ATR14 > $30: extreme volatiliteit, verhoogd gap-risico → één stap omlaag\n` +
-          `  – Entry te laat of geen logisch SL/TP niveau: altijd 'klein'\n` +
+          `  – Geen logisch SL/TP niveau: altijd 'klein'\n` +
           `• Kwaliteitsbonus (alle drie vereist, verhoogt één stap, maximum 'groot'):\n` +
-          `  – setupQualityScore ≥ 4/5 ÉN ATR14 ≥ $13 ÉN zekerheid ≥ 70%\n` +
+          `  – setupQualityScore ≥ 4/6 ÉN ATR14 ≥ $10 ÉN zekerheid ≥ 70%\n` +
           `• Vermeld in reasoning: basislijn, eventuele korting/bonus, eindadvies.\n` +
-          `  Voorbeeld: "Basislijn groot (72%), ATR14 $18 > $13 geen korting, score 4/5 bonus → GROOT"\n` +
-          `  Voorbeeld: "Basislijn normaal (67%), ATR14 $11 < $13 één stap omlaag → KLEIN"` +
+          `  Voorbeeld: "Basislijn groot (72%), ATR14 $18 geen korting, score 4/6 bonus → GROOT"\n` +
+          `  Voorbeeld: "Basislijn normaal (67%), ATR14 $9 < $10 één stap omlaag → KLEIN"` +
           `${eventsNote}${newsContextNote}${streakNote}${contextNotes}`,
       },
     ],

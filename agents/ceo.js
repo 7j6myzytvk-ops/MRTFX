@@ -79,7 +79,7 @@ export async function decide(
           `van hun mandaat:\n\n` +
 
           `[A] MARKTSTRUCTUUR-ANALIST (eerste oordeel): signaal "${analysis.signal}" ` +
-          `(zekerheid ${analysis.confidence}%) | setup-kwaliteit: ${analysis.setupQualityScore ?? '?'}/5 criteria — ${analysis.reasoning}\n` +
+          `(zekerheid ${analysis.confidence}%) | setup-kwaliteit: ${analysis.setupQualityScore ?? '?'}/6 criteria — ${analysis.reasoning}\n` +
           `→ Beoordeelt: HTF-bias, BOS/CHoCH, liquiditeitskaart, OBs/FVGs. Geen macro, geen indicatoren.\n\n` +
 
           `[B] RISICOMANAGER (trade-parameters — GEEN directioneel oordeel): ` +
@@ -157,8 +157,10 @@ export async function decide(
           `onomwonden dezelfde richting steunen\n` +
           `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht: ` +
           `zwaarste single-factor risico — verlaag significant of neutraal\n` +
-          `4) Gebruik SL/TP van risicomanager [B]; als je van de analist-richting afwijkt, ` +
-          `stel eigen SL/TP in die bij jouw richting passen\n` +
+          `4) Neem entry-zone, SL en TP van risicomanager [B] ongewijzigd over. ` +
+          `Stel NOOIT een andere entry-zone in — de risicomanager heeft al gecontroleerd ` +
+          `of de entry vandaag actionabel is. Als je afwijkt van de richting van de analist, ` +
+          `zeg dan neutraal in plaats van een eigen entry te verzinnen.\n` +
           (trendMode
             ? `5) TREND-MODUS: het signaal is al aligned met 4H + D1 + H1 + M30. ` +
               `De counter-trend stop is NIET van toepassing — dit IS een trend-setup. ` +
