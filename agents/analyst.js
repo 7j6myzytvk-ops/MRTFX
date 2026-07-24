@@ -300,10 +300,10 @@ function buildTrendModeRebuttal({ analysis, risk, devilsAdvocate, macro, geopoli
 
     `ZEKERHEIDSREGEL (verplicht toepassen):\n` +
     `• Alle 5 scenario's weerlegd + macro bevestigt → VERHOOG zekerheid\n` +
-    `• 1 steekhoudend punt → kleine aanpassing omlaag, behoud richting\n` +
-    `• Scenario ① of ② bevestigd (trend al gebroken of pullback te diep) → VERLAAG significant of switch naar neutraal\n` +
-    `• Meerdere scenario's bevestigd → neutraal; forceer geen trend-setup als de basis wankelt\n` +
-    `• Een onveranderd percentage is alleen gerechtvaardigd als je elk punt concreet kunt weerleggen.` +
+    `• 1-2 steekhoudende punten maar trend intact → max -8% aanpassing, behoud richting\n` +
+    `• Scenario ① EN ② beide bevestigd, of pullback aantoonbaar te diep → switch neutraal\n` +
+    `• Eén van beiden: verlaag max -15%, richting behouden\n` +
+    `• Een onveranderd percentage is gerechtvaardigd als je elk punt concreet weerlegde.` +
     `${newsContextNote}${contextNotes}`
   );
 }
@@ -340,10 +340,12 @@ function buildReversalModeRebuttal({ analysis, risk, devilsAdvocate, macro, geop
 
     `ZEKERHEIDSREGEL (verplicht toepassen):\n` +
     `• Alle 5 scenario's weerlegd + macro bevestigt → VERHOOG zekerheid\n` +
-    `• 1 steekhoudend punt → kleine aanpassing omlaag, behoud richting\n` +
-    `• Scenario ① of ② bevestigd → VERLAAG significant of switch naar neutraal\n` +
-    `• Meerdere scenario's bevestigd → neutraal; forceer geen richting als de basis wankelt\n` +
-    `• Een onveranderd percentage is alleen gerechtvaardigd als je elk punt concreet kunt weerleggen.` +
+    `• 1-2 steekhoudende punten maar structuur intact → max -8% aanpassing, behoud richting en signaal\n` +
+    `• Pre-mortem ≤75% counter + macro tegenstrijdig → dit is normaal bij een reversal-setup; verlaag max -10%, richting behouden\n` +
+    `• Scenario ① OF ② duidelijk bevestigd (niet alleen gesuggereerd) → verlaag -15 tot -20%, behoud richting tenzij structuur fundamenteel breekt\n` +
+    `• Scenario ① EN ② beide bevestigd, OF marktstructuur fundamenteel anders dan initieel → switch naar neutraal\n` +
+    `• Pre-mortem overtuigingskracht >80% op één of meer punten → overweeg neutraal\n` +
+    `• Een onveranderd percentage is gerechtvaardigd als je elk punt concreet weerlegde.` +
     `${newsContextNote}${contextNotes}`
   );
 }

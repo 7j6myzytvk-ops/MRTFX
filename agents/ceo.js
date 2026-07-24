@@ -164,8 +164,8 @@ export async function decide(
 
           `VASTE DREMPELS:\n` +
           `1) Minimaal 55% zekerheid vereist voor directioneel signaal — onder 55% altijd neutraal\n` +
-          `2) Weerwoord [F] significant lager dan [A]: neutraal tenzij macro + geo beide ` +
-          `onomwonden dezelfde richting steunen\n` +
+          `2) Weerwoord [F] geeft TEGENGESTELD signaal aan [A]: neutraal (structuur inconsistent). ` +
+          `[F] lager in zekerheid maar zelfde richting: geen reden voor neutraal — verlaag zekerheid max 8%\n` +
           `3) Pre-mortem scenario ② (institutionele val/Judas Swing) met hoge overtuigingskracht (>80%): ` +
           `zwaarste single-factor risico — verlaag significant of neutraal\n` +
           `4) Neem entry-zone, SL en TP van risicomanager [B] ongewijzigd over. ` +
