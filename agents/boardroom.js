@@ -163,6 +163,7 @@ export async function runDiscussion(
     discussion,
     decision,
     entryPrice,
+    trendMode,
     h4Trend,
     dailyTrend: d1Ctx?.trend ?? null,
     weeklyTrend: w1Ctx?.trend ?? null,

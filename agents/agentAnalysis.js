@@ -153,11 +153,12 @@ export function assessSignalQuality(sample) {
   }
 
   // Filter 9: Overextended move — koers te ver verwijderd van H1 SMA20.
-  // Drempel verhoogd van 2.5 naar 3.0×ATR: live data (23 jul) toonde dat signalen bij
-  // 2.7–3.1×ATR nog TP raakten. 2.5×ATR blokkeerde te vroeg in lopende trends.
-  // Fallback naar $60 als ATR ontbreekt (oude backtest-runs vóór Fase 68).
-  const smaGapMax = sample.atr14 != null ? sample.atr14 * 3.0 : 60;
-  if (sample.sma20H1 != null && sample.entryPrice != null) {
+  // Alleen van toepassing in REVERSAL-modus: in een reversal probeer je een keerpunt
+  // te vangen en een overextended move vergroot het reversal-risico significant.
+  // In TREND-modus is prijs ver van SMA20 juist normaal — dat is hoe een trend eruitziet.
+  // Een trend-entry blokkeren omdat de trend al loopt is logisch inconsistent.
+  if (!sample.trendMode && sample.sma20H1 != null && sample.entryPrice != null) {
+    const smaGapMax = sample.atr14 != null ? sample.atr14 * 3.0 : 60;
     const gap = sample.entryPrice - sample.sma20H1;
     if (sample.decision.signal === 'bearish' && gap < -smaGapMax) {
       blockers.push(`move overextended: koers $${Math.abs(gap).toFixed(0)} onder H1 SMA20 — reversal-risico`);
