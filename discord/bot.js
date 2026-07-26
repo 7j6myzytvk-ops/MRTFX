@@ -8,7 +8,7 @@ import {
   getRecentXauD1Candles,
   getRecentXauW1Candles,
 } from '../services/marketData.js';
-import { checkConditions, isActiveSession, isActiveDay } from '../services/conditionChecker.js';
+import { checkConditions, isActiveSession } from '../services/conditionChecker.js';
 import { getBriefing, setBriefing, clearBriefing, formatBriefingNote } from '../services/macroBriefing.js';
 import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
@@ -190,11 +190,9 @@ export function createBot() {
         const { details, triggered, direction, blockers } = conditions;
 
         const now = new Date();
-        const activeDay = isActiveDay(now);
         const dagNamen = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
         const dagNaam = dagNamen[now.getUTCDay()];
         const sessionIcon = details.session ? '✅' : '❌';
-        const dagIcon = activeDay ? '✅' : '❌';
         const tfIcon = details.tfAlignment?.aligned ? '✅' : '❌';
         const trendIcon = details.trendBias?.aligned ? '✅' : '❌';
         const levelIcon = details.nearLevel?.near ? '✅' : '❌';
@@ -224,8 +222,8 @@ export function createBot() {
           `**XAU/USD Status — ${now.toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
           `Koers: $${price.price}\n\n` +
           `**Conditie-check:**\n` +
-          `${dagIcon} Dag (${dagNaam}): ${activeDay ? 'actief' : 'maandag geblokkeerd (WR 40.9%)'}\n` +
-          `${sessionIcon} Sessie (13:00–17:00 UTC): ${details.session ? 'actief' : 'inactief'}\n` +
+          `📅 Dag: ${dagNaam}\n` +
+          `${sessionIcon} Sessie (07:00–17:00 UTC): ${details.session ? 'actief' : 'inactief'}\n` +
           `${tfIcon} TF-alignment: ${tfLine}\n` +
           `${trendIcon} D1/W1 trend: ${trendLine}\n` +
           `${levelIcon} Sleutelniveau: ${levelLine}\n` +
