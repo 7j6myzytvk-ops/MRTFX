@@ -19,6 +19,9 @@ import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
 import { checkFtmoLimits, formatFtmoStatus, getFtmoStats } from '../services/ftmoGuard.js';
 import { summarizeSignalHealth, formatHealthReport, validateSignalStructure } from '../services/signalValidator.js';
+import { addInsight, getActiveInsights } from '../services/knowledgeBase.js';
+import { extractInsights } from '../agents/contentAnalyst.js';
+import { checkYoutubeChannels } from '../services/youtubeMonitor.js';
 import {
   getConditionLog,
   summarizeConditionLog,
@@ -105,6 +108,21 @@ const commands = [
         .setName('wissen')
         .setDescription('Wis de huidige briefing')
     ),
+  new SlashCommandBuilder()
+    .setName('leer')
+    .setDescription('Voeg een marktinzicht toe aan de kennisbank — wordt meegenomen in elke boardroom')
+    .addStringOption((o) =>
+      o.setName('tekst').setDescription('Het inzicht of de marktobservatie die je wilt toevoegen').setRequired(true),
+    )
+    .addStringOption((o) =>
+      o.setName('bron').setDescription('Bron van het inzicht (bijv. "Trading Wizard", "eigen observatie")'),
+    ),
+  new SlashCommandBuilder()
+    .setName('kennisbank')
+    .setDescription('Toon alle actieve inzichten in de kennisbank'),
+  new SlashCommandBuilder()
+    .setName('youtube')
+    .setDescription('Scan Trading Wizard YouTube-kanaal handmatig op nieuwe video\'s'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
@@ -648,6 +666,68 @@ export function createBot() {
         );
       } catch (err) {
         await interaction.editReply(`Performance-overzicht mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'leer') {
+      await interaction.deferReply();
+      try {
+        const tekst = interaction.options.getString('tekst');
+        const bron = interaction.options.getString('bron') ?? 'handmatige input';
+        const resultaat = await extractInsights({ tekst, bron, bronType: 'handmatig' });
+        if (!resultaat.relevant || resultaat.inzichten.length === 0) {
+          await interaction.editReply(`❌ Geen relevante XAU/USD-inzichten gevonden in deze tekst.`);
+          return;
+        }
+        for (const i of resultaat.inzichten) {
+          addInsight({ bron, bronType: 'handmatig', inzicht: i.inzicht, implicatie: i.implicatie, markt: i.markt, geldigDagen: i.geldigDagen });
+        }
+        const regels = resultaat.inzichten.map((i) => `• **${i.inzicht}**\n  → ${i.implicatie} *(${i.geldigDagen} dagen geldig)*`);
+        await interaction.editReply(`✅ **${resultaat.inzichten.length} inzicht(en) opgeslagen in kennisbank:**\n${regels.join('\n')}`);
+      } catch (err) {
+        await interaction.editReply(`Leer-commando mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'kennisbank') {
+      await interaction.deferReply();
+      try {
+        const insights = getActiveInsights();
+        if (insights.length === 0) {
+          await interaction.editReply(`📚 Kennisbank is leeg — nog geen actieve inzichten.`);
+          return;
+        }
+        const regels = insights.map((i) =>
+          `• [${i.datum}] **${i.inzicht}**\n  → ${i.implicatie}\n  *Bron: ${i.bron} | Geldig t/m ${i.geldigTot}*`
+        );
+        await interaction.editReply(truncateForDiscord(`📚 **Actieve kennisbank (${insights.length} inzichten):**\n${regels.join('\n\n')}`));
+      } catch (err) {
+        await interaction.editReply(`Kennisbank ophalen mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'youtube') {
+      await interaction.deferReply();
+      try {
+        await interaction.editReply(`🔍 Trading Wizard kanaal scannen op nieuwe video's...`);
+        const verwerkt = await checkYoutubeChannels();
+        if (verwerkt.length === 0) {
+          await interaction.editReply(`✅ Geen nieuwe video's gevonden of alle video's al verwerkt.`);
+          return;
+        }
+        const regels = verwerkt.flatMap((v) =>
+          v.inzichten.map((i) => `• **${i.inzicht}**\n  → ${i.implicatie}`)
+        );
+        await interaction.editReply(truncateForDiscord(
+          `📺 **${verwerkt.length} nieuwe video('s) verwerkt:**\n` +
+          verwerkt.map((v) => `**"${v.video.titel}"**`).join(', ') +
+          `\n\n**Inzichten toegevoegd:**\n${regels.join('\n')}`
+        ));
+      } catch (err) {
+        await interaction.editReply(`YouTube-scan mislukt: ${err.message}`);
       }
       return;
     }

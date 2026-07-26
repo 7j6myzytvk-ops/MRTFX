@@ -14,6 +14,7 @@ import { computeWeeklyContext, formatWeeklyContextNote } from './weeklyContext.j
 import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
+import { formatInsightsForPrompt } from '../services/knowledgeBase.js';
 import { assessSession, formatSessionNote } from './sessionContext.js';
 import {
   getCeoPerformanceBriefing,
@@ -92,7 +93,8 @@ export async function runDiscussion(
       `Sweep, OB/FVG en CHoCH zijn NIET vereist in trend-modus. ` +
       `CEO: regel 5 (counter-trend stop) geldt NIET in trend-modus — het signaal IS al aligned.`
     : '';
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote + trendModeNote;
+  const knowledgeNote = formatInsightsForPrompt();
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote + trendModeNote + knowledgeNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats, atrTrend);

@@ -20,6 +20,7 @@ import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './event
 import { computeIndicators } from '../agents/indicators.js';
 import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
 import { runDailyReview } from './dailyReview.js';
+import { checkYoutubeChannels } from './youtubeMonitor.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
@@ -34,6 +35,7 @@ let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
 let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
+let lastYoutubeCheckTime = null; // begrenst YouTube-scan tot 1x per 6 uur
 
 async function poll(client) {
   try {
@@ -57,6 +59,16 @@ async function poll(client) {
         lastDailyReviewDate = todayStr;
         runDailyReview(client).catch((err) => console.error('[dailyReview] Mislukt:', err.message));
       }
+    }
+
+    // YouTube-kanalen checken op nieuwe video's: 1x per 6 uur.
+    if (!lastYoutubeCheckTime || Date.now() - lastYoutubeCheckTime >= 6 * 60 * 60 * 1000) {
+      lastYoutubeCheckTime = Date.now();
+      checkYoutubeChannels().then((verwerkt) => {
+        if (verwerkt.length > 0) {
+          console.log(`[YouTube] ${verwerkt.length} nieuwe video('s) verwerkt in kennisbank.`);
+        }
+      }).catch((e) => console.error('[YouTube] Check mislukt:', e.message));
     }
 
     if (!isActiveSession()) return;
