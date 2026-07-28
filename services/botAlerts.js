@@ -50,7 +50,7 @@ export function formatHeartbeat(lastSignalTime) {
   return (
     `🟢 **Setup-detector — sessiestart ${dateStr}**\n` +
     `${lastSetup}\n` +
-    `Setup-scanner actief: 08:00–17:00 UTC | Interval: 2 min`
+    `Setup-scanner actief: 24/5 (zo 21:00–vr 21:00 UTC) | Interval: 2 min`
   );
 }
 
@@ -60,5 +60,5 @@ export async function sendHeartbeat(client, lastSignalTime) {
 
 export async function sendStartupAlert(client) {
   const time = new Date().toISOString().replace('T', ' ').slice(0, 16);
-  await sendSystemAlert(client, `🔄 **Bot herstart** — ${time} UTC\nSetup-scanner actief: 08:00–17:00 UTC.`);
+  await sendSystemAlert(client, `🔄 **Bot herstart** — ${time} UTC\nSetup-scanner actief: 24/5 (zo 21:00–vr 21:00 UTC).`);
 }

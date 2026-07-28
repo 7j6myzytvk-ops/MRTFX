@@ -47,6 +47,34 @@ let lastDailyReviewDate = null;
 let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
 let lastYoutubeCheckTime = null; // begrenst YouTube-scan tot 1x per 6 uur
 
+async function injectStalenessIfNeeded(result) {
+  if (result.decision?.signal === 'neutral') return result;
+  if (!result.qualityResult?.passed) return result;
+  try {
+    const livePrice = await getXauUsdPrice();
+    const ez = result.decision?.entryZone ?? '';
+    const clean = ez.replace(/\$/g, '').replace(/\s/g, '');
+    const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
+    const entryMid = match
+      ? (parseFloat(match[1]) + parseFloat(match[2])) / 2
+      : result.entryPrice;
+    const drift = Math.abs(livePrice - entryMid);
+    if (drift > 20) {
+      console.log(`[Staleness] Prijs verschoven $${drift.toFixed(0)} van entry zone — signaal gemarkeerd als stale.`);
+      return {
+        ...result,
+        qualityResult: {
+          passed: false,
+          blockers: [`prijs $${drift.toFixed(0)} verschoven van entry zone (was $${entryMid.toFixed(0)}, nu $${livePrice.toFixed(0)})`],
+        },
+      };
+    }
+  } catch (e) {
+    console.warn('[Staleness] Live prijs niet beschikbaar:', e.message);
+  }
+  return result;
+}
+
 async function poll(client) {
   try {
     // TP/SL-uitkomsten evalueren: max 1x per 15 minuten (H1-candles sluiten per uur,
@@ -130,38 +158,6 @@ async function poll(client) {
       dailySignalCount++;
       lastTradeSignalTime = Date.now();
       console.log(`[Trade-cooldown] Signaal #${dailySignalCount}/${MAX_SIGNALS_PER_DAY} vandaag — 4u lockout actief.`);
-    }
-
-    // Controleert of de actuele marktprijs nog binnen $20 van de entry zone zit.
-    // Tussen boardroom-analyse (30-60 sec) en Discord-levering kan de prijs verschuiven.
-    // Bij > $20 drift: qualityResult wordt als filtered gemarkeerd zodat Discord-bericht
-    // duidelijk maakt dat de entry zone voorbij is — het signaal zelf is geldig maar stale.
-    async function injectStalenessIfNeeded(result) {
-      if (result.decision?.signal === 'neutral') return result;
-      if (!result.qualityResult?.passed) return result;
-      try {
-        const livePrice = await getXauUsdPrice();
-        const ez = result.decision?.entryZone ?? '';
-        const clean = ez.replace(/\$/g, '').replace(/\s/g, '');
-        const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
-        const entryMid = match
-          ? (parseFloat(match[1]) + parseFloat(match[2])) / 2
-          : result.entryPrice;
-        const drift = Math.abs(livePrice - entryMid);
-        if (drift > 20) {
-          console.log(`[Staleness] Prijs verschoven $${drift.toFixed(0)} van entry zone — signaal gemarkeerd als stale.`);
-          return {
-            ...result,
-            qualityResult: {
-              passed: false,
-              blockers: [`prijs $${drift.toFixed(0)} verschoven van entry zone (was $${entryMid.toFixed(0)}, nu $${livePrice.toFixed(0)})`],
-            },
-          };
-        }
-      } catch (e) {
-        console.warn('[Staleness] Live prijs niet beschikbaar:', e.message);
-      }
-      return result;
     }
 
     // Gemeenschappelijke pre-check voor beide paden: trade-cooldown en dagmaximum.
