@@ -257,6 +257,46 @@ async function poll(client) {
   }
 }
 
+// Voert een handmatige boardroom-scan uit buiten het normale sessievenster.
+// Bypast isActiveSession() en cooldown-timers — puur voor observatie/testen.
+// Telt niet mee in dagelijkse signaallimieten en update geen lockout-timers.
+export async function runForceScan(client) {
+  const [m15Candles, m30Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
+    getRecentRealCandles({ granularity: 'M15', count: 100 }),
+    getRecentRealCandles({ granularity: 'M30', count: 100 }),
+    getRecentXauH1Candles({ count: 50 }),
+    getRecentXauH4Candles({ count: 50 }),
+    getRecentXauD1Candles({ count: 30 }),
+    getRecentXauW1Candles({ count: 20 }),
+  ]);
+
+  const conditions = checkConditions({ h1Candles, m30Candles, m15Candles, d1Candles, w1Candles, h4Candles });
+  const [dollarCandles, yieldCandles, newsItems] = await Promise.all([
+    getRecentEurUsdCandles({ granularity: 'H1', count: 50 }),
+    getRecentUsYieldCandles({ count: 25 }),
+    fetchGoldNews({ maxItems: 12 }),
+  ]);
+
+  const sessionLabel = `[FORCE SCAN — buiten regulier sessievenster] ${formatConditionContext(conditions)}`;
+
+  const result = await runBoardroom(h1Candles, {
+    granularity: 'H1',
+    dollarCandles,
+    yieldCandles,
+    h4Candles,
+    d1Candles,
+    w1Candles,
+    newsItems,
+    newsContext: sessionLabel,
+    trendMode: conditions.trendMode,
+    triggerType: 'force',
+  });
+
+  const checkedResult = await injectStalenessIfNeeded(result);
+  await reportToDiscord(client, checkedResult);
+  return checkedResult;
+}
+
 // Geeft de huidige trade-lockout staat terug voor /status en monitoring.
 export function getTradeCooldownState() {
   const now = Date.now();

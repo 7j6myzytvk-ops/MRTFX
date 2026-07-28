@@ -14,7 +14,7 @@ import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker, truncateForDiscord } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
-import { startSignalScheduler, getTradeCooldownState } from '../services/scheduler.js';
+import { startSignalScheduler, getTradeCooldownState, runForceScan } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
 import { checkFtmoLimits, formatFtmoStatus, getFtmoStats } from '../services/ftmoGuard.js';
@@ -123,6 +123,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('youtube')
     .setDescription('Scan Trading Wizard YouTube-kanaal handmatig op nieuwe video\'s'),
+  new SlashCommandBuilder()
+    .setName('force-scan')
+    .setDescription('Trigger direct een boardroom-sessie — bypast sessiefilter en cooldowns (puur voor testen)'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
@@ -753,6 +756,17 @@ export function createBot() {
         ));
       } catch (err) {
         await interaction.editReply(`YouTube-scan mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'force-scan') {
+      await interaction.deferReply();
+      try {
+        await interaction.editReply(`🔍 **Force scan gestart** — boardroom wordt nu getriggerd buiten sessievenster. Resultaat volgt in het CEO-kanaal...`);
+        await runForceScan(interaction.client);
+      } catch (err) {
+        await interaction.editReply(`Force scan mislukt: ${err.message}`);
       }
       return;
     }

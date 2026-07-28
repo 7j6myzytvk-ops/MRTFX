@@ -1,15 +1,16 @@
 import { computeTimeframeBias, computeMultiTFAlignment, computeTrendBias } from '../agents/multiTimeframeAlignment.js';
 import { checkKeyLevelProximity } from '../agents/keyLevels.js';
 
-// Sessiefilter: actief 07:00–17:00 UTC (London pre-open t/m NY-sessie).
-// Uitgebreid van 08:00 naar 07:00 (Fase 98): London open begint feitelijk om 07:00 UTC
-// met instituties die posities klaarzetten voor de kill zone (07:00–10:00 UTC).
+// Sessiefilter: actief 24/5 (zondag 21:00 UTC t/m vrijdag 21:00 UTC).
+// Uitgebreid naar volledige markturen voor observatie/testdoeleinden — Asian sessie,
+// pre-London en late NY zijn nu actief. Signalen buiten London/NY zijn puur informatief.
 export function isActiveSession(now = new Date()) {
   const day = now.getUTCDay();
-  if (day === 6) return false;
-  if (day === 0 && now.getUTCHours() < 21) return false;
   const hour = now.getUTCHours();
-  return hour >= 7 && hour < 17;
+  if (day === 6) return false; // Zaterdag: markt gesloten
+  if (day === 0 && hour < 21) return false; // Zondag vóór 21:00 UTC: gesloten
+  if (day === 5 && hour >= 21) return false; // Vrijdag na 21:00 UTC: weekend gap
+  return true;
 }
 
 // Dagfilter: maandag heeft de laagste WR (40.9%) van alle weekdagen.
