@@ -25,7 +25,8 @@ import { checkYoutubeChannels } from './youtubeMonitor.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
-const POLL_INTERVAL_MS = 2 * 60 * 1000;
+const POLL_INTERVAL_MS = 2 * 60 * 1000;         // London/NY: elke 2 minuten
+const POLL_INTERVAL_OFFPEAK_MS = 15 * 60 * 1000; // Asian/nacht: elke 15 minuten
 // Minimale pauze na een boardroom-run (ook neutraal): voorkomt dat dezelfde
 // 4H-alignment elke 2 minuten een nieuwe boardroom triggert.
 const MIN_SIGNAL_COOLDOWN_MS = 25 * 60 * 1000;
@@ -309,14 +310,24 @@ export function getTradeCooldownState() {
   };
 }
 
+function getCurrentPollInterval() {
+  const hour = new Date().getUTCHours();
+  return (hour >= 7 && hour < 17) ? POLL_INTERVAL_MS : POLL_INTERVAL_OFFPEAK_MS;
+}
+
 export function startSignalScheduler(client) {
   const { ceoChannelId } = config.boardroom;
   if (!ceoChannelId) {
     console.log('Setup-detector uitgeschakeld: stel DISCORD_CEO_CHANNEL_ID in.');
     return;
   }
-  console.log(`Setup-detector actief — controleert elke ${POLL_INTERVAL_MS / 60000} minuten op setups.`);
+  console.log('Setup-detector actief — 2 min interval (London/NY), 15 min interval (Asian/nacht).');
   sendStartupAlert(client);
-  poll(client);
-  setInterval(() => poll(client), POLL_INTERVAL_MS);
+
+  // Recursieve setTimeout zodat het interval dynamisch aanpast per poll.
+  async function schedulePoll() {
+    await poll(client);
+    setTimeout(schedulePoll, getCurrentPollInterval());
+  }
+  schedulePoll();
 }
