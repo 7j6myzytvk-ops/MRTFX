@@ -14,7 +14,7 @@ import { fetchGoldNews } from '../services/newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord, formatSetupMarker, truncateForDiscord } from '../services/boardroomReporter.js';
 import { getRecentSignals, getAllSignals } from '../data/store.js';
-import { startSignalScheduler } from '../services/scheduler.js';
+import { startSignalScheduler, getTradeCooldownState } from '../services/scheduler.js';
 import { evaluateOpenSignals } from '../services/performanceTracker.js';
 import { summarize } from '../agents/outcomeEvaluator.js';
 import { checkFtmoLimits, formatFtmoStatus, getFtmoStats } from '../services/ftmoGuard.js';
@@ -218,6 +218,13 @@ export function createBot() {
           ? `\n\n**Macro-briefing actief** (geldig t/m ${new Date(briefing.expiresAt).toISOString().slice(0, 10)})\n> ${briefing.text.slice(0, 200)}${briefing.text.length > 200 ? '…' : ''}`
           : `\n\n_Geen macro-briefing actief. Gebruik /briefing om context in te stellen._`;
 
+        const cooldown = getTradeCooldownState();
+        const cooldownLine = cooldown.tradeLockedActive
+          ? `\n\n⏸️ **Trade-lockout actief** — ${cooldown.tradeLockedMinutesLeft} min resterend (signaal #${cooldown.signalsToday}/${cooldown.maxSignalsPerDay} vandaag)`
+          : cooldown.dayLimitReached
+            ? `\n\n🔒 **Dagmaximum bereikt** — ${cooldown.signalsToday}/${cooldown.maxSignalsPerDay} signalen vandaag`
+            : `\n\n✅ **Signalen vrij** — ${cooldown.signalsToday}/${cooldown.maxSignalsPerDay} vandaag`;
+
         await interaction.editReply(
           `**XAU/USD Status — ${now.toISOString().replace('T', ' ').slice(0, 16)} UTC**\n` +
           `Koers: $${price.price}\n\n` +
@@ -228,6 +235,7 @@ export function createBot() {
           `${trendIcon} D1/W1 trend: ${trendLine}\n` +
           `${levelIcon} Sleutelniveau: ${levelLine}\n` +
           `${statusLine}` +
+          cooldownLine +
           briefingLine
         );
       } catch (err) {
@@ -266,6 +274,7 @@ export function createBot() {
     if (interaction.commandName === 'geschiedenis') {
       await interaction.deferReply();
       try {
+        await evaluateOpenSignals(interaction.client);
         const aantal = interaction.options.getInteger('aantal') ?? 5;
         const signals = await getRecentSignals(aantal);
         if (signals.length === 0) {
@@ -361,6 +370,7 @@ export function createBot() {
         const sessionFrom = `${dateStr}T13:00:00.000Z`;
         const sessionTo = `${dateStr}T17:00:00.000Z`;
 
+        await evaluateOpenSignals(interaction.client);
         const [allSignals, allLog, ftmoStats] = await Promise.all([
           getAllSignals(),
           getConditionLog(),
@@ -384,9 +394,11 @@ export function createBot() {
           const status = s.qualityResult?.passed === false
             ? `🔶 ${(s.qualityResult.blockers ?? []).slice(0, 1).join(', ')}`
             : s.decision?.signal === 'neutral' ? '💤 neutraal' : '✅ geadviseerd';
-          const outcome = s.outcome?.result && s.outcome.result !== 'open'
-            ? ` → ${s.outcome.result.toUpperCase()}` : '';
-          return `• ${time} **${dir}** ${conf}%${scoreTag} | ${status}${outcome}`;
+          const outcomeStr = formatOutcome(s.outcome);
+          const sltp = s.decision?.signal !== 'neutral' && s.decision?.stopLoss
+            ? ` | SL ${s.decision.stopLoss} / TP ${s.decision.takeProfit}`
+            : '';
+          return `• ${time} **${dir}** ${conf}%${scoreTag} | ${status} | ${outcomeStr}${sltp}`;
         });
 
         const sessionNow = now.getUTCHours() >= 13 && now.getUTCHours() < 17;
@@ -619,13 +631,25 @@ export function createBot() {
         const all = await getAllSignals();
         const withOutcome = all.filter((s) => s.outcome);
         const resolved = withOutcome.filter((s) => ['tp', 'sl', 'geen'].includes(s.outcome.result));
-        const openCount = all.length - withOutcome.length + withOutcome.filter((s) => s.outcome.result === 'open').length;
+        const openSignals = all.filter((s) => !s.outcome || s.outcome.result === 'open');
+        const openCount = openSignals.length;
         const neutraalCount = withOutcome.filter((s) => s.outcome.result === 'neutraal').length;
         const onbruikbaarCount = withOutcome.filter((s) => s.outcome.result === 'onbruikbaar').length;
 
+        // Toon openstaande directionale signalen met SL/TP zodat de trader kan zien
+        // wat er getrackt wordt (en handmatig kan controleren of niveaus geraakt zijn).
+        const openDirectional = openSignals.filter((s) => s.decision?.signal && s.decision.signal !== 'neutral');
+        const openBlock = openDirectional.length > 0
+          ? '\n**Open (in tracking):**\n' + openDirectional.map((s) => {
+              const ts = s.timestamp.slice(11, 16) + ' UTC';
+              const candlesNote = s.outcome?.candlesChecked != null ? ` (${s.outcome.candlesChecked} candles)` : '';
+              return `  • #${s.id} ${ts} **${s.decision.signal.toUpperCase()}** ${s.decision.confidence}% — SL ${s.decision.stopLoss} / TP ${s.decision.takeProfit}${candlesNote}`;
+            }).join('\n')
+          : '';
+
         if (resolved.length === 0) {
           await interaction.editReply(
-            `Nog geen afgeronde trades.\nOpen: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}`,
+            `Nog geen afgeronde trades.\nOpen: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}` + openBlock,
           );
           return;
         }
@@ -654,13 +678,16 @@ export function createBot() {
           : '';
 
         await interaction.editReply(
-          `**Performance-overzicht**\n` +
-            `**Geadviseerde signalen:** ${stats.trades} trades (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) → WR ${stats.winRate ?? '-'}%\n` +
-            `${vrTarget}\n` +
-            `${recentLine ? recentLine + '\n' : ''}` +
-            `Gem. zekerheid TP: ${stats.avgConfidenceTp ?? '-'}% | SL: ${stats.avgConfidenceSl ?? '-'}%` +
-            `${filteredLine}\n` +
-            `Open: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}`,
+          truncateForDiscord(
+            `**Performance-overzicht**\n` +
+              `**Geadviseerde signalen:** ${stats.trades} trades (TP: ${stats.tp} / SL: ${stats.sl} / geen: ${stats.geen}) → WR ${stats.winRate ?? '-'}%\n` +
+              `${vrTarget}\n` +
+              `${recentLine ? recentLine + '\n' : ''}` +
+              `Gem. zekerheid TP: ${stats.avgConfidenceTp ?? '-'}% | SL: ${stats.avgConfidenceSl ?? '-'}%` +
+              `${filteredLine}\n` +
+              `Open: ${openCount} | Neutraal: ${neutraalCount} | Niet evalueerbaar: ${onbruikbaarCount}` +
+              openBlock,
+          ),
         );
       } catch (err) {
         await interaction.editReply(`Performance-overzicht mislukt: ${err.message}`);

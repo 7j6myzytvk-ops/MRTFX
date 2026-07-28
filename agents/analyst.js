@@ -118,6 +118,16 @@ function buildTrendModePrompt({ eventsNote, newsContextNote, contextNotes, candl
     `Een trend zien is niet hetzelfde als een setup hebben.\n\n` +
 
     `STRUCTUURANALYSE — doorloop élke stap expliciet:\n` +
+    `0. MARKTFASE & RANGE-POSITIE (verplicht eerst):\n` +
+    `  Bekijk de contextNotes op KB-inzichten over marktfase. Beantwoord:\n` +
+    `  a) Is de markt in een TREND (consistent HH+HL of LL+LH), CONTRACTIE (sideways range) of TRANSITIE?\n` +
+    `  b) Is de huidige prijs dicht bij een structurele grens (range high, range low, significante OB/FVG ` +
+    `op D1/H4) of in het MID-RANGE gebied?\n` +
+    `  MID-RANGE REGEL: als de markt in contractie is én prijs zit mid-range → ` +
+    `er is geen institutioneel reden om nu te bewegen. Criterium ① (4H trend helder) ` +
+    `scoort NIET als de trend zijwaarts is in een bredere contractie. Verlaag je totaalconclusie.\n` +
+    `  RAND-REGEL: als prijs bij een duidelijke range-grens zit én er is een pullback → ` +
+    `dit is de beste kanszone in een trendmarkt.\n` +
     `1. 4H-TREND VERIFICATIE: Bekijk de 4H-STRUCTUUR context. Zijn de laatste 3-5 4H-candles ` +
     `consistent bullish (hogere highs+lows) of bearish (lagere highs+lows)? ` +
     `Is er twijfel over de trendrichting?\n` +
@@ -170,11 +180,27 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `Een setup is pas handelbaar als de meeste van deze zes criteria aanwezig zijn. ` +
     `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
     `① HTF-BIAS HELDER: 4H én D1 wijzen beiden duidelijk dezelfde richting ` +
-    `(niet zijwaarts, niet tegenstrijdig). Gebruik de 4H-STRUCTUUR context hierboven om ` +
-    `de 4H-bias te bepalen. W1 is macro-achtergrond, niet het richting-criterium.\n` +
-    `② CORRECTE PREMIUM/DISCOUNT: voor longs bevindt de prijs zich in de discount-zone ` +
-    `(onder 50%-punt van de recente 4H/D1-range); voor shorts in de premium-zone (erboven). ` +
-    `Kopen in premium of shorten in discount is institutioneel onlogisch.\n` +
+    `(niet zijwaarts, niet tegenstrijdig). Gebruik de 4H-STRUCTUUR context hierboven.\n` +
+    `  SNELLE HERKENNINGSTIPS:\n` +
+    `  – Een H1-candle met range > $20 die een recente swing low/high breekt = directe 4H bias-shift. ` +
+    `Na zo'n candle is de 4H bias op dat moment HELDER in de richting van de breakdown/breakout.\n` +
+    `  – Reeks van 2+ lagere highs + lagere lows op H1 over de afgelopen 12 candles = bearish 4H bias.\n` +
+    `  – Reeks van 2+ hogere highs + hogere lows op H1 = bullish 4H bias.\n` +
+    `  – D1 sluit dezelfde dag als een grote directional move (>$40 range) = D1-bias is die richting.\n` +
+    `  W1 is macro-achtergrond, niet het richting-criterium.\n` +
+    `② CORRECTE PREMIUM/DISCOUNT: institutionele entry-zone. Twee geldige manieren om ② toe te kennen:\n` +
+    `  A) KLASSIEK: bereken equilibrium van de LAATSTE significante swing high → swing low ` +
+    `(gebruik de meest recente swing, niet de absolute 20-daagse range). ` +
+    `Long in discount (onder 50%-punt), short in premium (erboven). ` +
+    `Gebruik de 20-daagse rangedata in contextNotes (range20High/range20Low) alleen als macro-achtergrond.\n` +
+    `  B) TREND-RETEST (gebruik dit bij actieve downtrend of uptrend): als de 4H/D1 structuur ` +
+    `een reeks lagere highs + lagere lows toont (downtrend), dan is een short-entry geldig als ` +
+    `prijs op of boven een GEBROKEN SUPPORT-NIVEAU zit (oud steun = nu weerstand). ` +
+    `Dat niveau is inherent premium in de nieuwe, lagere range. ` +
+    `Ken ② toe als prijs een gebroken swing low retestt van bovenaf (bearish) ` +
+    `of een gebroken swing high van onderaf (bullish). ` +
+    `HARDE GRENS: method B geldt alleen als er aantoonbaar lagere highs + lagere lows zijn op H1 (downtrend) ` +
+    `of hogere highs + hogere lows (uptrend). Twijfel → gebruik method A.\n` +
     `③ VERSE ZONE: het beoogde OB of FVG is nog bruikbaar als entry. Concreet beslismoment:\n` +
     `  – VERS (ken ③ toe): geen enkele H1-candle heeft gesloten voorbij het 50%-punt (midpoint) ` +
     `van de zone. Wicks mogen de zone raken — dat is de initiële sweep/reactie. ` +
@@ -213,6 +239,21 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `Een richting zien is niet hetzelfde als een setup hebben.\n\n` +
 
     `STRUCTUURANALYSE — doorloop élke stap expliciet:\n` +
+    `0. MARKTFASE & RANGE-POSITIE (verplicht eerst — denk zoals een professionele intermarkt-trader):\n` +
+    `  Bekijk de contextNotes op KB-inzichten over marktfase én inter-market correlaties. Beantwoord:\n` +
+    `  a) Is de BREDERE markt (Gold D1/W1 + oil/BTC/equities per KB) in TREND, CONTRACTIE of TRANSITIE?\n` +
+    `  b) Is de huidige Gold-prijs dicht bij een structurele GRENS (recent range high/low, significante ` +
+    `D1-zone) of in het MID-RANGE gebied van de huidige consolidatie?\n` +
+    `  c) Bevestigen de inter-market leidende indicatoren (Oil, BTC, S&P per KB) de richting ` +
+    `van de potentiële setup — of contradicteren ze die?\n` +
+    `  MID-RANGE CONTRACTIE REGEL: ALLEEN toepassen als prijs in het 35–65%-gebied zit ` +
+    `(gebruik rangePct uit contextNotes als beschikbaar). In dat geval: contractiemarkt = ` +
+    `institutioneel geen reden om te bewegen, verlaag totaalscore met 1. ` +
+    `UITZONDERING: verlaag NIET als er een actieve CHoCH is (⑤ scoort) of als prijs een ` +
+    `range-grens (range20High of range20Low uit contextNotes) heeft gebroken — dat is ` +
+    `een breakout, geen mid-range situatie, ook al staat het percentage nog laag/hoog.\n` +
+    `  GRENS + INTER-MARKET BEVESTIGING = sterkste setup: prijs op range-grens + ` +
+    `oil/BTC bevestigt richting + ICT criteria aanwezig → hoogste scorekans.\n` +
     `1. HTF BIAS: Wat is de 4H/Daily trend? Is er een dominante richting of ` +
     `is de hogere structuur onduidelijk/zijwaarts? Gebruik de 4H-STRUCTUUR context hierboven.\n` +
     `2. MARKTSTRUCTUUR (H1): BOS of CHoCH? Noem de laatste 2-3 swings met exacte ` +

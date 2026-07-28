@@ -7,6 +7,7 @@ import {
   getRecentXauH4Candles,
   getRecentXauD1Candles,
   getRecentXauW1Candles,
+  getXauUsdPrice,
 } from './marketData.js';
 import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
@@ -25,13 +26,22 @@ import { checkYoutubeChannels } from './youtubeMonitor.js';
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
 const POLL_INTERVAL_MS = 2 * 60 * 1000;
-// Minimale pauze na een directionale boardroom-uitkomst. Voorkomt redundante runs
-// op dezelfde TF-alignment in trending markten (alignment kan uren aanstaan).
-// 25 min is lang genoeg voor ruis-preventie, kort genoeg om een nieuwe setup niet te missen.
+// Minimale pauze na een boardroom-run (ook neutraal): voorkomt dat dezelfde
+// 4H-alignment elke 2 minuten een nieuwe boardroom triggert.
 const MIN_SIGNAL_COOLDOWN_MS = 25 * 60 * 1000;
+// Lockout na een PASSED directional signaal: eenmaal in een trade, geen nieuw
+// signaal voor 4 uur. Voorkomt dat meerdere conflicterende signalen tegelijk
+// actief zijn terwijl een positie al loopt.
+const TRADE_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+// Max aantal handelbare signalen per dag. Na bereiken: boardroom loopt niet meer
+// voor die sessiedag — beschermt tegen overtrading en gefragmenteerde aandacht.
+const MAX_SIGNALS_PER_DAY = 3;
 
-let lastSignalTime = null;  // tijdstip laatste directionale beslissing (cooldown + heartbeat)
-let lastSpikeTime = null;   // aparte cooldown voor event/spike-triggers (2u)
+let lastSignalTime = null;       // tijdstip laatste boardroom-run (ook neutraal, cooldown + heartbeat)
+let lastTradeSignalTime = null;  // tijdstip laatste PASSED directional signaal (4u trade-lockout)
+let dailySignalDate = null;      // sessiedag van de dagelijkse teller (YYYY-MM-DD UTC)
+let dailySignalCount = 0;        // aantal PASSED signalen deze dag
+let lastSpikeTime = null;        // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
 let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
@@ -111,9 +121,68 @@ async function poll(client) {
       console.warn(`[FTMO] Waarschuwing: ${ftmo.warnings.join(' | ')}`);
     }
 
+    // Helperfunctie: registreer een PASSED directional signaal in de dagelijkse teller.
+    // Roept de caller aan na reportToDiscord, zodat alleen écht verzonden signalen tellen.
+    function registerTradeSignal(result) {
+      if (result.decision?.signal === 'neutral' || !result.qualityResult?.passed) return;
+      const todayKey = new Date().toISOString().slice(0, 10);
+      if (dailySignalDate !== todayKey) { dailySignalDate = todayKey; dailySignalCount = 0; }
+      dailySignalCount++;
+      lastTradeSignalTime = Date.now();
+      console.log(`[Trade-cooldown] Signaal #${dailySignalCount}/${MAX_SIGNALS_PER_DAY} vandaag — 4u lockout actief.`);
+    }
+
+    // Controleert of de actuele marktprijs nog binnen $20 van de entry zone zit.
+    // Tussen boardroom-analyse (30-60 sec) en Discord-levering kan de prijs verschuiven.
+    // Bij > $20 drift: qualityResult wordt als filtered gemarkeerd zodat Discord-bericht
+    // duidelijk maakt dat de entry zone voorbij is — het signaal zelf is geldig maar stale.
+    async function injectStalenessIfNeeded(result) {
+      if (result.decision?.signal === 'neutral') return result;
+      if (!result.qualityResult?.passed) return result;
+      try {
+        const livePrice = await getXauUsdPrice();
+        const ez = result.decision?.entryZone ?? '';
+        const clean = ez.replace(/\$/g, '').replace(/\s/g, '');
+        const match = clean.match(/([\d.]+)[–\-]([\d.]+)/);
+        const entryMid = match
+          ? (parseFloat(match[1]) + parseFloat(match[2])) / 2
+          : result.entryPrice;
+        const drift = Math.abs(livePrice - entryMid);
+        if (drift > 20) {
+          console.log(`[Staleness] Prijs verschoven $${drift.toFixed(0)} van entry zone — signaal gemarkeerd als stale.`);
+          return {
+            ...result,
+            qualityResult: {
+              passed: false,
+              blockers: [`prijs $${drift.toFixed(0)} verschoven van entry zone (was $${entryMid.toFixed(0)}, nu $${livePrice.toFixed(0)})`],
+            },
+          };
+        }
+      } catch (e) {
+        console.warn('[Staleness] Live prijs niet beschikbaar:', e.message);
+      }
+      return result;
+    }
+
+    // Gemeenschappelijke pre-check voor beide paden: trade-cooldown en dagmaximum.
+    function isTradeLockedOut() {
+      if (lastTradeSignalTime && Date.now() - lastTradeSignalTime < TRADE_COOLDOWN_MS) {
+        const minLeft = Math.ceil((TRADE_COOLDOWN_MS - (Date.now() - lastTradeSignalTime)) / 60000);
+        console.log(`[Trade-cooldown] Actief — ${minLeft} min resterend.`);
+        return true;
+      }
+      const todayKey = new Date().toISOString().slice(0, 10);
+      if (dailySignalDate === todayKey && dailySignalCount >= MAX_SIGNALS_PER_DAY) {
+        console.log(`[Trade-cooldown] Dagmaximum bereikt (${MAX_SIGNALS_PER_DAY}/dag) — geen nieuwe setups vandaag.`);
+        return true;
+      }
+      return false;
+    }
+
     // --- Pad 1: condition-based setup ---
     if (conditions.triggered) {
       if (lastSignalTime && Date.now() - lastSignalTime < MIN_SIGNAL_COOLDOWN_MS) return;
+      if (isTradeLockedOut()) return;
 
       console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
 
@@ -135,17 +204,20 @@ async function poll(client) {
         triggerType: 'condition',
       });
 
-      // Altijd cooldown instellen na een boardroom-run, ook bij neutraal.
+      // Altijd neutrale cooldown instellen na een boardroom-run.
       // 4H-alignment blijft uren stabiel — zonder neutrale cooldown triggert de
       // boardroom elke 2 minuten zolang conditions.triggered true is.
       lastSignalTime = Date.now();
 
-      await reportToDiscord(client, result);
+      const checkedResult = await injectStalenessIfNeeded(result);
+      await reportToDiscord(client, checkedResult);
+      registerTradeSignal(checkedResult);
       return;
     }
 
     // --- Pad 2: event/spike-trigger (onafhankelijk van conditions) ---
     if (lastSpikeTime && Date.now() - lastSpikeTime < SPIKE_COOLDOWN_MS) return;
+    if (isTradeLockedOut()) return;
 
     const indicators = computeIndicators(m15Candles);
     const spikeInfo = detectPriceSpike(m15Candles, indicators.atr14);
@@ -176,11 +248,29 @@ async function poll(client) {
       triggerType: 'spike',
     });
 
-    await reportToDiscord(client, spikeResult);
+    const checkedSpikeResult = await injectStalenessIfNeeded(spikeResult);
+    await reportToDiscord(client, checkedSpikeResult);
+    registerTradeSignal(checkedSpikeResult);
   } catch (err) {
     console.error('Setup-detector mislukt:', err.message);
     await sendDedupedAlert(client, err.message, formatErrorAlert(err));
   }
+}
+
+// Geeft de huidige trade-lockout staat terug voor /status en monitoring.
+export function getTradeCooldownState() {
+  const now = Date.now();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const tradeLockedUntil = lastTradeSignalTime ? lastTradeSignalTime + TRADE_COOLDOWN_MS : null;
+  const tradeLockedActive = tradeLockedUntil && now < tradeLockedUntil;
+  const signalsToday = dailySignalDate === todayKey ? dailySignalCount : 0;
+  return {
+    tradeLockedActive: !!tradeLockedActive,
+    tradeLockedMinutesLeft: tradeLockedActive ? Math.ceil((tradeLockedUntil - now) / 60000) : 0,
+    signalsToday,
+    maxSignalsPerDay: MAX_SIGNALS_PER_DAY,
+    dayLimitReached: signalsToday >= MAX_SIGNALS_PER_DAY,
+  };
 }
 
 export function startSignalScheduler(client) {

@@ -143,6 +143,24 @@ export function assessSignalQuality(sample) {
   // gaf maar de blokkade die signals weggooide. Replay toonde dat alle 8 blocked setups
   // winstgevend waren geweest.
 
+  // Filter 7b: Monday London Open — Judas Swing venster (07:00–08:30 UTC).
+  // In dit venster maakt de markt een fake directional move die wordt gevaded vóór de echte
+  // richting. Alleen A+ setups (score 4/4 trend of 5+/6 reversal) worden doorgelaten.
+  {
+    const now = new Date();
+    const isMonday = now.getUTCDay() === 1;
+    const utcH = now.getUTCHours();
+    const utcM = now.getUTCMinutes();
+    const inJudasWindow = utcH === 7 || (utcH === 8 && utcM < 30);
+    if (isMonday && inJudasWindow && setupScore != null) {
+      const requiredScore = sample.trendMode ? 4 : 5;
+      const maxScore = sample.trendMode ? 4 : 6;
+      if (setupScore < requiredScore) {
+        blockers.push(`Monday Judas Swing venster (07:00–08:30 UTC) — score ${setupScore}/${maxScore} te laag, vereist ${requiredScore}+`);
+      }
+    }
+  }
+
   // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
   // Oorspronkelijk $13 op basis van 18-daagse backtest (22 jun–10 jul). Verlaagd naar $10
   // na live-observatie: signalen met ATR $11–12 op 23 jul troffen TP (WR 83% geblokkeerde signalen).

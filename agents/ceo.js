@@ -145,21 +145,26 @@ export async function decide(
           `zelfs een technisch sterk signaal\n\n` +
 
           `ZEKERHEIDS-KALIBRATIE:\n` +
-          `• Alle vier perspectieven aligned + pre-mortem vindt niets → zekerheid >70%\n` +
-          `• Structuur helder [A+F aligned] + één of twee anderen aligned → zekerheid 60-70%, directioneel signaal\n` +
-          `• Structuur helder maar macro/DA tegenstrijdig → zekerheid 55-65%: structuur wint als A én F dezelfde kant op wijzen\n` +
-          `• Pre-mortem vindt duidelijk faalscenario (HTF-structuur of institutionele val, overtuigingskracht >75%) → zekerheid verlagen\n` +
-          `• Timing in London Kill Zone zonder Judas Swing-bevestiging → zekerheid verlagen\n` +
-          `• Structuur onduidelijk (A en F tegenstrijdig) of score <3 → neutraal\n\n` +
+          `• Score ≥4 + macro bevestigt richting + pre-mortem zwak → MINIMUM 65%, streef naar 68-72%. ` +
+          `Dit is een high-quality setup met institutionele bevestiging — lagere zekerheid is inconsistent met de data.\n` +
+          `• Score ≥4 + macro neutraal of licht tegenstrijdig → 62-68%\n` +
+          `• Score 3 + alle perspectieven aligned → 60-65%\n` +
+          `• Score 3 + macro of DA tegenstrijdig → 55-60%\n` +
+          `• Pre-mortem vindt duidelijk faalscenario (overtuigingskracht >75%) → zekerheid verlagen met 8-12%\n` +
+          `• Structuur onduidelijk (A en F tegenstrijdig) of score <3 → neutraal\n` +
+          `ANTI-CONSERVATIVITEIT REGEL: als je score ≥4 hebt, structuur helder is én macro niet actief tegenstrijdig ` +
+          `is — geef dan een directioneel signaal met ≥65% zekerheid. "Ik zie het maar weet het niet zeker" ` +
+          `is geen neutraal — dat is 60-65%. Neutraal betekent: de structuur klopt niet, niet dat je twijfelt.\n\n` +
 
           `BESLUIT-FLOW (doorloop stap voor stap):\n` +
           `Stap 1 — Score check: score <3 → neutraal (stop hier)\n` +
           `Stap 2 — Structuur check: geven [A] en [F] dezelfde richting? Ja → STRUCTUUR HELDER → ga naar stap 3\n` +
           `          Nee (A en F tegenstrijdig) → neutraal (stop hier)\n` +
-          `Stap 3 — Geef een DIRECTIONEEL signaal. Vervolgens bepaal je de zekerheid:\n` +
-          `  • Macro [D] en pre-mortem [C] zwak of aligned: 65-72%\n` +
-          `  • Macro of DA tegenstrijdig maar niet doorslaggevend (<75% counter): 58-65%\n` +
-          `  • Beiden sterk tegenstrijdig (beide >70%): 55-60% — maar BLIJF directioneel als score ≥3\n` +
+          `Stap 3 — Geef een DIRECTIONEEL signaal. Bepaal zekerheid via de kalibratie hierboven.\n` +
+          `  • Score ≥4 + macro aligned: 68-72%\n` +
+          `  • Score ≥4 + macro neutraal: 65-68%\n` +
+          `  • Score 3 + aligned: 62-65%\n` +
+          `  • Score 3 + tegenstrijdig: 58-62%\n` +
           `  • Zekerheid onder 55%: dan en alleen dan → neutraal\n\n` +
 
           `VASTE DREMPELS:\n` +

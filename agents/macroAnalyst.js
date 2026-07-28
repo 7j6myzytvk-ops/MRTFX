@@ -66,13 +66,30 @@ export async function assessSentiment(
           `• Technische indicatoren: EMA50, RSI, MACD — zie indicatoren in de contextNotes\n` +
           `• H1 candle-gedrag van de afgelopen ~50 uur\n` +
           `• HTF-structuur (D1, W1) — zie dagcontext en weekcontext in de contextNotes\n` +
-          `• Macro-briefing (indien beschikbaar) — door de gebruiker opgesteld kader voor de huidige periode\n\n` +
+          `• Macro-briefing (indien beschikbaar) — door de gebruiker opgesteld kader voor de huidige periode\n` +
+          `• 📚 KENNISBANK (KB) — inter-market context over Oil, BTC, equities — zie onderaan contextNotes\n\n` +
           `Je weet niet wat de structuur-analist concludeerde — jij kijkt alleen naar regime én momentum. ` +
           `Claim GEEN macro-events, centrale bankbeleid, of geopolitieke ontwikkelingen die je niet ` +
           `direct kunt afleiden uit de bovenstaande data.\n\n` +
 
-          `GOUD-MACRO REGIME — vier drijfveren, ranggeschikt op historisch belang:\n` +
-          `1. REËLE RENTE (sterkste driver): dalende reële rentes → bullish goud. ` +
+          `GOUD-MACRO REGIME — vijf drijfveren (begin altijd met stap 0):\n\n` +
+
+          `0. INTER-MARKET CHECK — DIT EERST, vóór dollar/rente:\n` +
+          `Zoek in je contextNotes naar KB-inzichten over Oil, BTC en equities. ` +
+          `Dit zijn leidende indicatoren die het macro-regime bepalen VOORDAT goud beweegt:\n` +
+          `• OLIE: oil boven sleutelzone = risk-appetite aanwezig, kan bullish goud ondersteunen. ` +
+          `Oil ONDER sleutelzone (bv. $95.52 range low) = macro bearish signaal — kan goud drukken ` +
+          `tenzij safe-haven actief is. Als KB meldt "oil onder range low" → verlaag bullish-zekerheid.\n` +
+          `• BTC/EQUITIES: BTC in contractie of flush = risk-off breedmarkt. S&P vlak onder ATH ` +
+          `maar stagnatie = voorzichtigheid. Als KB meldt "BTC contractie" of "flush verwacht" → ` +
+          `macro-bias neigt neutraal/bearish voor goud (tenzij safe-haven actief).\n` +
+          `• SAFE-HAVEN STATUS: als KB meldt dat goud NIET meer reageert als safe-haven (decoupling), ` +
+          `dan wegen risk-off signalen NIET bullish door voor goud — ze zijn neutraal of bearish.\n` +
+          `• MARKTFASE: als KB meldt "contractiefase" of "sideways" → verwacht geen sterke trendmove. ` +
+          `Regime is inherent onzekerder. Verlaag maximale zekerheid naar 55%.\n` +
+          `Vat je inter-market conclusie samen in één zin voordat je verder gaat.\n\n` +
+
+          `1. REËLE RENTE (traditioneel sterkste driver): dalende reële rentes → bullish goud. ` +
           `Stijgende reële rentes → bearish. Gebruik de rentecontext hieronder.\n` +
           `2. DOLLAR (directe inverse correlatie): zwakke dollar → bullish; sterke dollar → bearish. ` +
           `Gebruik de EUR/USD-context hieronder als proxy.\n` +
@@ -82,10 +99,11 @@ export async function assessSentiment(
           `4. INFLATIE HEDGE: hogere inflatie met ongewijzigde nominale rentes = lagere reële rentes ` +
           `= bullish. Maar agressieve renteverhogingen na inflatie = bearish.\n\n` +
 
-          `REGIME-LABEL:\n` +
-          `• Risk-on voor goud: dollar verzwakt EN reële rentes dalen → sterkste bullish combinatie\n` +
-          `• Risk-off voor goud: BEIDE dollar EN reële rentes stijgen → sterkste bearish combinatie\n` +
-          `• Gemengd: één van beiden tegengesteld → neutraal of lichte bias\n\n` +
+          `REGIME-LABEL (weeg alle vijf drijfveren):\n` +
+          `• Risk-on voor goud: dollar verzwakt EN reële rentes dalen EN oil/BTC positief → sterkste bullish\n` +
+          `• Risk-off voor goud: BEIDE dollar EN reële rentes stijgen EN inter-market bearish → sterkste bearish\n` +
+          `• Gemengd: één of meer drivers tegengesteld → neutraal of lichte bias\n` +
+          `• Contractiefase (per KB): max 55% zekerheid ongeacht andere drivers\n\n` +
 
           `TECHNISCH MOMENTUM ALS REGIMEBEVESTIGING — jij bent de enige agent die macro én ` +
           `indicators combineert. Beantwoord expliciet:\n` +
