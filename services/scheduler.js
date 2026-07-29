@@ -245,6 +245,7 @@ async function poll(client) {
       triggerType: 'spike',
     });
 
+    lastSignalTime = Date.now(); // voorkomt dat pad 1 direct daarna opnieuw triggert
     const checkedSpikeResult = await injectStalenessIfNeeded(spikeResult);
     await reportToDiscord(client, checkedSpikeResult);
     registerTradeSignal(checkedSpikeResult);

@@ -39,7 +39,8 @@ async function processVideo(video, kanaalNaam) {
     const segmenten = await YoutubeTranscript.fetchTranscript(video.videoId);
     transcript = segmenten.map((s) => s.text).join(' ');
   } catch {
-    markVideoProcessed(video.videoId);
+    // Niet markeren als verwerkt — transcript kan tijdelijk ontbreken (captions in aanmaak).
+    // Volgende YouTube-check (6u) probeert het opnieuw.
     return null;
   }
 

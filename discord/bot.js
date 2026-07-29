@@ -404,10 +404,9 @@ export function createBot() {
           return `• ${time} **${dir}** ${conf}%${scoreTag} | ${status} | ${outcomeStr}${sltp}`;
         });
 
-        const sessionNow = now.getUTCHours() >= 13 && now.getUTCHours() < 17;
-        const sessionStatus = sessionNow
-          ? `🟢 actief (nog ${(17 - now.getUTCHours()) * 60 - now.getUTCMinutes()} min)`
-          : now.getUTCHours() < 13 ? `⏳ start om 13:00 UTC` : `✅ afgelopen`;
+        const sessionStatus = isActiveSession(now)
+          ? `🟢 actief (24/5 — ${now.getUTCHours() >= 7 && now.getUTCHours() < 17 ? 'London/NY sessie' : 'Asian sessie'})`
+          : `✅ gesloten (weekend)`;
 
         const ftmoLine = `${ftmoStats.todayPnL >= 0 ? '+' : ''}${ftmoStats.todayPnL.toFixed(1)}% vandaag (${ftmoStats.todayTrades} trades) | totaal ${ftmoStats.totalPnL >= 0 ? '+' : ''}${ftmoStats.totalPnL.toFixed(1)}%`;
 
