@@ -162,10 +162,10 @@ export function assessSignalQuality(sample) {
   }
 
   // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
-  // Oorspronkelijk $13 op basis van 18-daagse backtest (22 jun–10 jul). Verlaagd naar $10
-  // na live-observatie: signalen met ATR $11–12 op 23 jul troffen TP (WR 83% geblokkeerde signalen).
-  // $10 filtert echt slapende markten, laat licht-rustiger uren met voldoende beweging door.
-  const ATR_MIN = 10;
+  // Oorspronkelijk $13 (backtest), verlaagd naar $10 (live jul), nu $8 (29 jul):
+  // signaal #300 (ATR ~$10, bearish) trof TP na 1 candle terwijl het gefilterd was.
+  // $8 filtert alleen echt dode markten, laat ATR $8–12 door.
+  const ATR_MIN = 8;
   if (sample.atr14 != null && sample.atr14 < ATR_MIN) {
     blockers.push(`ATR te laag ($${sample.atr14.toFixed(1)} < $${ATR_MIN}) — markt te kalm voor betrouwbare uitvoering`);
   }
