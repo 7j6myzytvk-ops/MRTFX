@@ -27,9 +27,15 @@ import { checkYoutubeChannels } from './youtubeMonitor.js';
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
 const POLL_INTERVAL_MS = 2 * 60 * 1000;         // London/NY: elke 2 minuten
 const POLL_INTERVAL_OFFPEAK_MS = 15 * 60 * 1000; // Asian/nacht: elke 15 minuten
-// Minimale pauze na een boardroom-run (ook neutraal): voorkomt dat dezelfde
-// 4H-alignment elke 2 minuten een nieuwe boardroom triggert.
+// Vloer-cooldown als fallback (passed-signaal zonder trade-lockout, edge case).
 const MIN_SIGNAL_COOLDOWN_MS = 25 * 60 * 1000;
+// Cooldown na gefilterd directioneel signaal: richting duidelijk maar kwaliteit te laag.
+// 90 min geeft de markt tijd om een betere setupstructuur te vormen i.p.v. elke 25 min
+// dezelfde onrijpe setup opnieuw te evalueren.
+const FILTERED_COOLDOWN_MS = 90 * 60 * 1000;
+// Cooldown na neutraal (score <3): geen setup gevonden. 45 min = sneller opnieuw kijken
+// dan gefilterd (markt kan snel draaien), maar rustiger dan de 25-min vloer.
+const NEUTRAL_COOLDOWN_MS = 45 * 60 * 1000;
 // Lockout na een PASSED directional signaal: eenmaal in een trade, geen nieuw
 // signaal voor 4 uur. Voorkomt dat meerdere conflicterende signalen tegelijk
 // actief zijn terwijl een positie al loopt.
@@ -38,7 +44,8 @@ const TRADE_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // voor die sessiedag — beschermt tegen overtrading en gefragmenteerde aandacht.
 const MAX_SIGNALS_PER_DAY = 3;
 
-let lastSignalTime = null;       // tijdstip laatste boardroom-run (ook neutraal, cooldown + heartbeat)
+let lastSignalTime = null;          // tijdstip laatste boardroom-run (voor heartbeat-display)
+let nextAllowedBoardroomTime = null; // dynamische cooldown: 90m gefilterd / 45m neutraal / 25m floor
 let lastTradeSignalTime = null;  // tijdstip laatste PASSED directional signaal (4u trade-lockout)
 let dailySignalDate = null;      // sessiedag van de dagelijkse teller (YYYY-MM-DD UTC)
 let dailySignalCount = 0;        // aantal PASSED signalen deze dag
@@ -150,6 +157,23 @@ async function poll(client) {
       console.warn(`[FTMO] Waarschuwing: ${ftmo.warnings.join(' | ')}`);
     }
 
+    // Stel de volgende toegestane boardroom-tijd in op basis van het resultaat-type.
+    // Gefilterd directioneel = 90 min (markt heeft tijd nodig voor betere setup).
+    // Neutraal = 45 min (geen setup, maar sneller opnieuw kijken dan gefilterd).
+    // Passed / edge = vloer van 25 min (trade-lockout dekt de rest).
+    function setNextBoardroomCooldown(result) {
+      const ts = Date.now();
+      const isFiltered = result.decision?.signal !== 'neutral' && !result.qualityResult?.passed;
+      const isNeutral = result.decision?.signal === 'neutral';
+      if (isFiltered) {
+        nextAllowedBoardroomTime = ts + FILTERED_COOLDOWN_MS;
+      } else if (isNeutral) {
+        nextAllowedBoardroomTime = ts + NEUTRAL_COOLDOWN_MS;
+      } else {
+        nextAllowedBoardroomTime = ts + MIN_SIGNAL_COOLDOWN_MS;
+      }
+    }
+
     // Helperfunctie: registreer een PASSED directional signaal in de dagelijkse teller.
     // Roept de caller aan na reportToDiscord, zodat alleen écht verzonden signalen tellen.
     function registerTradeSignal(result) {
@@ -178,7 +202,7 @@ async function poll(client) {
 
     // --- Pad 1: condition-based setup ---
     if (conditions.triggered) {
-      if (lastSignalTime && Date.now() - lastSignalTime < MIN_SIGNAL_COOLDOWN_MS) return;
+      if (nextAllowedBoardroomTime && Date.now() < nextAllowedBoardroomTime) return;
       if (isTradeLockedOut()) return;
 
       console.log(`[Setup-trigger] Richting: ${conditions.direction} | ${new Date().toISOString()}`);
@@ -201,13 +225,10 @@ async function poll(client) {
         triggerType: 'condition',
       });
 
-      // Altijd neutrale cooldown instellen na een boardroom-run.
-      // 4H-alignment blijft uren stabiel — zonder neutrale cooldown triggert de
-      // boardroom elke 2 minuten zolang conditions.triggered true is.
       lastSignalTime = Date.now();
-
       const checkedResult = await injectStalenessIfNeeded(result);
       await reportToDiscord(client, checkedResult);
+      setNextBoardroomCooldown(checkedResult);
       registerTradeSignal(checkedResult);
       return;
     }
@@ -245,9 +266,10 @@ async function poll(client) {
       triggerType: 'spike',
     });
 
-    lastSignalTime = Date.now(); // voorkomt dat pad 1 direct daarna opnieuw triggert
+    lastSignalTime = Date.now();
     const checkedSpikeResult = await injectStalenessIfNeeded(spikeResult);
     await reportToDiscord(client, checkedSpikeResult);
+    setNextBoardroomCooldown(checkedSpikeResult);
     registerTradeSignal(checkedSpikeResult);
   } catch (err) {
     console.error('Setup-detector mislukt:', err.message);

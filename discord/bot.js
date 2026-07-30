@@ -126,6 +126,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('force-scan')
     .setDescription('Trigger direct een boardroom-sessie — bypast sessiefilter en cooldowns (puur voor testen)'),
+  new SlashCommandBuilder()
+    .setName('blocker-analyse')
+    .setDescription('Welke kwaliteitsfilters blokkeren TP-signalen? Breakdown per blocker-type met uitkomsten.'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
@@ -766,6 +769,65 @@ export function createBot() {
         await runForceScan(interaction.client);
       } catch (err) {
         await interaction.editReply(`Force scan mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'blocker-analyse') {
+      await interaction.deferReply();
+      try {
+        await evaluateOpenSignals(interaction.client);
+        const all = await getAllSignals();
+        const filtered = all.filter(
+          (s) =>
+            s.qualityResult?.passed === false &&
+            s.decision?.signal !== 'neutral' &&
+            ['tp', 'sl'].includes(s.outcome?.result),
+        );
+
+        if (filtered.length === 0) {
+          await interaction.editReply('Nog geen gefilterde signalen met afgeronde uitkomst (TP/SL). Meer data nodig.');
+          return;
+        }
+
+        // Groepeer per blocker → tel TP en SL
+        const blockerMap = new Map();
+        for (const s of filtered) {
+          for (const blocker of s.qualityResult.blockers ?? []) {
+            // Normaliseer: verwijder dynamische waarden zodat vergelijkbare blockers samenvoegen
+            const key = blocker
+              .replace(/\$[\d.]+/g, '$X')
+              .replace(/\d+(\.\d+)?\/\d+/g, 'N/M')
+              .replace(/−\d+%/g, '−N%')
+              .slice(0, 80);
+            if (!blockerMap.has(key)) blockerMap.set(key, { tp: 0, sl: 0, total: 0 });
+            const entry = blockerMap.get(key);
+            entry.total++;
+            if (s.outcome.result === 'tp') entry.tp++;
+            else entry.sl++;
+          }
+        }
+
+        // Sorteer: TP-count aflopend (blockers die goede signalen tegenhouden staan bovenaan)
+        const sorted = [...blockerMap.entries()].sort((a, b) => b[1].tp - a[1].tp || b[1].total - a[1].total);
+
+        const totaalTP = filtered.filter((s) => s.outcome.result === 'tp').length;
+        const totaalSL = filtered.filter((s) => s.outcome.result === 'sl').length;
+
+        const lines = sorted.map(([key, { tp, sl, total }]) => {
+          const wr = total > 0 ? Math.round((tp / total) * 100) : 0;
+          const label = tp > sl ? '🔴 blokkeert TP-signalen' : tp === sl ? '⚠️ gemengd' : '✅ terecht geblokkeerd';
+          return `**${key}**\n  → ${total}× geblokkeerd | TP: ${tp} / SL: ${sl} | WR: ${wr}% | ${label}`;
+        });
+
+        const header =
+          `**Blocker-analyse — gefilterde signalen met uitkomst**\n` +
+          `Totaal: ${filtered.length} (TP: ${totaalTP} / SL: ${totaalSL})\n` +
+          `🔴 = blocker houdt winstgevende setups tegen | ✅ = terecht afgewezen\n\n`;
+
+        await interaction.editReply(truncateForDiscord(header + lines.join('\n\n')));
+      } catch (err) {
+        await interaction.editReply(`Blocker-analyse mislukt: ${err.message}`);
       }
       return;
     }
