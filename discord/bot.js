@@ -131,7 +131,7 @@ const commands = [
     .setDescription('Welke kwaliteitsfilters blokkeren TP-signalen? Breakdown per blocker-type met uitkomsten.'),
   new SlashCommandBuilder()
     .setName('sl-analyse')
-    .setDescription('Volledige breakdown van alle passed signalen die SL raakten — wat liet het systeem door dat het niet mocht?'),
+    .setDescription('Breakdown van passed signalen die SL raakten: score, rebuttal, DA, macro en trend-context.'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
