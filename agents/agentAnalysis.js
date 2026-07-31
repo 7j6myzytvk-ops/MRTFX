@@ -124,9 +124,27 @@ export function assessSignalQuality(sample) {
   // aanwezig vindt, is er geen handelbare setup — altijd blokkeren ongeacht de rest.
   // Drempel hersteld naar 3 (Fase 91): ⑥ kill-zone-timing terug als kwaliteitscriterium,
   // schaal is weer /6. Score 0-2 = geen setup, score 3+ = minimaal voldoende.
+  //
+  // Counter-trend regel (Fase 103): wanneer de signaalrichting tégengesteld is aan de
+  // W1-trend, is een score van 3/6 onvoldoende — dat is de minimale drempel voor
+  // mét-trend setups. Tegen de weektrend ingaan vereist sterkere bevestiging: score ≥ 4.
+  // Rootcause: trades #237 en #242 (27 jul) waren beide BULLISH 3/6 in een W1 bearish
+  // markt — precies dit profiel. SL geraakt na 1 en 6 candles.
+  // Score 4+ counter-trend wordt wél doorgelaten: genoeg confluence voor een legitieme
+  // reversal (CHoCH bevestigd, sweep, OB, kill-zone — het volledige plaatje).
   const setupScore = sample.discussion.analyst?.setupQualityScore;
-  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
-    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 criteria aanwezig)`);
+  const signal = sample.decision.signal;
+  const w1Trend = sample.weeklyTrend;
+  const isCounterTrendW1 =
+    (signal === 'bullish' && w1Trend === 'bearish') ||
+    (signal === 'bearish' && w1Trend === 'bullish');
+  const minSetupScore = isCounterTrendW1 ? 4 : 3;
+
+  if (setupScore !== undefined && setupScore !== null && setupScore < minSetupScore) {
+    const reden = isCounterTrendW1
+      ? `counter-trend t.o.v. W1 (${w1Trend}) vereist score ≥4`
+      : 'geen handelbare setup';
+    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 — ${reden})`);
   }
 
   // AMD-fase filter: alleen 'onduidelijk' blokkeert mechanisch.
