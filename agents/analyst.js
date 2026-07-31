@@ -181,6 +181,10 @@ function buildReversalModePrompt({ eventsNote, newsContextNote, contextNotes, ca
     `Tel ze expliciet en gebruik het totaal om je maximale zekerheid te bepalen:\n` +
     `① HTF-BIAS HELDER: 4H én D1 wijzen beiden duidelijk dezelfde richting ` +
     `(niet zijwaarts, niet tegenstrijdig). Gebruik de 4H-STRUCTUUR context hierboven.\n` +
+    `  ⚠️ W1-CONTEXT: Als de weektrend (W1, zie contextNotes) tégengesteld is aan jouw signaal, ` +
+    `vermeld dit expliciet. Een counter-W1 setup vereist aantoonbaar meer confluence: ` +
+    `bevestigde CHoCH (⑤), verse zone (③) EN sweep (④) moeten alle drie aanwezig zijn ` +
+    `om ① toe te kennen. Ontbreekt één van de drie? Dan ① NIET toekennen bij counter-W1.\n` +
     `  SNELLE HERKENNINGSTIPS:\n` +
     `  – Een H1-candle met range > $20 die een recente swing low/high breekt = directe 4H bias-shift. ` +
     `Na zo'n candle is de 4H bias op dat moment HELDER in de richting van de breakdown/breakout.\n` +
