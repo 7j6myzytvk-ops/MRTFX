@@ -94,13 +94,15 @@ export function assessSignalQuality(sample) {
   // beslissingsgewichten. Een aparte mechanische blokkade telt macro dubbel en verhinderde
   // valid signals met CEO-confidence 59-61% die daadwerkelijk TP raakten (jul 23 data).
   // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
-  // Drempel verhoogd van -15 naar -25 (Fase 76): in live-omstandigheden triggerde -15 bij
-  // 20% van de signalen (4×/20) terwijl backtest slechts 0,3% (1×/310) gaf. Meerdere
-  // geblokkeerde signalen haalden TP — de filter was te agressief. Bij -25 blokkeren we
-  // alleen extremen (analist trekt meer dan een kwart van zijn zekerheid in).
+  // Drempel verhoogd van -15 → -25 (Fase 76) → -35 (Fase 103):
+  // /blocker-analyse toonde dat bij drempel -25 zes signalen geblokkeerd werden
+  // waarvan 5 TP raakten (83% WR). De boardroom-discussie maakt de analist
+  // structureel te voorzichtig — zijn eerste inschatting is vaker correct dan
+  // zijn herziene mening na het weerwoord. Bij -35 blokkeren we alleen gevallen
+  // waarbij de analist meer dan een derde van zijn zekerheid intrekt.
   const rebuttalDelta =
     (sample.discussion.analystRebuttal?.confidence ?? 0) - (sample.discussion.analyst?.confidence ?? 0);
-  if (rebuttalDelta <= -25) {
+  if (rebuttalDelta <= -35) {
     blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
   }
   // R:R >5.0 filter verwijderd: CEO stelt soms een precision entry zone in (dicht bij SL)

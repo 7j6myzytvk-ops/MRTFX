@@ -129,6 +129,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('blocker-analyse')
     .setDescription('Welke kwaliteitsfilters blokkeren TP-signalen? Breakdown per blocker-type met uitkomsten.'),
+  new SlashCommandBuilder()
+    .setName('sl-analyse')
+    .setDescription('Volledige breakdown van alle passed signalen die SL raakten — wat liet het systeem door dat het niet mocht?'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
@@ -828,6 +831,49 @@ export function createBot() {
         await interaction.editReply(truncateForDiscord(header + lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Blocker-analyse mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'sl-analyse') {
+      await interaction.deferReply();
+      try {
+        await evaluateOpenSignals(interaction.client);
+        const all = await getAllSignals();
+
+        const passedSL = all.filter(
+          (s) =>
+            s.qualityResult?.passed !== false &&
+            s.decision?.signal !== 'neutral' &&
+            s.outcome?.result === 'sl',
+        );
+
+        if (passedSL.length === 0) {
+          await interaction.editReply('Geen passed signalen met SL-uitkomst gevonden.');
+          return;
+        }
+
+        const lines = passedSL.map((s) => {
+          const rebuttalDelta =
+            (s.discussion?.analystRebuttal?.confidence ?? 0) - (s.discussion?.analyst?.confidence ?? 0);
+          const ts = new Date(s.timestamp).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+          return (
+            `**#${s.id} — ${ts}**\n` +
+            `Richting: ${s.decision.signal.toUpperCase()} | Zekerheid CEO: ${s.decision.confidence}%\n` +
+            `Entry: $${s.entryPrice?.toFixed(2)} | SL: $${s.decision.stopLoss} | TP: $${s.decision.takeProfit}\n` +
+            `SL geraakt na: ${s.outcome.candlesToHit} candles\n` +
+            `Setup score: ${s.discussion?.analyst?.setupQualityScore ?? '?'}/6 | AMD: ${s.discussion?.analyst?.amdPhase ?? '?'}\n` +
+            `Rebuttal delta: ${rebuttalDelta > 0 ? '+' : ''}${rebuttalDelta}% | DA counter: ${s.discussion?.devilsAdvocate?.counterConfidence ?? '?'}%\n` +
+            `Macro: ${s.discussion?.macro?.sentiment ?? '?'} (${s.discussion?.macro?.confidence ?? '?'}%)\n` +
+            `W1: ${s.weeklyTrend ?? '?'} | D1: ${s.dailyTrend ?? '?'} | H4: ${s.h4Trend ?? '?'} | trendMode: ${s.trendMode ?? '?'}\n` +
+            `ATR14: $${s.atr14?.toFixed(1) ?? '?'}`
+          );
+        });
+
+        const header = `**SL-analyse — passed signalen die stop-loss raakten (${passedSL.length} stuks)**\n\n`;
+        await interaction.editReply(truncateForDiscord(header + lines.join('\n\n---\n\n')));
+      } catch (err) {
+        await interaction.editReply(`SL-analyse mislukt: ${err.message}`);
       }
       return;
     }
