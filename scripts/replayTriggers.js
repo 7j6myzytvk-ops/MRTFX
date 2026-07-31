@@ -23,10 +23,12 @@ import { runDiscussion } from '../agents/boardroom.js';
 
 // Huidige productie-cooldown (Fase 84: 25 min na elke boardroom-run)
 const COOLDOWN_MS = 25 * 60 * 1000;
+// Aantal boardrooms parallel draaien (2 = ~2× sneller, beperkt API-druk)
+const BATCH_SIZE = 2;
 
-const DEFAULT_FROM = '2026-07-13T00:00:00Z';
+const DEFAULT_FROM = '2026-07-15T00:00:00Z';
 const from = process.argv[2] ? new Date(process.argv[2]) : new Date(DEFAULT_FROM);
-const to   = process.argv[3] ? new Date(process.argv[3]) : new Date('2026-07-23T00:00:00Z');
+const to   = process.argv[3] ? new Date(process.argv[3]) : new Date('2026-07-17T23:59:00Z');
 
 // 5 werkdagen extra pre-load zodat de eerste candle-slices genoeg lookback hebben
 const fetchFrom = new Date(from.getTime() - 5 * 24 * 60 * 60 * 1000);
@@ -61,6 +63,8 @@ let triggeredRaw = 0;
 let skippedCooldown = 0;
 let ranBoardroom = 0;
 
+// Fase 1: verzamel alle triggers (conditie-check, geen API-calls)
+const pendingTriggers = [];
 for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)) {
   if (!isActiveSession(t)) continue;
 
@@ -84,20 +88,31 @@ for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)
     continue;
   }
 
-  const price = h1Slice[h1Slice.length - 1].close;
-  console.log(`\n── ${iso.slice(0,16)} UTC ─────────────────────────────────`);
-  const modeTag = conditions.trendMode ? ' | 🔵 TREND-MODUS' : '';
-  const ctTag = !conditions.trendMode && conditions.details.isCounterTrend ? ' | ⚠️ COUNTER-TREND (W1 bearish)' : '';
-  console.log(`   Richting: ${conditions.direction.toUpperCase()} | Prijs: $${price.toFixed(2)}${modeTag}${ctTag}`);
-  console.log(`   Boardroom samengesteld...`);
-
   lastSignalTime = t.getTime();
   ranBoardroom++;
 
-  const dollarCandles  = eurCandles.filter((c) => c.time <= iso).slice(-50);
-  const yieldCandles   = yieldRaw.filter((c)   => c.time <= iso).slice(-25);
-  const conditionContext = formatConditionContext(conditions);
+  pendingTriggers.push({
+    t: new Date(t),
+    iso,
+    h1Slice,
+    conditions,
+    dollarCandles: eurCandles.filter((c) => c.time <= iso).slice(-50),
+    yieldCandles:  yieldRaw.filter((c)   => c.time <= iso).slice(-25),
+  });
+}
 
+console.log(`\n${pendingTriggers.length} triggers verzameld — start parallel verwerking (batch ${BATCH_SIZE})...\n`);
+
+// Fase 2: voer boardrooms uit in parallelle batches van BATCH_SIZE
+async function runOneTrigger({ t, iso, h1Slice, conditions, dollarCandles, yieldCandles }) {
+  const price = h1Slice[h1Slice.length - 1].close;
+  const modeTag = conditions.trendMode ? ' | 🔵 TREND-MODUS' : '';
+  const ctTag = !conditions.trendMode && conditions.details.isCounterTrend ? ' | ⚠️ COUNTER-TREND (W1 bearish)' : '';
+  console.log(`\n── ${iso.slice(0,16)} UTC ─────────────────────────────────`);
+  console.log(`   Richting: ${conditions.direction.toUpperCase()} | Prijs: $${price.toFixed(2)}${modeTag}${ctTag}`);
+  console.log(`   Boardroom samengesteld...`);
+
+  const conditionContext = formatConditionContext(conditions);
   let result;
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
@@ -115,7 +130,7 @@ for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)
       });
       break;
     } catch (err) {
-      if (attempt < 4 && (err.status === 529 || err.status === 529 || err.message?.includes('overloaded'))) {
+      if (attempt < 4 && (err.status === 529 || err.message?.includes('overloaded'))) {
         const wait = attempt * 30000;
         console.log(`   ⏳ API overloaded, wacht ${wait/1000}s (poging ${attempt}/4)...`);
         await new Promise((r) => setTimeout(r, wait));
@@ -130,7 +145,7 @@ for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)
   const da    = discussion.devilsAdvocate?.counterConfidence ?? '?';
 
   console.log(`   CEO:    ${decision.signal.toUpperCase()} (${decision.confidence}%)`);
-  console.log(`   Score:  ${score}/5 | DA counter: ${da}%`);
+  console.log(`   Score:  ${score}/6 | DA counter: ${da}%`);
   console.log(`   Filter: ${qualityResult.passed ? '✓ PASSED' : '✗ GEBLOKKEERD — ' + qualityResult.blockers.join(', ')}`);
   if (decision.stopLoss && decision.takeProfit) {
     const rr = Math.abs(decision.takeProfit - price) / Math.abs(price - decision.stopLoss);
@@ -138,7 +153,7 @@ for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)
   }
   console.log(`   CEO-redenering: ${decision.reasoning?.slice(0, 200)}...`);
 
-  results.push({
+  return {
     time: iso.slice(0,16),
     direction: conditions.direction,
     price: price.toFixed(2),
@@ -152,7 +167,13 @@ for (let t = new Date(from); t <= to; t = new Date(t.getTime() + 60 * 60 * 1000)
     sl: decision.stopLoss,
     tp: decision.takeProfit,
     reasoning: decision.reasoning,
-  });
+  };
+}
+
+for (let i = 0; i < pendingTriggers.length; i += BATCH_SIZE) {
+  const batch = pendingTriggers.slice(i, i + BATCH_SIZE);
+  const batchResults = await Promise.all(batch.map(runOneTrigger));
+  results.push(...batchResults);
 }
 
 console.log(`\n\n${'='.repeat(54)}`);
@@ -191,7 +212,7 @@ if (results.length > 0) {
       r.direction.padEnd(9),
       r.signal.padEnd(9),
       (r.confidence + '%').padEnd(6),
-      (r.score + '/5').padEnd(7),
+      (r.score + '/6').padEnd(7),
       flt.padEnd(9),
       '$' + r.price,
     ].join(' ');

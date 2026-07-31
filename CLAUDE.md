@@ -13,11 +13,20 @@ Na elke reeks implementaties (elke 3-5 taken of na een significante wijziging) s
 
 Als ik één van deze vragen niet met vertrouwen kan beantwoorden, benoem ik dat expliciet aan de gebruiker — zonder dat zij ernaar hoeven te vragen.
 
+## Parameter-freeze (actief vanaf 31 jul 2026)
+Het systeem heeft voldoende aanpassingen gehad. **Verander geen filter-drempels, cooldowns of kwaliteitsregels meer** op basis van losse signalen of korte reeksen (<20 trades). De volgende parameters zijn bevroren:
+- Rebuttal-drempel: -35%
+- ATR-minimum: $8
+- DA-blocker: >82%
+- Setup-score minimum: ≥3 (≥4 voor counter-W1)
+- R:R-ondergrens: 1.0
+- CEO-zekerheid minimum: 50%
+
+Uitzondering: pas na ≥100 doorgekomen live signalen opnieuw evalueren, en alleen bij een duidelijk statistisch patroon (niet bij 1-2 uitschieters). Als de gebruiker een parameter wil aanpassen op basis van <20 trades, benoem ik dit als risico.
+
 ## Bekende zwakke schakels (bijhouden en aanpakken)
 - Analist-prompt: ICT-criteria (sweep, OB, CHoCH) moeten scherper gedefinieerd zijn
-- Risicomanager: entry zone mag niet verder dan ~$20 van actuele prijs liggen
-- CEO: geen onbruikbare entry zones ("wacht op retest bij X") als prijs er ver van zit
-- Systematische validatie: elke 2 weken terugkijken op signalen en uitkomsten
+- Systematische validatie: elke 2 weken terugkijken op signalen en uitkomsten na de freeze
 
 ## Architectuur
 - 6 agents: analist → parallel[riskManager, DA, macroAnalist, geopolitiek] → rebuttal → CEO

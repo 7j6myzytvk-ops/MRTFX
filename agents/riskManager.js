@@ -8,7 +8,7 @@ const RISK_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      entryZone: { type: 'string', description: 'Concrete entry-zone als prijsrange, bv. "$4100–$4108". Bij te late entry: "Wacht op pullback naar $4100–$4108".' },
+      entryZone: { type: 'string', description: 'Concrete entry-zone als prijsrange, bv. "$4100–$4108". Als er geen logische zone binnen 1.5×ATR is: "Directe markt-entry ~$X". Nooit "Wacht op pullback" — dat is niet actionabel.' },
       stopLoss: { type: 'number', description: 'Voorgestelde stop-loss prijs.' },
       takeProfit: { type: 'number', description: 'Voorgestelde take-profit prijs.' },
       positionSize: { type: 'string', enum: ['klein', 'normaal', 'groot'] },
@@ -31,8 +31,10 @@ export async function assessRisk(
   const eventsNote = events.length
     ? `\n\nLet op: binnen 48 uur staan de volgende belangrijke USD-economische events gepland: ` +
       events.map((e) => `"${e.name}" om ${e.time}`).join(', ') +
-      `. Houd rekening met verhoogde volatiliteit rond deze tijdstippen bij je SL/TP- en ` +
-      `positiegrootte-advies.`
+      `. HARDE REGEL bij events: verbreed de SL NIET voor event-bescherming. Een bredere SL ` +
+      `verslechtert de R:R en blokkeert het signaal automatisch. De juiste reactie op event-risico ` +
+      `is positiegrootte 'klein' — niet een grotere stop. Houd de SL op het structurele niveau; ` +
+      `verlaag de positiegrootte één stap als je event-risico wilt compenseren.`
     : '';
 
   const newsContextNote = newsContext

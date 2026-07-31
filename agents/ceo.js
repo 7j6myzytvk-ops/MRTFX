@@ -181,10 +181,12 @@ export async function decide(
             ? `5) TREND-MODUS: het signaal is al aligned met 4H + D1 + H1 + M30. ` +
               `De counter-trend stop is NIET van toepassing — dit IS een trend-setup. ` +
               `Focus op setup-kwaliteit (criteria ①–④) en de teamconsensus.\n`
-            : `5) COUNTER-TREND CONTEXT: als D1 én W1 beide dezelfde richting wijzen en het ` +
-              `signaal is tegengesteld — wees extra selectief (max 60% zekerheid). ` +
-              `H4 is kortetermijn context, geen veto: een H4 CHoCH terwijl D1+W1 nog lopen ` +
-              `is een potentieel reversal-signaal, niet per definitie te riskant.\n`
+            : `5) COUNTER-TREND CONTEXT: als de weektrend (W1) tegengesteld is aan het signaal — ` +
+              `ook als D1 gedeeltelijk bevestigt — is extra selectiviteit verplicht. ` +
+              `Vermeld de W1-tegenwind expliciet in je reasoning en hanteer maximaal 60% zekerheid. ` +
+              `W1 is de macro-stroom: D1 en H4 kunnen draaien terwijl W1 nog loopt. ` +
+              `Een score van 3/6 in een W1 counter-trend setup is onvoldoende — alleen score ≥4 ` +
+              `met bevestigde CHoCH rechtvaardigt een directioneel signaal tegen W1.\n`
           ) +
           `Onderbouw je besluit met concrete verwijzingen naar [A]–[F].` +
           `${newsContextNote}${ceoBriefingNote}${contextNotes}`,
