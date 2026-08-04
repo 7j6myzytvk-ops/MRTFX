@@ -18,12 +18,20 @@ function checkTrue(name, val) { check(name, val, true); }
 
 // --- formatErrorAlert ---
 
-// 1. Krediet-fout gedetecteerd
+// 1a. Twelve Data krediet-fout
 {
   const err = new Error('You have run out of API credits for the day. 864 API credits were used.');
   const msg = formatErrorAlert(err);
-  checkTrue('formatErrorAlert - krediet: bevat KREDIET LIMIET', msg.includes('KREDIET LIMIET'));
-  checkTrue('formatErrorAlert - krediet: bevat originele foutmelding', msg.includes('864 API credits'));
+  checkTrue('formatErrorAlert - TD krediet: bevat KREDIET LIMIET', msg.includes('KREDIET LIMIET'));
+  checkTrue('formatErrorAlert - TD krediet: bevat originele foutmelding', msg.includes('864 API credits'));
+}
+
+// 1b. Anthropic krediet-fout
+{
+  const err = new Error('Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.');
+  const msg = formatErrorAlert(err);
+  checkTrue('formatErrorAlert - Anthropic krediet: bevat ANTHROPIC KREDIET OP', msg.includes('ANTHROPIC KREDIET OP'));
+  checkTrue('formatErrorAlert - Anthropic krediet: bevat originele foutmelding', msg.includes('credit balance'));
 }
 
 // 2. Rate limit fout
@@ -61,7 +69,7 @@ function checkTrue(name, val) { check(name, val, true); }
   const msg = formatHeartbeat(null);
   checkTrue('formatHeartbeat - geen signal: bevat nog geen setup', msg.includes('nog geen setup'));
   checkTrue('formatHeartbeat - bevat sessiestart', msg.includes('sessiestart'));
-  checkTrue('formatHeartbeat - bevat monitoring', msg.includes('Monitoring actief'));
+  checkTrue('formatHeartbeat - bevat monitoring', msg.includes('Setup-scanner actief'));
 }
 
 // 7. Met lastSignalTime → datum getoond

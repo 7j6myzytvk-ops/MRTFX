@@ -28,14 +28,22 @@ export async function sendDedupedAlert(client, key, message) {
 
 export function formatErrorAlert(err) {
   const msg = err.message ?? String(err);
-  if (msg.toLowerCase().includes('credit')) {
+  const lower = msg.toLowerCase();
+  if (lower.includes('credit') && lower.includes('anthropic')) {
+    return (
+      `⛔ **ANTHROPIC KREDIET OP**\n` +
+      `Anthropic API-credits zijn uitgeput. De bot stopt met monitoren tot het tegoed is aangevuld.\n` +
+      `> ${msg}`
+    );
+  }
+  if (lower.includes('credit')) {
     return (
       `⛔ **KREDIET LIMIET BEREIKT**\n` +
       `Twelve Data-credits zijn op voor vandaag. De bot stopt met monitoren tot 00:00 UTC.\n` +
       `> ${msg}`
     );
   }
-  if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('429')) {
+  if (lower.includes('rate') || lower.includes('429')) {
     return `⚠️ **Rate limit** — te veel Twelve Data-requests per minuut.\n> ${msg}`;
   }
   return `⚠️ **Fout in setup-detector**\n> ${msg}`;
