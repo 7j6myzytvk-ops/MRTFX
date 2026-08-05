@@ -85,125 +85,22 @@ export function assessSignalQuality(sample) {
 
   const blockers = [];
 
-  // Filter 1: CEO-zekerheid te laag. Drempel verlaagd van 52% naar 50% (Fase 97): CEO-prompt
-  // geeft nu minimaal 55% voor directionele signalen. Filter 50% vangt alleen systeem-anomalieën.
-  if (sample.decision.confidence < 50) {
-    blockers.push('CEO-zekerheid onder 50%');
-  }
-  // Macro contrarian blocker verwijderd (Fase 97): CEO weegt macro al mee op 20% in zijn
-  // beslissingsgewichten. Een aparte mechanische blokkade telt macro dubbel en verhinderde
-  // valid signals met CEO-confidence 59-61% die daadwerkelijk TP raakten (jul 23 data).
-  // Filter 3: significant verlies van overtuiging na de boardroom-discussie.
-  // Drempel verhoogd van -15 → -25 (Fase 76) → -35 (Fase 103):
-  // /blocker-analyse toonde dat bij drempel -25 zes signalen geblokkeerd werden
-  // waarvan 5 TP raakten (83% WR). De boardroom-discussie maakt de analist
-  // structureel te voorzichtig — zijn eerste inschatting is vaker correct dan
-  // zijn herziene mening na het weerwoord. Bij -35 blokkeren we alleen gevallen
-  // waarbij de analist meer dan een derde van zijn zekerheid intrekt.
-  const rebuttalDelta =
-    (sample.discussion.analystRebuttal?.confidence ?? 0) - (sample.discussion.analyst?.confidence ?? 0);
-  if (rebuttalDelta <= -35) {
-    blockers.push(`analist verloor significant vertrouwen na discussie (−${Math.abs(rebuttalDelta)}%)`);
-  }
-  // R:R >5.0 filter verwijderd: CEO stelt soms een precision entry zone in (dicht bij SL)
-  // wat een hoge R:R geeft — dat is een geldige setup, geen reden om te blokkeren.
-  // R:R ondergrens: bij R:R < 1.0 is de verwachte waarde structureel negatief.
-  // Drempel verlaagd van 1.5 naar 1.0: backtest toonde dat setups met R:R 1.0–1.4
-  // vaker naar TP gingen dan de 1.5-drempel suggereerde.
-  if (sample.entryPrice != null && classifyRiskReward(sample) === '<1.0') {
-    blockers.push('risico/winst-verhouding te laag (<1.0) — negatieve verwachte waarde');
-  }
-  // DA-blocker verhoogd van 70% naar 82% (Fase 97): DA-kalibratie 66-80% = "sterk risico"
-  // scoorde systematisch 70-75%, waardoor geldige setups werden geblokkeerd. 82%+ = "zeker gevaar"
-  // (meerdere recente signalen wijzen op mislukking). CEO weegt DA al mee op 20%.
-  if ((sample.discussion.devilsAdvocate?.counterConfidence ?? 0) > 82) {
-    blockers.push('pre-mortem: zeker faalscenario gevonden (>82%)');
-  }
+  // Fase 105: kwaliteitsfilter teruggebracht naar absolute minimum.
+  // Zeven weken geen TP op doorgekomen signalen (jun 17 → aug 5 2026).
+  // Gefilterde signalen: 54.5% WR. Doorgekomen signalen: 0% WR.
+  // Alle filters van Fase 69–104 verwijderd — de filter werkte structureel omgekeerd.
+  // Enige harde blokkades die overblijven:
+  // 1. Setup score < 3: geen handelbare ICT-setup aanwezig
+  // 2. AMD-fase onduidelijk: geen marktstructuur om op te handelen
 
-  // Setup-kwaliteitsscore: als de analist minder dan 3 van de 6 ICT/SMC-criteria
-  // aanwezig vindt, is er geen handelbare setup — altijd blokkeren ongeacht de rest.
-  // Drempel hersteld naar 3 (Fase 91): ⑥ kill-zone-timing terug als kwaliteitscriterium,
-  // schaal is weer /6. Score 0-2 = geen setup, score 3+ = minimaal voldoende.
-  //
-  // Counter-trend regel (Fase 103): wanneer de signaalrichting tégengesteld is aan de
-  // W1-trend, is een score van 3/6 onvoldoende — dat is de minimale drempel voor
-  // mét-trend setups. Tegen de weektrend ingaan vereist sterkere bevestiging: score ≥ 4.
-  // Rootcause: trades #237 en #242 (27 jul) waren beide BULLISH 3/6 in een W1 bearish
-  // markt — precies dit profiel. SL geraakt na 1 en 6 candles.
-  // Score 4+ counter-trend wordt wél doorgelaten: genoeg confluence voor een legitieme
-  // reversal (CHoCH bevestigd, sweep, OB, kill-zone — het volledige plaatje).
   const setupScore = sample.discussion.analyst?.setupQualityScore;
-  const signal = sample.decision.signal;
-  const w1Trend = sample.weeklyTrend;
-  const isCounterTrendW1 =
-    (signal === 'bullish' && w1Trend === 'bearish') ||
-    (signal === 'bearish' && w1Trend === 'bullish');
-  const minSetupScore = isCounterTrendW1 ? 4 : 3;
-
-  if (setupScore !== undefined && setupScore !== null && setupScore < minSetupScore) {
-    const reden = isCounterTrendW1
-      ? `counter-trend t.o.v. W1 (${w1Trend}) vereist score ≥4`
-      : 'geen handelbare setup';
-    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 — ${reden})`);
+  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
+    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 — geen handelbare setup)`);
   }
 
-  // AMD-fase filter: alleen 'onduidelijk' blokkeert mechanisch.
-  // 'manipulation' (Judas Swing) wordt niet meer mechanisch geblokkeerd — de analist
-  // en CEO beoordelen dit al via AMD-fase en setup-criteria. London KZ werkt structureel
-  // via manipulatie naar distributie; mechanisch blokkeren snijdt de beste entries weg.
   const amdPhase = sample.discussion?.analyst?.amdPhase;
   if (amdPhase === 'onduidelijk') {
     blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
-  }
-
-  // Counter-trend blocker verwijderd (Fase 99): CEO ontvangt de D1+W1-context al via zijn
-  // prompt (max 60% bij counter-trend D1+W1) en beslist zelfstandig. Een mechanische blokkade
-  // bovenop de CEO-beslissing telt de macro-trend dubbel en blokkeerde valid setups —
-  // met name de bullish move van $4061→$4159 op 21-22 jul 2026 waarbij CEO correct 57-60%
-  // gaf maar de blokkade die signals weggooide. Replay toonde dat alle 8 blocked setups
-  // winstgevend waren geweest.
-
-  // Filter 7b: Monday London Open — Judas Swing venster (07:00–08:30 UTC).
-  // In dit venster maakt de markt een fake directional move die wordt gevaded vóór de echte
-  // richting. Alleen A+ setups (score 4/4 trend of 5+/6 reversal) worden doorgelaten.
-  {
-    const now = new Date();
-    const isMonday = now.getUTCDay() === 1;
-    const utcH = now.getUTCHours();
-    const utcM = now.getUTCMinutes();
-    const inJudasWindow = utcH === 7 || (utcH === 8 && utcM < 30);
-    if (isMonday && inJudasWindow && setupScore != null) {
-      const requiredScore = sample.trendMode ? 4 : 5;
-      const maxScore = sample.trendMode ? 4 : 6;
-      if (setupScore < requiredScore) {
-        blockers.push(`Monday Judas Swing venster (07:00–08:30 UTC) — score ${setupScore}/${maxScore} te laag, vereist ${requiredScore}+`);
-      }
-    }
-  }
-
-  // Filter 8: ATR te laag — markt te kalm voor betrouwbare SL/TP.
-  // Oorspronkelijk $13 (backtest), verlaagd naar $10 (live jul), nu $8 (29 jul):
-  // signaal #300 (ATR ~$10, bearish) trof TP na 1 candle terwijl het gefilterd was.
-  // $8 filtert alleen echt dode markten, laat ATR $8–12 door.
-  const ATR_MIN = 8;
-  if (sample.atr14 != null && sample.atr14 < ATR_MIN) {
-    blockers.push(`ATR te laag ($${sample.atr14.toFixed(1)} < $${ATR_MIN}) — markt te kalm voor betrouwbare uitvoering`);
-  }
-
-  // Filter 9: Overextended move — koers te ver verwijderd van H1 SMA20.
-  // Alleen van toepassing in REVERSAL-modus: in een reversal probeer je een keerpunt
-  // te vangen en een overextended move vergroot het reversal-risico significant.
-  // In TREND-modus is prijs ver van SMA20 juist normaal — dat is hoe een trend eruitziet.
-  // Een trend-entry blokkeren omdat de trend al loopt is logisch inconsistent.
-  if (!sample.trendMode && sample.sma20H1 != null && sample.entryPrice != null) {
-    const smaGapMax = sample.atr14 != null ? sample.atr14 * 3.0 : 60;
-    const gap = sample.entryPrice - sample.sma20H1;
-    if (sample.decision.signal === 'bearish' && gap < -smaGapMax) {
-      blockers.push(`move overextended: koers $${Math.abs(gap).toFixed(0)} onder H1 SMA20 — reversal-risico`);
-    }
-    if (sample.decision.signal === 'bullish' && gap > smaGapMax) {
-      blockers.push(`move overextended: koers $${gap.toFixed(0)} boven H1 SMA20 — reversal-risico`);
-    }
   }
 
   return { passed: blockers.length === 0, blockers };
