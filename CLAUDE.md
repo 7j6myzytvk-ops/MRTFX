@@ -3,6 +3,32 @@
 ## Doel
 Volledig geautomatiseerd XAU/USD trading systeem dat live setups detecteert, via Discord doorstuurt, en daadwerkelijk take profits raakt.
 
+## Verplichte data-audit vóór elke filterwijziging — HARDE STOP
+
+Voordat ik ook maar één parameter in de kwaliteitsfilter aanpas, voer ik eerst deze audit uit:
+
+```
+node -e "
+const fs = require('fs');
+const signals = JSON.parse(fs.readFileSync('data/signals.json'));
+const tpHits = signals.filter(s => s.outcome?.result === 'tp').sort((a,b) => new Date(b.timestamp)-new Date(a.timestamp));
+const passed = signals.filter(s => s.qualityResult?.passed === true && s.outcome);
+const filtered = signals.filter(s => s.qualityResult?.passed === false && s.outcome);
+const passedTP = passed.filter(s => s.outcome?.result === 'tp').length;
+const filteredTP = filtered.filter(s => s.outcome?.result === 'tp').length;
+console.log('Laatste TP:', tpHits[0]?.timestamp?.slice(0,10) || 'nooit');
+console.log('Passed WR:', passedTP + '/' + passed.length);
+console.log('Filtered WR:', filteredTP + '/' + filtered.length);
+"
+```
+
+Beslisregel na de audit:
+- **Als gefilterde WR > passed WR**: de filter werkt OMGEKEERD. Stel de filterlogica zelf ter discussie — niet de drempelwaarden.
+- **Als de laatste TP weken geleden was**: geen nieuwe aanpassingen. Eerst begrijpen waarom er geen TP's zijn.
+- **Als de gebruiker zegt "het werkte beter vóór fase X"**: dit is een hypothese die ik direct toets met de audit, niet iets wat ik wegredener met een nieuwe aanpassing.
+
+Ik heb dit patroon in augustus 2026 herhaaldelijk gemist. Zeven weken geen TP op doorgekomen signalen terwijl de gebruiker dit meerdere keren signaleerde. Elke keer optimaliseerde ik binnen een kapotte filter in plaats van de filter zelf te bevragen. Dit mag niet opnieuw gebeuren.
+
 ## Zelfcheck — verplicht periodiek uitvoeren
 Na elke reeks implementaties (elke 3-5 taken of na een significante wijziging) stel ik mezelf deze vragen voordat ik verdergaat met de volgende taak:
 
