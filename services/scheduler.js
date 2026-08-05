@@ -13,6 +13,7 @@ import { fetchGoldNews } from './newsService.js';
 import { runBoardroom } from '../agents/boardroom.js';
 import { reportToDiscord } from './boardroomReporter.js';
 import { evaluateOpenSignals } from './performanceTracker.js';
+import { evaluateBlockedSignalOutcomes } from './blockedSignalLog.js';
 import { checkConditions, formatConditionContext, isActiveSession } from './conditionChecker.js';
 import { sendDedupedAlert, sendHeartbeat, sendStartupAlert, formatErrorAlert } from './botAlerts.js';
 import { checkFtmoLimits } from './ftmoGuard.js';
@@ -91,6 +92,9 @@ async function poll(client) {
     if (!lastOutcomeCheckTime || now - lastOutcomeCheckTime >= 15 * 60 * 1000) {
       lastOutcomeCheckTime = now;
       await evaluateOpenSignals(client);
+      evaluateBlockedSignalOutcomes().catch((err) =>
+        console.error('[blockedSignalLog] Outcome-evaluatie mislukt:', err.message),
+      );
     }
 
     // Dagelijkse trader-review: elke werkdag om 17:25–17:34 UTC (na sessie-einde).
