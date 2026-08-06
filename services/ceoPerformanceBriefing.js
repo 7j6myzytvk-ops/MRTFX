@@ -70,8 +70,8 @@ export function formatCeoPerformanceBriefingNote(stats, atrTrend = null) {
   const { n, tp, sl, winRate, streak, weeklyCount } = stats;
 
   const wrNote =
-    winRate === null
-      ? `Winrate onbekend (geen afgeronde TP/SL-trades).`
+    winRate == null
+      ? `Winrate onbekend (geen afgeronde TP/SL-trades in de afgelopen 7 dagen).`
       : winRate < 40
         ? `Recente winRate: ${winRate}% — ruim onder doelstelling. Wees selectiever, verhoog je eigen drempel.`
         : winRate > 65
