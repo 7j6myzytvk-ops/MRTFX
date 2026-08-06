@@ -91,13 +91,11 @@ export function formatCeoPerformanceBriefingNote(stats, atrTrend = null) {
     }
   }
 
-  const weeklyNote = weeklyCount != null
-    ? weeklyCount === 0
+  const weeklyNote = weeklyCount != null && weeklyCount > 0
+    ? `\nDeze week al ${weeklyCount} directioneel signaal${weeklyCount > 1 ? 'en' : ''} afgegeven.`
+    : weeklyCount === 0
       ? `\nDeze week nog geen directioneel signaal afgegeven.`
-      : weeklyCount >= 3
-        ? `\n⚠️ WEEKFREQUENTIE: al ${weeklyCount} directionele signalen deze week. Verhoog je drempel — kwaliteit boven kwantiteit.`
-        : `\nDeze week al ${weeklyCount} directioneel signaal${weeklyCount > 1 ? 'en' : ''} afgegeven.`
-    : '';
+      : '';
 
   const atrNote = atrTrend
     ? atrTrend === 'stijgend'
