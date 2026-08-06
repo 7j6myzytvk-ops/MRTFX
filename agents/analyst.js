@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 import { formatCandles } from './formatCandles.js';
 
@@ -48,7 +48,7 @@ export async function analyzeCandles(
   candles,
   { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '', trendMode = false } = {},
 ) {
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const eventsNote = events.length
     ? `\n\nLet op: binnen 48 uur staan de volgende marktbewegende USD-events gepland: ` +
@@ -287,7 +287,7 @@ export async function reviewDiscussion(
   { risk, devilsAdvocate, macro, geopolitical = null },
   { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '', trendMode = false } = {},
 ) {
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const newsContextNote = newsContext
     ? `\n\nLet op: het team heeft daarnaast de volgende actuele marktcontext meegegeven (behandel ` +

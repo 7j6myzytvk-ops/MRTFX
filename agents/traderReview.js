@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 
-const client = new Anthropic({ apiKey: config.anthropic.apiKey });
+const client = makeClient();
 
 const SYSTEM_PROMPT = `Je bent een veteraan XAU/USD forex-trader met meer dan 100.000 voltooide trades. \
 Je hebt meerdere marktcycli overleefd — bull runs, bear markets, flash crashes, CPI-shocks, Fed-pivots. \

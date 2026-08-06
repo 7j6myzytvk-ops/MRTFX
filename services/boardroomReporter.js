@@ -58,7 +58,7 @@ export function formatSetupMarker(signal, comboSignal = false, qualityResult = {
 function formatDecisionBody(decision) {
   const entryLine = decision.entryZone ? `Entry: ${decision.entryZone}\n` : '';
   return (
-    `Signaal: ${decision.signal.toUpperCase()} (zekerheid: ${decision.confidence}%)\n` +
+    `Signaal: ${decision.signal?.toUpperCase() ?? '?'} (zekerheid: ${decision.confidence}%)\n` +
     `${entryLine}` +
     `SL: ${decision.stopLoss} | TP: ${decision.takeProfit} | Positiegrootte: ${decision.positionSize}\n` +
     `${decision.reasoning}`
@@ -140,9 +140,9 @@ export function formatTraceMessages({
       : '');
 
   const messages = [
-    `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal.toUpperCase()} (zekerheid: ${analyst.confidence}%) | AMD-fase: ${analyst.amdPhase ?? 'onbekend'}\n${analyst.reasoning}`,
+    `**🔍 Analist - eerste analyse**\nSignaal: ${analyst.signal?.toUpperCase() ?? '?'} (zekerheid: ${analyst.confidence}%) | AMD-fase: ${analyst.amdPhase ?? 'onbekend'}\n${analyst.reasoning}`,
     `**🛡️ Risicomanager**\nSL: ${riskManager.stopLoss} | TP: ${riskManager.takeProfit} | Positiegrootte: ${riskManager.positionSize}\n${riskManager.reasoning}`,
-    `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal.toUpperCase()} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
+    `**🗣️ Devil's Advocate**\nTegen-signaal: ${devilsAdvocate.counterSignal?.toUpperCase() ?? '?'} (zekerheid: ${devilsAdvocate.counterConfidence}%)\n${devilsAdvocate.argument}`,
     `**🌍 Marktcontext/Sentiment**\nSentiment: ${macro.sentiment} (zekerheid: ${macro.confidence}%)\n${macro.reasoning}`,
   ];
 
@@ -159,7 +159,7 @@ export function formatTraceMessages({
   }
 
   messages.push(
-    `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal.toUpperCase()} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
+    `**🔁 Analist - weerwoord**\nSignaal: ${analystRebuttal.signal?.toUpperCase() ?? '?'} (zekerheid: ${analystRebuttal.confidence}%)\n${analystRebuttal.reasoning}`,
     ceoLine,
   );
 
@@ -207,7 +207,7 @@ export function formatOutcomeMessage({ id, timestamp, decision, outcome, quality
 
   return (
     `**Signaal #${id} afgerond${filteredNote} - ${label}${candlesNote}**\n` +
-    `Origineel signaal (${entryTime} UTC): ${decision.signal.toUpperCase()} ` +
+    `Origineel signaal (${entryTime} UTC): ${decision.signal?.toUpperCase() ?? '?'} ` +
     `(zekerheid ${decision.confidence}%) - SL ${decision.stopLoss} / TP ${decision.takeProfit} ` +
     `(${decision.positionSize})`
   );

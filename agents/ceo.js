@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 
 const DECISION_TOOL = {
@@ -27,7 +27,7 @@ export async function decide(
   { analysis, risk, devilsAdvocate, macro, geopolitical = null, rebuttal },
   { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', contextNotes = '', ceoBriefingNote = '', trendMode = false } = {},
 ) {
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const lastClose = candles[candles.length - 1].close;
 

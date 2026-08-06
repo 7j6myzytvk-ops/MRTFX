@@ -23,7 +23,7 @@ export async function assessRisk(
   analysis,
   { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '', streakNote = '' } = {},
 ) {
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const lastClose = candles[candles.length - 1].close;
   const atr14 = atr(candles.slice(-50), 14) ?? 0;

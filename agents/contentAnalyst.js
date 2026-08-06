@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 
-const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+const client = makeClient();
 
 // Analyseert een transcript of tekst en extraheert gestructureerde regime-inzichten
 // die relevant zijn voor XAU/USD trading.

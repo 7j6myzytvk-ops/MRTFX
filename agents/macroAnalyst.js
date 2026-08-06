@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 import { formatCandles } from './formatCandles.js';
 
@@ -24,7 +24,7 @@ export async function assessSentiment(
   _analysis,
   { instrument = 'XAU_USD', granularity = 'H1', events = [], newsContext = '', contextNotes = '' } = {},
 ) {
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const eventsNote = events.length
     ? `\n\nDaarnaast staan binnen 48 uur de volgende bevestigde USD-agendapunten gepland ` +

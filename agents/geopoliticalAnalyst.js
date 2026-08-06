@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 
 const GEOPOLITICAL_TOOL = {
@@ -59,7 +59,7 @@ export async function assessGeopolitical(
     return NO_NEWS_RESULT;
   }
 
-  const client = new Anthropic({ apiKey: config.anthropic.apiKey, timeout: 60_000 });
+  const client = makeClient();
 
   const newsBlock = newsItems
     .map((item) => `- ${item.publishedAt.slice(0, 16).replace('T', ' ')} UTC [${item.source}] ${item.title}`)
