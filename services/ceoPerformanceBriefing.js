@@ -3,13 +3,15 @@ import path from 'path';
 
 const SIGNALS_FILE = path.join(process.cwd(), 'data', 'live', 'signals.json');
 const MAX_RECENT = 10;
+const LOOKBACK_DAYS = 7;
 
 async function readRecentSignals() {
   try {
     const raw = await readFile(SIGNALS_FILE, 'utf-8');
     const signals = JSON.parse(raw);
+    const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
     return signals
-      .filter((s) => s.outcome && ['tp', 'sl', 'geen'].includes(s.outcome.result))
+      .filter((s) => s.outcome && ['tp', 'sl', 'geen'].includes(s.outcome.result) && new Date(s.timestamp) >= cutoff)
       .slice(-MAX_RECENT);
   } catch {
     return [];

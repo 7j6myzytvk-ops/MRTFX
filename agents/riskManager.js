@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { makeClient } from './anthropicClient.js';
 import { config } from '../config/index.js';
 import { atr } from './indicators.js';
 
