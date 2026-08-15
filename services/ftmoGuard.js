@@ -6,6 +6,11 @@ export const DAILY_LOSS_LIMIT_PCT  = -5;   // max -5% van account per dag
 export const TOTAL_DRAWDOWN_PCT    = -10;  // max -10% totale drawdown (FTMO hard rule)
 export const DAILY_WARN_PCT        = -3;   // waarschuwing bij -3% vandaag
 
+// Alleen signalen na Fase 105 (reset-datum) tellen mee voor FTMO-statistieken.
+// Pre-reset signalen kwamen door een kapotte filter en vertegenwoordigen geen
+// schone tradinghistorie.
+const FASE105_CUTOFF = new Date('2026-08-05T00:00:00Z');
+
 // Fallback R:R als entry/TP/SL niet opgeslagen zijn (oude signalen).
 const FALLBACK_RR = 2.0;
 
@@ -51,7 +56,8 @@ function todayUtc() {
 }
 
 export async function getFtmoStats() {
-  const all = await getAllSignals();
+  const allSignals = await getAllSignals();
+  const all = allSignals.filter((s) => new Date(s.timestamp) >= FASE105_CUTOFF);
   const today = todayUtc();
 
   let todayPnL = 0;

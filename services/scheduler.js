@@ -155,6 +155,12 @@ async function poll(client) {
     const ftmo = await checkFtmoLimits();
     if (ftmo.blocked) {
       console.warn(`[FTMO] Geblokkeerd: ${ftmo.blockers.join(' | ')}`);
+      const ftmoKey = `ftmo-blocked-${new Date().toISOString().slice(0, 10)}`;
+      await sendDedupedAlert(
+        client,
+        ftmoKey,
+        `🛑 **FTMO-bewaker heeft het systeem geblokkeerd**\n${ftmo.blockers.join('\n')}\n\nDe setup-scanner is gestopt. Gebruik \`/ftmo\` voor details.`,
+      );
       return;
     }
     if (ftmo.warnings.length > 0) {

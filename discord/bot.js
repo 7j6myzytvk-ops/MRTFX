@@ -30,6 +30,7 @@ import {
   formatDayReport,
   formatHourReport,
 } from '../services/conditionDiagnostics.js';
+import { getBlockedSignals } from '../services/blockedSignalLog.js';
 
 const commands = [
   new SlashCommandBuilder()
@@ -132,6 +133,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('sl-analyse')
     .setDescription('Breakdown van passed signalen die SL raakten: score, rebuttal, DA, macro en trend-context.'),
+  new SlashCommandBuilder()
+    .setName('vergelijk')
+    .setDescription('Vergelijkt WR van doorgekomen vs. gefilterde signalen — werkt de filter correct of omgekeerd?'),
 ].map((c) => c.toJSON());
 
 function resolveDatum(datumStr) {
@@ -831,6 +835,108 @@ export function createBot() {
         await interaction.editReply(truncateForDiscord(header + lines.join('\n\n')));
       } catch (err) {
         await interaction.editReply(`Blocker-analyse mislukt: ${err.message}`);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'vergelijk') {
+      await interaction.deferReply();
+      try {
+        await evaluateOpenSignals(interaction.client);
+        const [all, blocked] = await Promise.all([getAllSignals(), getBlockedSignals()]);
+
+        // Doorgekomen: directionale signalen die het kwaliteitsfilter passeerden, met afgeronde uitkomst
+        const passed = all.filter(
+          (s) =>
+            s.qualityResult?.passed !== false &&
+            s.decision?.signal && s.decision.signal !== 'neutral' &&
+            ['tp', 'sl', 'geen'].includes(s.outcome?.result),
+        );
+
+        // Gefilterd: uit de dedicated blockedSignals.json (heeft SL/TP en uitkomst-evaluatie)
+        const blockedResolved = blocked.filter(
+          (s) =>
+            s.signal && s.signal !== 'neutral' &&
+            ['tp', 'sl', 'geen'].includes(s.outcome?.result),
+        );
+
+        function computeStats(signals, outcomeKey = (s) => s.outcome?.result) {
+          const tp = signals.filter((s) => outcomeKey(s) === 'tp').length;
+          const sl = signals.filter((s) => outcomeKey(s) === 'sl').length;
+          const geen = signals.filter((s) => outcomeKey(s) === 'geen').length;
+          const wr = (tp + sl) > 0 ? Math.round((tp / (tp + sl)) * 100) : null;
+          return { n: signals.length, tp, sl, geen, wr };
+        }
+
+        const passedStats = computeStats(passed);
+        const blockedStats = computeStats(blockedResolved);
+
+        // Minimale dataset voor een betrouwbaar oordeel
+        const MIN_N = 5;
+        let verdict = '';
+        if (passedStats.n < MIN_N && blockedStats.n < MIN_N) {
+          verdict = `⏳ Te weinig data voor oordeel — minimaal ${MIN_N} afgeronde trades per groep nodig.`;
+        } else if (passedStats.n < MIN_N) {
+          verdict = `⏳ Te weinig doorgekomen signalen (${passedStats.n}/${MIN_N}) voor vergelijking.`;
+        } else if (blockedStats.n < MIN_N) {
+          verdict = `⏳ Te weinig gefilterde signalen met uitkomst (${blockedStats.n}/${MIN_N}) voor vergelijking.`;
+        } else {
+          const diff = (blockedStats.wr ?? 0) - (passedStats.wr ?? 0);
+          if (diff > 10) {
+            verdict = `🚨 FILTER WERKT OMGEKEERD — gefilterde signalen scoren ${diff}% hoger dan doorgekomen. Filter zelf ter discussie stellen.`;
+          } else if (diff > 0) {
+            verdict = `⚠️ Filter marginaal omgekeerd (${diff}% verschil) — te klein voor conclusie, maar opletten.`;
+          } else if (diff < -10) {
+            verdict = `✅ Filter werkt correct — houdt zwakkere signalen (${Math.abs(diff)}% lager WR) terecht achter.`;
+          } else {
+            verdict = `➖ Filter neutraal — WR-verschil (${Math.abs(diff)}%) niet significant genoeg voor conclusie.`;
+          }
+        }
+
+        // Per-blocker breakdown: welke blocker heeft welke WR?
+        const blockerMap = new Map();
+        for (const s of blockedResolved) {
+          for (const blocker of s.blockers ?? []) {
+            const key = blocker
+              .replace(/\$[\d.]+/g, '$X')
+              .replace(/\d+(\.\d+)?\/\d+/g, 'N/M')
+              .replace(/−\d+%/g, '−N%')
+              .slice(0, 70);
+            if (!blockerMap.has(key)) blockerMap.set(key, { tp: 0, sl: 0 });
+            const e = blockerMap.get(key);
+            if (s.outcome?.result === 'tp') e.tp++;
+            else if (s.outcome?.result === 'sl') e.sl++;
+          }
+        }
+        const blockerLines = [...blockerMap.entries()]
+          .sort((a, b) => (b[1].tp + b[1].sl) - (a[1].tp + a[1].sl))
+          .map(([key, { tp, sl }]) => {
+            const total = tp + sl;
+            const wr = total > 0 ? Math.round((tp / total) * 100) : null;
+            const label = wr !== null && wr > 50 ? '🔴 blokkeert TP' : wr !== null && wr < 35 ? '✅ terecht' : '⚠️ gemengd';
+            return `• ${key}\n  ${total}× | TP: ${tp} / SL: ${sl}${wr !== null ? ` → WR ${wr}%` : ''} | ${label}`;
+          });
+
+        const passedWrLine = passedStats.wr !== null ? `WR: **${passedStats.wr}%**` : 'WR: onbekend';
+        const blockedWrLine = blockedStats.wr !== null ? `WR: **${blockedStats.wr}%**` : 'WR: onbekend';
+
+        const blockerBlock = blockerLines.length > 0
+          ? `\n\n**Blocker breakdown (gefilterd, TP+SL):**\n${blockerLines.join('\n')}`
+          : '';
+
+        await interaction.editReply(
+          truncateForDiscord(
+            `**🔬 Vergelijking: doorgekomen vs. gefilterd**\n\n` +
+            `**✅ Doorgekomen (passed): ${passedStats.n} signalen**\n` +
+            `TP: ${passedStats.tp} | SL: ${passedStats.sl} | geen: ${passedStats.geen} → ${passedWrLine}\n\n` +
+            `**🔶 Gefilterd (geblokkeerd): ${blockedStats.n} signalen**\n` +
+            `TP: ${blockedStats.tp} | SL: ${blockedStats.sl} | geen: ${blockedStats.geen} → ${blockedWrLine}\n\n` +
+            `**Oordeel:** ${verdict}` +
+            blockerBlock,
+          ),
+        );
+      } catch (err) {
+        await interaction.editReply(`Vergelijking mislukt: ${err.message}`);
       }
       return;
     }
