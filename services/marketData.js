@@ -174,6 +174,36 @@ export async function getRecentXauW1Candles({ count = 20 } = {}) {
   return data;
 }
 
+// XAU/USD M15-candles: sluit 1x per 15 minuten. Cache 15 minuten — nieuw zonder cache
+// betekende ~64 Twelve Data-calls per uur (scheduler draait elke 2 min). Met cache: 4/uur.
+const M15_CACHE_TTL_MS = 15 * 60 * 1000;
+let m15CandlesCache = null;
+
+export async function getRecentXauM15Candles({ count = 100 } = {}) {
+  if (m15CandlesCache && m15CandlesCache.count === count && isCacheValid(m15CandlesCache.fetchedAt, M15_CACHE_TTL_MS)) {
+    return m15CandlesCache.data;
+  }
+  const raw = await getXauUsdCandles({ granularity: 'M15', count: count + 70 });
+  const data = filterFlatCandles(raw).slice(-count);
+  m15CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
+
+// XAU/USD M30-candles: sluit 1x per 30 minuten. Cache 30 minuten — zonder cache
+// ~32 calls/uur, met cache: 2/uur.
+const M30_CACHE_TTL_MS = 30 * 60 * 1000;
+let m30CandlesCache = null;
+
+export async function getRecentXauM30Candles({ count = 100 } = {}) {
+  if (m30CandlesCache && m30CandlesCache.count === count && isCacheValid(m30CandlesCache.fetchedAt, M30_CACHE_TTL_MS)) {
+    return m30CandlesCache.data;
+  }
+  const raw = await getXauUsdCandles({ granularity: 'M30', count: count + 70 });
+  const data = filterFlatCandles(raw).slice(-count);
+  m30CandlesCache = { count, data, fetchedAt: Date.now() };
+  return data;
+}
+
 // XAU/USD H1-candles: sluit 1x per uur, 10 minuten cache is voldoende voor
 // alignment-check en boardroom-analyse. Scheelt ~216 calls per handelsdag.
 const H1_CACHE_TTL_MS = 10 * 60 * 1000;

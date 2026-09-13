@@ -3,6 +3,8 @@ import {
   getRecentRealCandles,
   getRecentEurUsdCandles,
   getRecentUsYieldCandles,
+  getRecentXauM15Candles,
+  getRecentXauM30Candles,
   getRecentXauH1Candles,
   getRecentXauH4Candles,
   getRecentXauD1Candles,
@@ -131,10 +133,10 @@ async function poll(client) {
       await sendHeartbeat(client, lastSignalTime);
     }
 
-    // Candle-data ophalen (H1/H4/D1/W1 gecached, M15/M30 vers per poll)
+    // Candle-data ophalen (alle timeframes gecached — scheelt ~1.300 Twelve Data-calls/dag)
     const [m15Candles, m30Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
-      getRecentRealCandles({ granularity: 'M15', count: 100 }),
-      getRecentRealCandles({ granularity: 'M30', count: 100 }),
+      getRecentXauM15Candles({ count: 100 }),
+      getRecentXauM30Candles({ count: 100 }),
       getRecentXauH1Candles({ count: 50 }),
       getRecentXauH4Candles({ count: 50 }),
       getRecentXauD1Candles({ count: 30 }),
@@ -292,8 +294,8 @@ async function poll(client) {
 // Telt niet mee in dagelijkse signaallimieten en update geen lockout-timers.
 export async function runForceScan(client) {
   const [m15Candles, m30Candles, h1Candles, h4Candles, d1Candles, w1Candles] = await Promise.all([
-    getRecentRealCandles({ granularity: 'M15', count: 100 }),
-    getRecentRealCandles({ granularity: 'M30', count: 100 }),
+    getRecentXauM15Candles({ count: 100 }),
+    getRecentXauM30Candles({ count: 100 }),
     getRecentXauH1Candles({ count: 50 }),
     getRecentXauH4Candles({ count: 50 }),
     getRecentXauD1Candles({ count: 30 }),
