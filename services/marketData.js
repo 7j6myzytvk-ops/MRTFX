@@ -36,6 +36,14 @@ async function request(endpoint, params, retriesLeft = 2) {
     return data;
   } catch (err) {
     const status = err.response?.status;
+    // Rate limit: Twelve Data geeft JSON {"status":"error","message":"...credits..."} terug.
+    // Wacht 61 seconden zodat het minutevenster reset, dan opnieuw proberen.
+    const isRateLimit = status === 429 || err.message?.includes('credits');
+    if (isRateLimit && retriesLeft > 0) {
+      console.warn('[marketData] Twelve Data rate limit — wacht 61 s en probeer opnieuw.');
+      await new Promise((r) => setTimeout(r, 61 * 1000));
+      return request(endpoint, params, retriesLeft - 1);
+    }
     // Retry bij tijdelijke server-side fouten (5xx, bv. Cloudflare 520) én 404
     // (Twelve Data geeft soms een kortdurende 404 bij routing-haperingen).
     // Wacht 5 seconden tussen pogingen — geeft de externe server de kans te herstellen.
