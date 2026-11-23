@@ -52,18 +52,13 @@ export function checkConditions({
     blockers.push(`timeframes niet aligned (H1: ${h1Bias}, M30: ${m30Bias}, M15: ${m15Bias})`);
   }
 
-  // 3. W1-trendrichting als context (geen blokkade).
+  // 3. W1-trendrichting als context.
   const trendBias = computeTrendBias(d1Candles, w1Candles);
 
   // 4. Sleutelniveau-proximity: context voor agents.
   const nearLevel = checkKeyLevelProximity(h1Candles, w1Candles, d1Candles);
 
   // 5. Trend-modus detectie: 4H + D1 aligned in dezelfde richting (Fase 98).
-  // Eerder vereiste dit ook H1+M30 alignment — daardoor activeerde trend-modus NIET tijdens
-  // pullbacks (H1+M30 tijdelijk tegen de trend) wat juist de optimale entry is.
-  // Nu: H4+D1 aligned = trend actief, ook als H1+M30 een pullback laten zien.
-  // Trigger (H1+M30 aligned) valt dan samen met een TEGENSTELDE H4+D1-trend →
-  // boardroom analyseert de pullback als trend-continuation entry.
   const h4Bias = h4Candles && h4Candles.length >= 20 ? computeTimeframeBias(h4Candles) : null;
   const d1Bias = d1Candles && d1Candles.length >= 20 ? computeTimeframeBias(d1Candles) : null;
   const trendMode =
@@ -71,7 +66,23 @@ export function checkConditions({
     h4Bias !== 'neutraal' && d1Bias !== 'neutraal' &&
     h4Bias === d1Bias;
 
-  // Counter-trend detectie (t.o.v. W1) — alleen voor context-noot, geen blokkade.
+  // Counter-trend blokkade: als W1 én D1 dezelfde richting wijzen én de H1/M30-trigger
+  // gaat er tegenin, blokkeren we. D1 in retracement t.o.v. W1 (klassieke reversal-setup)
+  // is bewust niet geblokkeerd — enkel wanneer beide hoger timeframes het eens zijn.
+  // Replay op 181 triggers (okt–nov 2026): bullish WR 23%, bearish WR 44%.
+  // Oorzaak: bullish triggers werden afgegeven terwijl W1+D1 bearish waren.
+  const w1Bias = trendBias.direction;
+  if (
+    tfAlignment.aligned &&
+    d1Bias !== null && d1Bias !== 'mixed' &&
+    w1Bias !== 'neutraal' && w1Bias !== 'mixed' &&
+    d1Bias === w1Bias &&
+    tfAlignment.direction !== w1Bias
+  ) {
+    blockers.push(`counter-trend geblokkeerd (W1+D1: ${w1Bias}, trigger: ${tfAlignment.direction})`);
+  }
+
+  // Counter-trend detectie (t.o.v. W1) — voor context-noot in formatConditionContext.
   const isCounterTrend =
     tfAlignment.aligned && trendBias.aligned && tfAlignment.direction !== trendBias.direction;
 
