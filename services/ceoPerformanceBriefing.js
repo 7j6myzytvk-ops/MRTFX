@@ -5,7 +5,7 @@ const SIGNALS_FILE = path.join(process.cwd(), 'data', 'live', 'signals.json');
 const MAX_RECENT = 10;
 // Fase 105 reset-datum: alleen signalen ná deze datum tellen mee in de CEO-briefing.
 // Pre-reset signalen (kapotte filter) mogen de CEO niet langer beïnvloeden.
-const FASE105_CUTOFF = new Date('2026-08-05T00:00:00Z');
+const FASE105_CUTOFF = new Date(process.env.FASE105_CUTOFF || '2026-08-05T00:00:00Z');
 
 async function readRecentSignals() {
   try {

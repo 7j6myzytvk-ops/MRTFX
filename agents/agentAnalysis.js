@@ -94,8 +94,10 @@ export function assessSignalQuality(sample) {
   // 2. AMD-fase onduidelijk: geen marktstructuur om op te handelen
 
   const setupScore = sample.discussion.analyst?.setupQualityScore;
-  if (setupScore !== undefined && setupScore !== null && setupScore < 3) {
-    blockers.push(`setup-kwaliteit te laag (${setupScore}/6 — geen handelbare setup)`);
+  // undefined/null = model vulde het veld niet → behandel als score 0 (geen setup)
+  const effectiveScore = (setupScore !== undefined && setupScore !== null) ? setupScore : 0;
+  if (effectiveScore < 3) {
+    blockers.push(`setup-kwaliteit te laag (${setupScore ?? 'ontbreekt'}/6 — geen handelbare setup)`);
   }
 
   const amdPhase = sample.discussion?.analyst?.amdPhase;

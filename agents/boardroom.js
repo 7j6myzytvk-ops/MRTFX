@@ -130,6 +130,8 @@ export async function runDiscussion(
   const rebuttal = await reviewDiscussion(candles, analysis, { risk, devilsAdvocate, macro, geopolitical }, opts);
 
   const decision = await decide(candles, { analysis, risk, devilsAdvocate, macro, geopolitical, rebuttal }, { ...opts, ceoBriefingNote });
+  // Normaliseer NL→EN: model schrijft soms "neutraal" i.p.v. de verwachte "neutral".
+  if (decision.signal === 'neutraal') decision.signal = 'neutral';
 
   // Mechanische confidence-cap: LLM-instructies alleen zijn onvoldoende betrouwbaar
   // voor numerieke grenzen. Caps per modus worden hier hard afgedwongen.

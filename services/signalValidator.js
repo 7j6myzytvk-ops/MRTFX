@@ -29,7 +29,7 @@ export function validateSignalStructure(result) {
   }
   const score = discussion?.analyst?.setupQualityScore;
   if (score !== undefined && score !== null) {
-    if (typeof score !== 'number' || score < 0 || score > 5 || !Number.isInteger(score)) {
+    if (typeof score !== 'number' || score < 0 || score > 6 || !Number.isInteger(score)) {
       issues.push(`setupQualityScore buiten bereik of geen geheel getal: ${score}`);
     }
   } else {
