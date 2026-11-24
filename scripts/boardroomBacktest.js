@@ -209,7 +209,7 @@ async function main() {
     const tp = tpValid ? tpRaw : atrTp;
     if (!slValid || !tpValid) console.log(`  ⚠️  Ongeldige SL/TP van boardroom → ATR-fallback (SL $${sl.toFixed(1)} TP $${tp.toFixed(1)})`);
 
-    const outcome = evaluateOutcome({ signal, stopLoss: sl, takeProfit: tp }, futureCandles);
+    const outcome = evaluateOutcome({ signal, stopLoss: sl, takeProfit: tp }, futureCandles, entry);
     const icon    = outcome.result === 'tp' ? '✅' : outcome.result === 'sl' ? '❌' : '➖';
     const hit     = outcome.candlesToHit ? ` na ${outcome.candlesToHit}h` : '';
     console.log(`  ${icon} ${signal.toUpperCase()} | ${confidence}% | score ${setupScore}/6 | SL $${sl.toFixed(1)} TP $${tp.toFixed(1)} | ${outcome.result}${hit}`);
@@ -220,6 +220,9 @@ async function main() {
       confidence, setupScore, passed,
       sl: sl.toFixed(2), tp: tp.toFixed(2), entry: entry.toFixed(2),
       outcome: outcome.result, candles: outcome.candlesToHit ?? null,
+      rMultiple: outcome.rMultiple ?? null,
+      mfe: outcome.mfe ?? null,
+      mae: outcome.mae ?? null,
     };
   });
 

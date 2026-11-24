@@ -1,4 +1,5 @@
 import { summarize } from './outcomeEvaluator.js';
+import { MIN_SETUP_SCORE } from '../config/rules.js';
 
 // Stond de Devil's Advocate uiteindelijk "aan dezelfde kant" als het CEO-besluit
 // (zeldzaam - de DA wordt expliciet gevraagd het besluit uit te dagen)?
@@ -96,7 +97,7 @@ export function assessSignalQuality(sample) {
   const setupScore = sample.discussion.analyst?.setupQualityScore;
   // undefined/null = model vulde het veld niet → behandel als score 0 (geen setup)
   const effectiveScore = (setupScore !== undefined && setupScore !== null) ? setupScore : 0;
-  if (effectiveScore < 3) {
+  if (effectiveScore < MIN_SETUP_SCORE) {
     blockers.push(`setup-kwaliteit te laag (${setupScore ?? 'ontbreekt'}/6 — geen handelbare setup)`);
   }
 

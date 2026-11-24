@@ -26,6 +26,7 @@ import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/ec
 import { runDailyReview } from './dailyReview.js';
 import { runWeeklyRegime, runWeeklyRegimeIfStale } from './weeklyRegime.js';
 import { checkYoutubeChannels } from './youtubeMonitor.js';
+import { runLessonAgent } from './lessonAgent.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
@@ -57,6 +58,7 @@ let lastSpikeTime = null;        // aparte cooldown voor event/spike-triggers (2
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
 let lastWeeklyRegimeDate = null;
+let lastLessonAgentDate = null;  // wekelijkse hypothese-analyse (maandag 06:00 UTC)
 let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
 let lastYoutubeCheckTime = null; // begrenst YouTube-scan tot 1x per 6 uur
 
@@ -126,6 +128,13 @@ async function poll(client) {
       if (isSunday && utcH === 20 && utcM < 15 && lastWeeklyRegimeDate !== todayStr) {
         lastWeeklyRegimeDate = todayStr;
         runWeeklyRegime().catch((err) => console.error('[weeklyRegime] Mislukt:', err.message));
+      }
+
+      // Wekelijkse hypothese-analyse: maandag 06:00 UTC (na het weekend, vóór London open).
+      const isMonday = now.getUTCDay() === 1;
+      if (isMonday && utcH === 6 && utcM < 15 && lastLessonAgentDate !== todayStr) {
+        lastLessonAgentDate = todayStr;
+        runLessonAgent().catch((err) => console.error('[lessonAgent] Mislukt:', err.message));
       }
     }
 

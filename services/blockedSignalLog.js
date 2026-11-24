@@ -81,7 +81,7 @@ export async function evaluateBlockedSignalOutcomes() {
     if (horizonCandles.length < HORIZON_CANDLES) continue; // horizon nog niet voorbij
 
     const decision = { signal: entry.signal, stopLoss: entry.stopLoss, takeProfit: entry.takeProfit };
-    const outcome = evaluateOutcome(decision, horizonCandles);
+    const outcome = evaluateOutcome(decision, horizonCandles, entry.entryPrice ?? null);
     entry.outcome = outcome;
     updated++;
   }
