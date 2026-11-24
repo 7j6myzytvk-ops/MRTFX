@@ -24,7 +24,7 @@ import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './event
 import { computeIndicators } from '../agents/indicators.js';
 import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
 import { runDailyReview } from './dailyReview.js';
-import { runWeeklyRegime } from './weeklyRegime.js';
+import { runWeeklyRegime, runWeeklyRegimeIfStale } from './weeklyRegime.js';
 import { checkYoutubeChannels } from './youtubeMonitor.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
@@ -374,6 +374,7 @@ export function startSignalScheduler(client) {
   }
   console.log('Setup-detector actief — 2 min interval (London/NY), 15 min interval (Asian/nacht).');
   sendStartupAlert(client);
+  runWeeklyRegimeIfStale();
 
   // Recursieve setTimeout zodat het interval dynamisch aanpast per poll.
   async function schedulePoll() {

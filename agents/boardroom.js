@@ -107,14 +107,42 @@ export async function runDiscussion(
 
   const analysis = await analyzeCandles(candles, opts);
 
-  const [risk, devilsAdvocate, macro, geopolitical] = await Promise.all([
+  // Promise.allSettled zodat één falende agent de hele boardroom niet neerhalt.
+  // Elke gefaalde agent krijgt een neutrale fallback zodat de CEO nog steeds
+  // een beslissing kan nemen op basis van de beschikbare agents.
+  const lastClose = candles[candles.length - 1].close;
+  const atrVal = indicators.atr14 ?? 20;
+  const [riskRes, daRes, macroRes, geoRes] = await Promise.allSettled([
     assessRisk(candles, analysis, { ...opts, streakNote }),
-    // DA krijgt alleen de laatste 15 candles — forceert focus op recente price action
-    // i.p.v. bevestiging van dezelfde HTF-structuur als de analist (echo-chamber fix, Fase 79).
-    challengeAnalysis(candles.slice(-15), analysis, opts),
+    challengeAnalysis(candles.slice(-30), analysis, opts),
     assessSentiment(candles, analysis, opts),
     assessGeopolitical(newsItems, { instrument, granularity, events: opts.events || [] }),
   ]);
+  const risk = riskRes.status === 'fulfilled' ? riskRes.value : {
+    stopLoss: analysis.signal === 'bullish' ? lastClose - atrVal : lastClose + atrVal,
+    takeProfit: analysis.signal === 'bullish' ? lastClose + atrVal * 2 : lastClose - atrVal * 2,
+    positionSize: 'klein',
+    reasoning: '[Risicomanager niet beschikbaar — fallback ATR-niveaus gebruikt]',
+  };
+  const devilsAdvocate = daRes.status === 'fulfilled' ? daRes.value : {
+    counterSignal: analysis.signal === 'bullish' ? 'bearish' : 'bullish',
+    counterConfidence: 50,
+    argument: '[Pre-mortem niet beschikbaar]',
+  };
+  const macro = macroRes.status === 'fulfilled' ? macroRes.value : {
+    sentiment: 'neutraal', confidence: 50,
+    reasoning: '[Macro-analist niet beschikbaar]',
+  };
+  const geopolitical = geoRes.status === 'fulfilled' ? geoRes.value : {
+    assessment: 'neutraal', confidence: 0,
+    reasoning: '[Geopolitieke analist niet beschikbaar]',
+  };
+  if ([riskRes, daRes, macroRes, geoRes].some((r) => r.status === 'rejected')) {
+    const failed = [riskRes, daRes, macroRes, geoRes]
+      .map((r, i) => r.status === 'rejected' ? ['risk', 'da', 'macro', 'geo'][i] : null)
+      .filter(Boolean);
+    console.warn(`[boardroom] Agents met fallback: ${failed.join(', ')}`);
+  }
 
   // Hard vrijdag-override: positiegrootte altijd één stap kleiner op vrijdag na 12:00 UTC.
   // weekendNote instrueert de riskManager al; dit garandeert het ook als de AI het negeert.

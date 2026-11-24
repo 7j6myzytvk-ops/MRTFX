@@ -133,6 +133,18 @@ export function formatRegimeNote(regime) {
   );
 }
 
+// Start bij opstart als er geen geldig regime-bestand is — zodat het systeem
+// nooit een boardroom-week in gaat zonder wekelijkse marktcontext.
+export async function runWeeklyRegimeIfStale() {
+  const existing = await getWeeklyRegime();
+  if (!existing) {
+    console.log('[weeklyRegime] Geen geldig regime gevonden — genereer direct.');
+    return runWeeklyRegime().catch((err) =>
+      console.error('[weeklyRegime] Initiële run mislukt:', err.message),
+    );
+  }
+}
+
 export async function runWeeklyRegime() {
   console.log('[weeklyRegime] Wekelijkse regime-analyse starten...');
   const [w1Candles, d1Candles, h4Candles, dollarCandles, yieldCandles] = await Promise.all([
