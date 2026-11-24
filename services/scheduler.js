@@ -24,6 +24,7 @@ import { detectPriceSpike, formatSpikeContext, SPIKE_COOLDOWN_MS } from './event
 import { computeIndicators } from '../agents/indicators.js';
 import { fetchForexFactoryEvents, getRecentlyReleasedEvents } from '../agents/economicCalendar.js';
 import { runDailyReview } from './dailyReview.js';
+import { runWeeklyRegime } from './weeklyRegime.js';
 import { checkYoutubeChannels } from './youtubeMonitor.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
@@ -55,6 +56,7 @@ let dailySignalCount = 0;        // aantal PASSED signalen deze dag
 let lastSpikeTime = null;        // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
+let lastWeeklyRegimeDate = null;
 let lastOutcomeCheckTime = null; // begrenst evaluateOpenSignals tot 1x per 15 min
 let lastYoutubeCheckTime = null; // begrenst YouTube-scan tot 1x per 6 uur
 
@@ -110,6 +112,20 @@ async function poll(client) {
       if (isWeekday && utcH === 17 && utcM >= 25 && utcM < 35 && lastDailyReviewDate !== todayStr) {
         lastDailyReviewDate = todayStr;
         runDailyReview(client).catch((err) => console.error('[dailyReview] Mislukt:', err.message));
+      }
+    }
+
+    // Wekelijks regime: zondag 20:00–20:14 UTC — vóór London maandag open.
+    // Geeft élke boardroom-run de hele week een wekelijkse marktcontext mee.
+    {
+      const now = new Date();
+      const isSunday = now.getUTCDay() === 0;
+      const utcH = now.getUTCHours();
+      const utcM = now.getUTCMinutes();
+      const todayStr = now.toISOString().slice(0, 10);
+      if (isSunday && utcH === 20 && utcM < 15 && lastWeeklyRegimeDate !== todayStr) {
+        lastWeeklyRegimeDate = todayStr;
+        runWeeklyRegime().catch((err) => console.error('[weeklyRegime] Mislukt:', err.message));
       }
     }
 

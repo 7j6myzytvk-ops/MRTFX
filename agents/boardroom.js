@@ -14,6 +14,7 @@ import { computeWeeklyContext, formatWeeklyContextNote } from './weeklyContext.j
 import { assessGeopolitical } from './geopoliticalAnalyst.js';
 import { appendSignal } from '../data/store.js';
 import { getBriefing, formatBriefingNote } from '../services/macroBriefing.js';
+import { getWeeklyRegime, formatRegimeNote } from '../services/weeklyRegime.js';
 import { formatInsightsForPrompt } from '../services/knowledgeBase.js';
 import { assessSession, formatSessionNote } from './sessionContext.js';
 import {
@@ -74,6 +75,8 @@ export async function runDiscussion(
   // hier en niet in alle agent-bestanden hoeft te worden toegevoegd.
   const briefing = await getBriefing();
   const briefingNote = formatBriefingNote(briefing);
+  const regime = await getWeeklyRegime();
+  const regimeNote = formatRegimeNote(regime);
   const sessionTime = currentTime ? new Date(currentTime) : new Date();
   const sessionNote = formatSessionNote(assessSession(sessionTime));
   const weekendNote = (() => {
@@ -94,7 +97,7 @@ export async function runDiscussion(
       `CEO: regel 5 (counter-trend stop) geldt NIET in trend-modus — het signaal IS al aligned.`
     : '';
   const knowledgeNote = formatInsightsForPrompt();
-  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + sessionNote + eventsNote + weekendNote + trendModeNote + knowledgeNote;
+  const contextNotes = indicatorsNote + dollarContextNote + yieldContextNote + h4ContextNote + dailyContextNote + weeklyContextNote + briefingNote + regimeNote + sessionNote + eventsNote + weekendNote + trendModeNote + knowledgeNote;
 
   const perfStats = await getCeoPerformanceBriefing();
   const ceoBriefingNote = formatCeoPerformanceBriefingNote(perfStats, atrTrend);
