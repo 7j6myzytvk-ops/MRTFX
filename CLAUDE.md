@@ -71,7 +71,7 @@ Het systeem heeft voldoende aanpassingen gehad. **Verander geen filter-drempels,
 - DA-blocker: >82%
 - Setup-score minimum: ≥3 (≥4 voor counter-W1)
 - R:R-ondergrens: 1.0
-- CEO-zekerheid minimum: 50%
+- CEO-zekerheid minimum: 55% (afgedwongen in code via config/rules.js CEO_MIN_CONFIDENCE)
 
 Uitzondering: pas na ≥100 doorgekomen live signalen opnieuw evalueren, en alleen bij een duidelijk statistisch patroon (niet bij 1-2 uitschieters). Als de gebruiker een parameter wil aanpassen op basis van <20 trades, benoem ik dit als risico.
 

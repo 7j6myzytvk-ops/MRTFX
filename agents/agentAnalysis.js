@@ -1,5 +1,12 @@
 import { summarize } from './outcomeEvaluator.js';
-import { MIN_SETUP_SCORE } from '../config/rules.js';
+import {
+  MIN_SETUP_SCORE,
+  ATR_MIN,
+  CEO_MIN_CONFIDENCE,
+  DA_MAX_CONVICTION,
+  REBUTTAL_MIN_DELTA,
+  MIN_RISK_REWARD,
+} from '../config/rules.js';
 
 // Stond de Devil's Advocate uiteindelijk "aan dezelfde kant" als het CEO-besluit
 // (zeldzaam - de DA wordt expliciet gevraagd het besluit uit te dagen)?
@@ -104,6 +111,43 @@ export function assessSignalQuality(sample) {
   const amdPhase = sample.discussion?.analyst?.amdPhase;
   if (amdPhase === 'onduidelijk') {
     blockers.push('AMD-fase onduidelijk — geen handelbare marktstructuur');
+  }
+
+  // CEO-zekerheid: harde code-grens (config/rules.js CEO_MIN_CONFIDENCE).
+  // De CEO-prompt instrueert hetzelfde, maar modellen wijken soms af — dit vangt die gevallen op.
+  if (sample.decision.confidence < CEO_MIN_CONFIDENCE) {
+    blockers.push(`CEO-zekerheid te laag (${sample.decision.confidence}% < ${CEO_MIN_CONFIDENCE}%)`);
+  }
+
+  // ATR-minimum: lage volatiliteit = kleine SL/TP absolute waarden = slechte uitvoerbaarheid.
+  if (sample.atr14 != null && sample.atr14 < ATR_MIN) {
+    blockers.push(`ATR te laag ($${sample.atr14.toFixed(1)} < $${ATR_MIN} — te weinig range voor betrouwbare SL/TP)`);
+  }
+
+  // Devil's Advocate-overtuiging: bij >82% heeft de DA een concreet, zwaar faalscenario gevonden.
+  const daConviction = sample.discussion?.devilsAdvocate?.counterConfidence;
+  if (daConviction != null && daConviction > DA_MAX_CONVICTION) {
+    blockers.push(`DA-overtuigingskracht te hoog (${daConviction}% > ${DA_MAX_CONVICTION}% — concreet faalscenario aanwezig)`);
+  }
+
+  // Rebuttal-delta: analist verloor te veel vertrouwen na de teamdiscussie.
+  const { analyst, analystRebuttal } = sample.discussion ?? {};
+  if (analyst && analystRebuttal) {
+    const delta = analystRebuttal.confidence - analyst.confidence;
+    if (delta < REBUTTAL_MIN_DELTA) {
+      blockers.push(`Analist verloor te veel overtuiging na weerwoord (delta ${delta}% < ${REBUTTAL_MIN_DELTA}%)`);
+    }
+  }
+
+  // R:R-ondergrens: te laag R:R maakt winstgevend handelen structureel onmogelijk.
+  const { stopLoss, takeProfit } = sample.decision;
+  const entry = sample.entryPrice;
+  if (entry != null && stopLoss != null && takeProfit != null) {
+    const risk   = Math.abs(entry - stopLoss);
+    const reward = Math.abs(takeProfit - entry);
+    if (risk > 0 && reward / risk < MIN_RISK_REWARD) {
+      blockers.push(`R:R te laag (${(reward / risk).toFixed(2)} < ${MIN_RISK_REWARD})`);
+    }
   }
 
   return { passed: blockers.length === 0, blockers };
