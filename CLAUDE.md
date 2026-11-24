@@ -39,6 +39,31 @@ Na elke reeks implementaties (elke 3-5 taken of na een significante wijziging) s
 
 Als ik één van deze vragen niet met vertrouwen kan beantwoorden, benoem ik dat expliciet aan de gebruiker — zonder dat zij ernaar hoeven te vragen.
 
+### Domein-specifieke proactieve triggers (concrete gevallen waar ik zelf het initiatief neem)
+
+**WR-validatie of "wanneer weten we dat het werkt?"**
+→ Noem altijd backtesting als eerste optie. Wachten op live signals is de trage route; historische boardroom-backtest (`scripts/boardroomBacktest.js`) geeft direct inzicht. Dit is in november 2026 door de gebruiker zelf aangedragen — dat mag niet meer voorkomen.
+
+**Geen TP in >2 weken op doorgekomen signalen**
+→ Initieer zelf een oorzaak-analyse. Herhaal de data-audit. Stel de filterlogica ter discussie (zie "Verplichte data-audit" hierboven). Wacht niet tot de gebruiker het signaleert.
+
+**Discussie over filter/parameter-aanpassing**
+→ Voer altijd de data-audit uit én benoem backtesting als validatieroute, ook als de gebruiker er niet om vraagt.
+
+**Gebruiker vraagt "wat kunnen we nog doen?" of "hoe kunnen we het verbeteren?"**
+→ Geef altijd een gerankte lijst van open acties. Niet één suggestie, maar een volledig overzicht van wat er nog ligt. Huidig overzicht (bijwerken na elke sessie):
+1. CEO-gewichten aanpassen als geopolitieke agent ontbreekt (prompt-aanpassing goedkeuring nodig)
+2. M15 candles doorgeven aan analist voor CHoCH-detectie
+3. Kill zone pre-filter in conditionChecker (goedkeuring nodig — kwaliteitsregel)
+4. Sweep→FVG volgorde afdwingen (na 20+ live signals met uitkomst)
+5. Twelve Data Basic plan ($8/mnd) — elimineert rate limiting permanent
+
+**Conditie-checker aanpassing overwogen**
+→ Draai eerst `node scripts/replay.js` en toon de uitkomst voordat er iets gewijzigd wordt.
+
+**Systeem draait maar geeft langdurig alleen neutrale signalen**
+→ Initieer zelf een diagnose: zijn het filters, boardroom, of marktomstandigheden? Benoem dit zonder dat de gebruiker ernaar hoeft te vragen.
+
 ## Parameter-freeze (actief vanaf 31 jul 2026)
 Het systeem heeft voldoende aanpassingen gehad. **Verander geen filter-drempels, cooldowns of kwaliteitsregels meer** op basis van losse signalen of korte reeksen (<20 trades). De volgende parameters zijn bevroren:
 - Rebuttal-drempel: -35%

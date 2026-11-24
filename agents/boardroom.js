@@ -27,10 +27,11 @@ import { logBlockedSignal } from '../services/blockedSignalLog.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null, trendMode = false } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null, trendMode = false, preloadedFfEvents = null } = {},
 ) {
   const now = currentTime ? new Date(currentTime) : new Date();
-  const ffEvents = await fetchForexFactoryEvents();
+  // preloadedFfEvents: voor backtests wordt een lege array meegegeven om live-fetch te skippen.
+  const ffEvents = preloadedFfEvents !== null ? preloadedFfEvents : await fetchForexFactoryEvents();
   const upcomingEvts = getUpcomingEvents(ffEvents, 48, now);
   const recentEvts = getRecentlyReleasedEvents(ffEvents, 60, now);
   const events = upcomingEvts; // backward compat: agents ontvangen aankomende events via opts.events
