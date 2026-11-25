@@ -316,9 +316,14 @@ async function main() {
     const slValid = signal === 'bullish' ? slRaw < entryA : slRaw > entryA;
     const tpValid = signal === 'bullish' ? tpRaw > entryA : tpRaw < entryA;
     const usedAtrFallback = !slValid || !tpValid;
+    // Wat was er precies fout — voor telwerk in samenvatting.
+    const wrongSideDetail = !slValid && !tpValid ? 'SL+TP'
+      : !slValid ? 'SL'
+      : !tpValid ? 'TP'
+      : null;
     const sl = slValid ? slRaw : atrSl;
     const tp = tpValid ? tpRaw : atrTp;
-    if (usedAtrFallback) console.log(`  ⚠️  Ongeldige SL/TP → ATR-fallback (SL $${sl.toFixed(1)} TP $${tp.toFixed(1)})`);
+    if (usedAtrFallback) console.log(`  ⚠️  ${wrongSideDetail} aan verkeerde kant → ATR-fallback (SL $${sl.toFixed(1)} TP $${tp.toFixed(1)})`);
 
     // --- Variant A: entry = slotkoers trigger ---
     const outcomeA = evaluateOutcome({ signal, stopLoss: sl, takeProfit: tp }, futureCandles, entryA);
@@ -354,7 +359,7 @@ async function main() {
       trendMode: conditions.trendMode, regime,
       boardroomSignal: signal, confidence, setupScore, passed,
       entryZone: decision.entryZone ?? null,
-      usedAtrFallback,
+      usedAtrFallback, wrongSideDetail: wrongSideDetail ?? null,
       // Variant A
       entry: entryA.toFixed(2), sl: sl.toFixed(2), tp: tp.toFixed(2),
       outcome: outcomeA.result, candles: outcomeA.candlesToHit ?? null,
@@ -405,7 +410,15 @@ async function main() {
   printStats('Gevuld (hoofdcijfers B)', varBTrades, COST_PER_TRADE_USD);
 
   console.log('\n── ATR-FALLBACK TRADES (apart, buiten hoofdcijfers) ──');
-  printStats('ATR-fallback', atrFallback, COST_PER_TRADE_USD);
+  printStats('ATR-fallback totaal', atrFallback, COST_PER_TRADE_USD);
+  // Uitsplitsing: wat was er fout aan de boardroom SL/TP?
+  const wrongSL    = doorgelaten.filter(r => r.wrongSideDetail === 'SL' || r.wrongSideDetail === 'SL+TP');
+  const wrongTP    = doorgelaten.filter(r => r.wrongSideDetail === 'TP' || r.wrongSideDetail === 'SL+TP');
+  const wrongBoth  = doorgelaten.filter(r => r.wrongSideDetail === 'SL+TP');
+  if (atrFallback.length > 0) {
+    console.log(`  Verkeerde kant: SL=${wrongSL.length} | TP=${wrongTP.length} | SL+TP=${wrongBoth.length}`);
+    console.log(`  (${((atrFallback.length / doorgelaten.length) * 100).toFixed(0)}% van alle doorgelaten trades had ongeldige boardroom SL/TP)`);
+  }
 
   // Score-breakdown
   const scoreGroups = {};

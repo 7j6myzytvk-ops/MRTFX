@@ -39,6 +39,7 @@ export async function evaluateForwardTest() {
   const signals = await getAllSignals();
   const resolved = signals.filter(
     (s) =>
+      s.onbruikbaar !== true &&          // uitzondering: handmatig gemarkeerde ongeldige signalen
       s.qualityResult?.passed === true &&
       s.outcome?.result &&
       ['tp', 'sl', 'geen'].includes(s.outcome.result) &&

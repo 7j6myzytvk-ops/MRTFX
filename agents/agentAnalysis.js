@@ -139,9 +139,26 @@ export function assessSignalQuality(sample) {
     }
   }
 
-  // R:R-ondergrens: te laag R:R maakt winstgevend handelen structureel onmogelijk.
+  // SL/TP richting-check: harde blokkade als SL of TP aan de verkeerde kant van de entry staat.
+  // Dezelfde logica als signalValidator.js — vangt modellen op die SL en TP verwisselen.
+  // Moet vóór de R:R-check staan: Math.abs maskeert richting-fouten anders.
   const { stopLoss, takeProfit } = sample.decision;
   const entry = sample.entryPrice;
+  const signal_dir = sample.decision.signal;
+  if (entry != null && stopLoss != null && signal_dir === 'bullish' && stopLoss >= entry) {
+    blockers.push(`SL aan verkeerde kant ($${stopLoss} ≥ entry $${entry.toFixed(1)} — SL moet onder entry bij BULLISH)`);
+  }
+  if (entry != null && stopLoss != null && signal_dir === 'bearish' && stopLoss <= entry) {
+    blockers.push(`SL aan verkeerde kant ($${stopLoss} ≤ entry $${entry.toFixed(1)} — SL moet boven entry bij BEARISH)`);
+  }
+  if (entry != null && takeProfit != null && signal_dir === 'bullish' && takeProfit <= entry) {
+    blockers.push(`TP aan verkeerde kant ($${takeProfit} ≤ entry $${entry.toFixed(1)} — TP moet boven entry bij BULLISH)`);
+  }
+  if (entry != null && takeProfit != null && signal_dir === 'bearish' && takeProfit >= entry) {
+    blockers.push(`TP aan verkeerde kant ($${takeProfit} ≥ entry $${entry.toFixed(1)} — TP moet onder entry bij BEARISH)`);
+  }
+
+  // R:R-ondergrens: te laag R:R maakt winstgevend handelen structureel onmogelijk.
   if (entry != null && stopLoss != null && takeProfit != null) {
     const risk   = Math.abs(entry - stopLoss);
     const reward = Math.abs(takeProfit - entry);
