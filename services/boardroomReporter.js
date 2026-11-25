@@ -110,7 +110,8 @@ export function formatCeoMessage(decision, comboSignal = false, qualityResult = 
   if (sessionNote) metaParts.push(`Sessie: nog ${sessionNote}`);
   if (lotSize) metaParts.push(`Lot: ${lotSize.lots} (€${lotSize.riskEur} = ${lotSize.riskPct}% | SL $${lotSize.slDistance})`);
   const metaLine = metaParts.length ? metaParts.join(' | ') + '\n' : '';
-  let msg = `**👔 CEO-besluit - ${marker}**\n${metaLine}${formatDecisionBody(decision)}`;
+  const forwardLabel = process.env.FORWARD_TEST === 'true' ? '🧪 **FORWARD-TEST** | ' : '';
+  let msg = `**👔 CEO-besluit - ${forwardLabel}${marker}**\n${metaLine}${formatDecisionBody(decision)}`;
   if (!qualityResult.passed && qualityResult.blockers?.length > 0) {
     msg += `\n⚠️ Niet geadviseerd: ${qualityResult.blockers.join(', ')}.`;
   }

@@ -27,6 +27,7 @@ import { runDailyReview } from './dailyReview.js';
 import { runWeeklyRegime, runWeeklyRegimeIfStale } from './weeklyRegime.js';
 import { checkYoutubeChannels } from './youtubeMonitor.js';
 import { runLessonAgent } from './lessonAgent.js';
+import { isForwardTestStopped, evaluateForwardTest, sendStopAlert } from './forwardTestGuard.js';
 
 // Elke 2 minuten controleren — reduceert detectie-latentie zonder de load significant
 // te verhogen (gecachede candle-data + 3 verse OANDA-calls per poll).
@@ -101,6 +102,10 @@ async function poll(client) {
       evaluateBlockedSignalOutcomes().catch((err) =>
         console.error('[blockedSignalLog] Outcome-evaluatie mislukt:', err.message),
       );
+      // Forward-test: controleer stop-regel na elke outcome-ronde.
+      evaluateForwardTest().then((r) => {
+        if (r?.stopped) sendStopAlert(client).catch(() => {});
+      }).catch(() => {});
     }
 
     // Dagelijkse trader-review: elke werkdag om 17:25–17:34 UTC (na sessie-einde).
@@ -235,6 +240,12 @@ async function poll(client) {
         return true;
       }
       return false;
+    }
+
+    // --- Forward-test stop-regel ---
+    if (isForwardTestStopped()) {
+      console.log('[ForwardTest] Gestopt — negatieve verwachtingswaarde na 40+ trades. Geen nieuwe signalen.');
+      return;
     }
 
     // --- Pad 1: condition-based setup ---
