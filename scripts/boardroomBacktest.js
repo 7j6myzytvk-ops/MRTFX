@@ -280,7 +280,7 @@ async function main() {
         dollarCandles: eurWindow, yieldCandles: yldWindow,
         h4Candles: h4Window, d1Candles: d1Window, w1Candles: w1Window,
         currentTime: candle.time, trendMode: conditions.trendMode,
-        preloadedFfEvents: [],
+        preloadedFfEvents: [], dryRun: true,
       });
     } catch (err) {
       console.error(`  ❗ Boardroom mislukt: ${err.message}`);

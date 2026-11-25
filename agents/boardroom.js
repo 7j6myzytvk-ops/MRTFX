@@ -27,7 +27,7 @@ import { logBlockedSignal } from '../services/blockedSignalLog.js';
 
 export async function runDiscussion(
   candles,
-  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null, trendMode = false, preloadedFfEvents = null } = {},
+  { instrument = 'XAU_USD', granularity = 'H1', newsContext = '', dollarCandles = null, yieldCandles = null, h4Candles = null, d1Candles = null, w1Candles = null, newsItems = [], currentTime = null, trendMode = false, preloadedFfEvents = null, dryRun = false } = {},
 ) {
   const now = currentTime ? new Date(currentTime) : new Date();
   // preloadedFfEvents: voor backtests wordt een lege array meegegeven om live-fetch te skippen.
@@ -228,7 +228,7 @@ export async function runDiscussion(
     console.warn('[boardroom] ' + formatHealthReport(validation, `${instrument} ${new Date().toISOString()}`));
   }
 
-  if (!qualityResult.passed) {
+  if (!qualityResult.passed && !dryRun) {
     logBlockedSignal({
       decision,
       qualityResult,
