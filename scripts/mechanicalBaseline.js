@@ -56,6 +56,10 @@ const SL_MULT  = 1.5;
 const TP2_MULT = 2.0;
 const TP3_MULT = 3.0;
 
+// In-sample: periode waarin conditionChecker is ontwikkeld en afgesteld.
+// Out-of-sample: alles daarvóór — blinde periode.
+const IS_START = '2026-06-01';
+
 // ── Hulpfuncties ────────────────────────────────────────────────────────
 
 function detectRegime(d1Window) {
@@ -279,8 +283,8 @@ async function main() {
   console.log(`Pass 1 klaar: ${triggerQueue.length} triggers.\n`);
 
   // Mechanische resultaten
-  const mechM2 = triggerQueue.map(t => ({ ...t.mech.m2, dir: t.dir, regime: t.regime, year: t.year }));
-  const mechM3 = triggerQueue.map(t => ({ ...t.mech.m3, dir: t.dir, regime: t.regime, year: t.year }));
+  const mechM2 = triggerQueue.map(t => ({ ...t.mech.m2, dir: t.dir, regime: t.regime, year: t.year, time: t.time }));
+  const mechM3 = triggerQueue.map(t => ({ ...t.mech.m3, dir: t.dir, regime: t.regime, year: t.year, time: t.time }));
 
   const divider = '═'.repeat(70);
   console.log('\n' + divider);
@@ -290,6 +294,22 @@ async function main() {
 
   printSummary('MECHANISCH SL×1.5 / TP×2', mechM2);
   printSummary('MECHANISCH SL×1.5 / TP×3', mechM3);
+
+  // IS / OOS split
+  const printISOOS = (label, trades) => {
+    const oos = trades.filter(t => t.time < IS_START);
+    const iis = trades.filter(t => t.time >= IS_START);
+    console.log(`\n── IS/OOS SPLIT — ${label} ──`);
+    console.log(`  Out-of-sample (vóór ${IS_START}): ${fmt(tradeStats(oos), true)}`);
+    console.log(`  In-sample     (vanaf ${IS_START}): ${fmt(tradeStats(iis), true)}`);
+    // per regime binnen OOS
+    for (const r of ['trend-up', 'trend-down', 'range']) {
+      const sub = oos.filter(t => t.regime === r);
+      if (sub.length > 0) console.log(`    OOS ${r}: ${fmt(tradeStats(sub), true)}`);
+    }
+  };
+  printISOOS('MECHANISCH SL×1.5 TP×3', mechM3);
+  printISOOS('MECHANISCH SL×1.5 TP×2', mechM2);
 
   // Vergelijking met boardroom-origineel (bekende cijfers uit boardroomBacktest run 25 mei – 20 nov 2026)
   console.log('\n── VERGELIJKING MET BOARDROOM-ORIGINEEL (Haiku, 25 mei – 20 nov 2026) ──');
@@ -348,8 +368,8 @@ async function main() {
   });
 
   const hybPassed = hybridResults.filter(r => r.hybrid?.passed);
-  const hybH2 = hybPassed.map(r => ({ ...r.hybrid.h2, dir: r.hybrid.boardDir, regime: r.regime, year: r.year }));
-  const hybH3 = hybPassed.map(r => ({ ...r.hybrid.h3, dir: r.hybrid.boardDir, regime: r.regime, year: r.year }));
+  const hybH2 = hybPassed.map(r => ({ ...r.hybrid.h2, dir: r.hybrid.boardDir, regime: r.regime, year: r.year, time: r.time }));
+  const hybH3 = hybPassed.map(r => ({ ...r.hybrid.h3, dir: r.hybrid.boardDir, regime: r.regime, year: r.year, time: r.time }));
 
   console.log('\n' + divider);
   console.log('HYBRIDE RESULTATEN (boardroom yes/no + ATR SL/TP)');
@@ -358,6 +378,8 @@ async function main() {
 
   printSummary('HYBRIDE SL×1.5 / TP×2', hybH2);
   printSummary('HYBRIDE SL×1.5 / TP×3', hybH3);
+  printISOOS('HYBRIDE SL×1.5 TP×3', hybH3);
+  printISOOS('HYBRIDE SL×1.5 TP×2', hybH2);
 
   // Drieweg vergelijking
   console.log('\n── DRIEWEG VERGELIJKING (Totaal) ──');
