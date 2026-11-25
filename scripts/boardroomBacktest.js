@@ -222,13 +222,19 @@ async function main() {
     if (lastTriggerTime && now - lastTriggerTime < COOLDOWN_MS) continue;
 
     const h1Window  = h1All.slice(Math.max(0, i - 50), i + 1);
-    const m30Window = m30All.filter(c => c.time <= candle.time).slice(-100);
-    const m15Window = m15All.filter(c => c.time <= candle.time).slice(-100);
-    const h4Window  = h4All.filter(c => c.time <= candle.time).slice(-50);
-    const d1Window  = d1All.filter(c => c.time <= candle.time).slice(-60);
-    const w1Window  = w1All.filter(c => c.time <= candle.time).slice(-20);
-    const eurWindow = eurUsdAll.filter(c => c.time <= candle.time).slice(-50);
-    const yldWindow = yieldAll.filter(c => c.time <= candle.time).slice(-25);
+    // Punt-in-tijd filter: hogere TF-candles alleen meenemen als hun SLOTKOERS
+    // ≤ slotkoers van de H1-triggercandle. Candles staan op openingstijd;
+    // close_time = open_time + tijdsframe-duur. Zo vermijden we lookahead via
+    // de lopende D1/W1/H4-candle (die op openingstijd ≤ trigger.time staat
+    // maar zijn OHLC pas sluit uren of dagen later).
+    const h1CloseMs = new Date(candle.time).getTime() + 3_600_000;
+    const m30Window = m30All.filter(c => new Date(c.time).getTime() +   1_800_000 <= h1CloseMs).slice(-100);
+    const m15Window = m15All.filter(c => new Date(c.time).getTime() +     900_000 <= h1CloseMs).slice(-100);
+    const h4Window  = h4All.filter(c =>  new Date(c.time).getTime() +  14_400_000 <= h1CloseMs).slice(-50);
+    const d1Window  = d1All.filter(c =>  new Date(c.time).getTime() +  86_400_000 <= h1CloseMs).slice(-60);
+    const w1Window  = w1All.filter(c =>  new Date(c.time).getTime() + 604_800_000 <= h1CloseMs).slice(-20);
+    const eurWindow = eurUsdAll.filter(c => new Date(c.time).getTime() + 3_600_000 <= h1CloseMs).slice(-50);
+    const yldWindow = yieldAll.filter(c =>  new Date(c.time).getTime() + 86_400_000 <= h1CloseMs).slice(-25);
 
     if (m30Window.length < 20 || m15Window.length < 20) continue;
 

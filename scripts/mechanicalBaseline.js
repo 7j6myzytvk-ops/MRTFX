@@ -195,11 +195,13 @@ function runPass1(candles) {
     }
 
     const h1Window  = h1.slice(Math.max(0, i - 50), i + 1);
-    const m30Window = m30.filter(c => c.time <= candle.time).slice(-100);
-    const m15Window = m15.filter(c => c.time <= candle.time).slice(-100);
-    const h4Window  = h4.filter(c => c.time <= candle.time).slice(-50);
-    const d1Window  = d1.filter(c => c.time <= candle.time).slice(-60);
-    const w1Window  = w1.filter(c => c.time <= candle.time).slice(-20);
+    // Punt-in-tijd: alleen hogere-TF-candles waarvan de sluittijd ≤ H1-sluittijd.
+    const h1CloseMs = new Date(candle.time).getTime() + 3_600_000;
+    const m30Window = m30.filter(c => new Date(c.time).getTime() +   1_800_000 <= h1CloseMs).slice(-100);
+    const m15Window = m15.filter(c => new Date(c.time).getTime() +     900_000 <= h1CloseMs).slice(-100);
+    const h4Window  = h4.filter(c =>  new Date(c.time).getTime() +  14_400_000 <= h1CloseMs).slice(-50);
+    const d1Window  = d1.filter(c =>  new Date(c.time).getTime() +  86_400_000 <= h1CloseMs).slice(-60);
+    const w1Window  = w1.filter(c =>  new Date(c.time).getTime() + 604_800_000 <= h1CloseMs).slice(-20);
 
     if (m30Window.length < 20 || m15Window.length < 20) continue;
 
