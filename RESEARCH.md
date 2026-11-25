@@ -16,6 +16,7 @@ Alles wat hier niet aan voldoet heet "hypothese" of "indicatie", nooit "bewezen"
 
 ## Teller
 Aantal geteste hypotheses: **6** (hoe meer hypotheses, hoe groter de kans dat er één toevallig goed lijkt)
+Bewezen hypotheses: **1** (H6)
 
 ## Hypotheses
 
@@ -43,14 +44,17 @@ Aantal geteste hypotheses: **6** (hoe meer hypotheses, hoe groter de kans dat er
 - Lopend (25-11-2026). Vergelijk met H2 over exact dezelfde periode en triggers.
 - Beslisregel: voegt de boardroom geen E(R) toe bovenop H2 → boardroom eruit (kosten en complexiteit zonder waarde).
 
-### H4 — Donchian-breakout 20/55 dagen, D1-timeframe — OPEN
+### H4 — Donchian-breakout 20/55 dagen, D1-timeframe — ONVOLDOENDE DATA (25-11-2026)
 - **Hypothese:** Een trend-volgend systeem op D1 gebaseerd op Donchian-breakout heeft een positieve E(R) op XAU/USD.
 - **Pre-specified parameters (niet wijzigen):**
   - Entry: D1-close breekt boven 55-daagse Donchian-high (long) of onder 55-daagse Donchian-low (short). Donchian = highest high / lowest low van voorgaande 55 D1-candles (punt-in-tijd, exclusief huidige candle).
   - Initiële SL: 2×ATR(D1,14) van de entry-prijs af.
-  - Trailing exit: positie sluit als D1-low (long) of D1-high (short) de 20-daagse Donchian-grens (lowest low resp. highest high van voorgaande 20 candles) raakt of overschrijdt. rMultiple = (exit − entry) / initiële SL-afstand.
+  - Trailing exit: positie sluit als D1-low (long) of D1-high (short) de 20-daagse Donchian-grens raakt of overschrijdt. rMultiple = (exit − entry) / initiële SL-afstand.
   - Eén trade tegelijk; entry = slotkoers breakout-candle.
-- Nog te draaien: `node scripts/hypothesisTest.js --cached --from 2024-11-01 --h4`
+- **Uitslag (25-11-2026, nov 2024–nov 2026, `--h4 --cached`):** n=7 trades — te weinig voor enige conclusie.
+  - OOS (vóór jun 2026): n=2 (beide TP), IS: n=5 (0 TP, 4 SL, 1 geen).
+  - 2-jaars D1-data geeft slechts 7 triggers. Resultaten zijn ruis.
+- **Status:** Niet te beoordelen. ≥4 jaar data nodig (of andere asset met meer volatiliteitsregimes).
 
 ### H5 — London-open breakout (Aziatische range) — OPEN
 - **Hypothese:** Een breakout na de Aziatische sessie, in de richting van de breakout, heeft een positieve E(R).
@@ -61,18 +65,33 @@ Aantal geteste hypotheses: **6** (hoe meer hypotheses, hoe groter de kans dat er
   - TP: entry ± 2,0 × range-breedte (range-high − range-low).
   - Minimum range-breedte: $3 (te smalle ranges uitgesloten).
   - Eén trade tegelijk; als range < $3 of geen breakout in venster → geen trade die dag.
-- Nog te draaien: `node scripts/hypothesisTest.js --cached --from 2024-11-01 --h5`
+- **Uitslag (25-11-2026, nov 2024–nov 2026, `--h5 --cached`):** n=217 trades (TP=78, SL=89, geen=50)
+  - WR 47%, **E(R) +0,197R**, CI [−0,004; +0,396] — ondergrens nét onder nul
+  - OOS (vóór jun 2026): n=176, E(R) +0,175R, CI [−0,037; +0,392] — ook nét onder nul
+  - IS (jun–nov 2026): n=41, E(R) +0,324R, CI [−0,213; +0,865]
+  - **Per regime:** trend-up −0,026R; range +0,243R; **trend-down +0,773R CI [+0,335; +1,181]** ← sterk
+  - OOS trend-down: n=25, WR 78%, E(R) +1,07R (ondergrens CI positief, maar n klein)
+  - Per jaar: 2024 +0,494R (n=22); 2025 −0,026R (n=120); 2026 +0,505R (n=75) — 2025 is een dip
+- **Status:** Totaal-CI snijdt nul → nog niet bewezen. Opmerkelijk: trend-down regime heeft een sterke edge (H7 als vervolgtest: H5 alleen in trend-down).
 
-### H6 — H2 met D1-trendfilter (alleen met de trend) — OPEN
+### H6 — H2 met D1-trendfilter (alleen met de trend) — **BEWEZEN (25-11-2026)**
 - **Hypothese:** H2 (mechanische conditionChecker-triggers, SL×1,5/TP×3) gefilterd op D1-trendrichting heeft een hogere E(R) dan H2 ongefilterd.
 - **Pre-specified parameters (niet wijzigen):**
   - Dezelfde triggers als H2 (conditionChecker + SL×1,5×ATR + TP×3×ATR + één trade tegelijk).
-  - Filter: conditionChecker-richting moet overeenkomen met het D1-regime (SMA50-richtingstest, zelfde als boardroomBacktest):
+  - Filter: conditionChecker-richting moet overeenkomen met het D1-regime (SMA50-richtingstest):
     - regime = trend-up → alleen bullish triggers
     - regime = trend-down → alleen bearish triggers
     - regime = range → geen trade
   - Geen extra parameters; dezelfde ATR-multipliers als H2.
-- Nog te draaien: `node scripts/hypothesisTest.js --cached --from 2024-11-01 --h6`
+- **Uitslag (25-11-2026, nov 2024–nov 2026, `--h6 --cached`):** n=550 trades (TP=208, SL=328, geen=14)
+  - WR 39%, **E(R) +0,134R**, CI [+0,011; +0,263]
+  - **OOS (vóór jun 2026):** n=399, WR 40%, **E(R) +0,162R, CI [+0,015; +0,309]** ← ondergrens > 0
+  - IS (jun–nov 2026): n=151, E(R) +0,060R, CI [−0,161; +0,302] — IS zwakker (verwacht: rules hier ontwikkeld)
+  - Per richting: bullish +0,123R, bearish +0,158R — beide positief
+  - Per jaar: 2025 +0,149R (n=289); 2026 +0,113R (n=261) — consistent
+  - OOS trend-up: n=343, E(R) +0,164R; OOS trend-down: n=56, E(R) +0,150R
+- **Vergelijking H2 vs H6:** H2 n=838 E(R)+0,106R CI[+0,007;+0,205] → H6 n=550 E(R)+0,134R CI[+0,011;+0,263]. De D1-trendfilter schrapt range-trades en verhoogt E(R) met +0,028R.
+- **Status: BEWEZEN.** Voldoet aan alle 6 criteria: ≥2 jaar data ✓, OOS positief ✓, één trade tegelijk ✓, E(R) na $0,70 kosten ✓, OOS CI-ondergrens > 0 ✓, parameters pre-specified ✓.
 
 ## Gevonden fouten (en status)
 - Filterdrempels stonden alleen in prompts → LLM bepaalde zelf of ze golden. **Gefixt** (8126b1c): harde blokkades in agentAnalysis.
@@ -91,3 +110,4 @@ Aantal geteste hypotheses: **6** (hoe meer hypotheses, hoe groter de kans dat er
 ## Besluitenlog
 - 25-11-2026: Haiku 4.5 live als forward test op papier (geen echt geld, geen FTMO).
 - 25-11-2026: CEO-zekerheid 55%, ATR-minimum $8 (Fase 102), bevestigd door Mr.T.
+- 25-11-2026: H6 bewezen (OOS E(R)+0,162R, CI[+0,015;+0,309]). Eerste bewezen edge in dit systeem. Vervolgvraag: H3 (hybride boardroom-filter) als verdere verbetering op H6?
