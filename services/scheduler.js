@@ -1,3 +1,5 @@
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 import { config } from '../config/index.js';
 import {
   getRecentRealCandles,
@@ -55,6 +57,33 @@ let nextAllowedBoardroomTime = null; // dynamische cooldown: 90m gefilterd / 45m
 let lastTradeSignalTime = null;  // tijdstip laatste PASSED directional signaal (4u trade-lockout)
 let dailySignalDate = null;      // sessiedag van de dagelijkse teller (YYYY-MM-DD UTC)
 let dailySignalCount = 0;        // aantal PASSED signalen deze dag
+
+// Sla trade-cooldown state op in Railway-volume zodat redeploys de lockout en dagteller
+// niet resetten. Pad = data/live/ (zelfde volume als signals.json).
+const COOLDOWN_STATE_FILE = path.join(process.cwd(), 'data', 'live', 'tradeCooldown.json');
+
+async function loadCooldownState() {
+  try {
+    const raw = await readFile(COOLDOWN_STATE_FILE, 'utf-8');
+    const { lastTradeSignalTime: ts, dailySignalDate: d, dailySignalCount: c } = JSON.parse(raw);
+    if (typeof ts === 'number') lastTradeSignalTime = ts;
+    if (typeof d  === 'string') dailySignalDate    = d;
+    if (typeof c  === 'number') dailySignalCount   = c;
+    console.log(
+      `[Cooldown] State hersteld: last=${ts ? new Date(ts).toISOString().slice(0, 16) : 'nooit'}, ` +
+      `vandaag=${d ?? '-'} (${c ?? 0}/${MAX_SIGNALS_PER_DAY} signalen)`,
+    );
+  } catch (err) {
+    if (err.code !== 'ENOENT') console.warn('[Cooldown] Kon state niet laden:', err.message);
+  }
+}
+
+function saveCooldownState() {
+  const state = { lastTradeSignalTime, dailySignalDate, dailySignalCount };
+  mkdir(path.dirname(COOLDOWN_STATE_FILE), { recursive: true })
+    .then(() => writeFile(COOLDOWN_STATE_FILE, JSON.stringify(state, null, 2)))
+    .catch((err) => console.warn('[Cooldown] Kon state niet opslaan:', err.message));
+}
 let lastSpikeTime = null;        // aparte cooldown voor event/spike-triggers (2u)
 let lastHeartbeatDate = null;
 let lastDailyReviewDate = null;
@@ -225,6 +254,7 @@ async function poll(client) {
       dailySignalCount++;
       lastTradeSignalTime = Date.now();
       console.log(`[Trade-cooldown] Signaal #${dailySignalCount}/${MAX_SIGNALS_PER_DAY} vandaag — 4u lockout actief.`);
+      saveCooldownState();
     }
 
     // Gemeenschappelijke pre-check voor beide paden: trade-cooldown en dagmaximum.
@@ -386,13 +416,14 @@ function getCurrentPollInterval() {
   return (hour >= 7 && hour < 17) ? POLL_INTERVAL_MS : POLL_INTERVAL_OFFPEAK_MS;
 }
 
-export function startSignalScheduler(client) {
+export async function startSignalScheduler(client) {
   const { ceoChannelId } = config.boardroom;
   if (!ceoChannelId) {
     console.log('Setup-detector uitgeschakeld: stel DISCORD_CEO_CHANNEL_ID in.');
     return;
   }
   console.log('Setup-detector actief — 2 min interval (London/NY), 15 min interval (Asian/nacht).');
+  await loadCooldownState();
   sendStartupAlert(client);
   runWeeklyRegimeIfStale();
 
