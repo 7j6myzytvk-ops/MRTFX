@@ -103,6 +103,10 @@ export async function getEurUsdCandles(opts = {}) {
   return fetchCandles({ symbol: 'EUR/USD', ...opts });
 }
 
+export async function getCandles(symbol, opts = {}) {
+  return fetchCandles({ symbol, ...opts });
+}
+
 // Voor de live boardroom (`/analyse`, scheduler) willen we `count` echte candles,
 // niet `count` ruwe candles. Twelve Data vult weekend-gaten op met synthetische
 // platte placeholder-candles (zie agents/outcomeEvaluator.js), die anders het
