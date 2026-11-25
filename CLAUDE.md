@@ -1,5 +1,8 @@
 # MRTFX — Projectinstructies voor Claude
 
+## Onderzoekslogboek — VERPLICHT
+Lees `RESEARCH.md` vóór elke backtest, filterwijziging of uitspraak over winstgevendheid. Gebruik de woorden "bewezen" of "statistisch significant" alleen als aan de criteria in RESEARCH.md is voldaan. Werk na elke backtest de betreffende hypothese in RESEARCH.md bij (uitslag + status) en verhoog de teller bij elke nieuwe hypothese.
+
 ## Doel
 Volledig geautomatiseerd XAU/USD trading systeem dat live setups detecteert, via Discord doorstuurt, en daadwerkelijk take profits raakt.
 
